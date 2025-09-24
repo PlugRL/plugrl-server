@@ -1,7 +1,9 @@
-from typing import Dict, Type
+import dataclasses
+from typing import Type, Dict
 from loguru import logger
-from vlarl_launcher.algorithm.base import BaseAlgorithm, BaseAlgoConfig
+from vlarl_launcher.policy.base_policy import BasePolicy, BasePolicyConfig
 
+from vlarl_launcher.algorithm.base import BaseAlgorithm, BaseAlgoConfig
 class AlgoSpec:
     def __init__(self, uid: str, cls: Type[BaseAlgorithm], default_kwargs: dict | None = None):
         self.uid = uid
@@ -15,23 +17,6 @@ class AlgoSpec:
 
 REGISTERED_ALGO_CONFIGS: Dict[str, BaseAlgoConfig] = {}
 REGISTERED_ALGORITHMS: Dict[str, AlgoSpec] = {}
-
-def register(
-    name: str,
-    cls: Type[BaseAlgorithm],
-    default_kwargs: dict | None = None,
-):
-
-    if name in REGISTERED_ALGORITHMS:
-        logger.warning(f"Algorithm {name} already registered")
-    if not issubclass(cls, BaseAlgorithm):
-        raise TypeError(f"Algorithm {name} must inherit from BaseAlgorithm")
-
-    REGISTERED_ALGORITHMS[name] = AlgoSpec(
-        name,
-        cls,
-        default_kwargs=default_kwargs,
-    )
 
 def register_algo(uid: str, override: bool = False, **default_kwargs):
     def _register_algo(cls):
@@ -47,10 +32,10 @@ def register_algo(uid: str, override: bool = False, **default_kwargs):
         return cls
     return _register_algo
 
-def make_algo(uid: str, **kwargs) -> BaseAlgorithm:
+def make_algo(uid: str, policy: BasePolicy, **kwargs) -> BaseAlgorithm:
     if uid not in REGISTERED_ALGORITHMS:
         raise KeyError(f"Algorithm {uid} is not registered.")
-    return REGISTERED_ALGORITHMS[uid].create(**kwargs)
+    return REGISTERED_ALGORITHMS[uid].create(policy=policy, **kwargs)
 
 def register_algo_config(uid: str):
     def _register_algo_config(cls):
