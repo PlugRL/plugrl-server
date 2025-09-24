@@ -1,0 +1,25 @@
+[project]
+name = "vlarl-launcher"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "chenhao lu",email = "luch21@mails.tsinghua.edu.cn"}
+]
+readme = "README.md"
+requires-python = ">=3.10,<4.0"
+dependencies = [
+    "vlarl-client @ file:///home/polaris/tea/vlarl/vlarl_client",
+    "websockets (>=15.0.1,<16.0.0)",
+    "tyro (>=0.9.32,<0.10.0)",
+    "setuptools (==61.0)"
+]
+
+[tool.poetry.scripts]
+vlarl-run-server = "vlarl_launcher.cli:main"
+
+[tool.poetry]
+packages = [{include = "vlarl_launcher", from = "src"}]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
