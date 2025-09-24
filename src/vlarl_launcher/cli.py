@@ -5,7 +5,7 @@ import tyro
 from loguru import logger
 
 import vlarl_launcher
-from vlarl_launcher.algorithm.base import BaseAlgoConfig
+from vlarl_launcher.algorithm.base_algorithm import BaseAlgoConfig
 from vlarl_launcher.policy.base_policy import BasePolicyConfig
 from vlarl_launcher.policy.registration import REGISTERED_POLICY_CONFIGS, make_policy
 from vlarl_launcher.algorithm.registration import REGISTERED_ALGO_CONFIGS, make_algo

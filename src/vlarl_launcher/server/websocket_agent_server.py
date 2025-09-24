@@ -9,7 +9,7 @@ from loguru import logger
 from vlarl_client import msgpack_numpy
 from vlarl_client.websocket_worker_agent import MessageType
 
-from vlarl_launcher.algorithm.base import BaseAlgorithm
+from vlarl_launcher.algorithm.base_algorithm import BaseAlgorithm
 
 class WebSocketAgentServer:
     def __init__(

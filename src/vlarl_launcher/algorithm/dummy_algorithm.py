@@ -1,7 +1,7 @@
 import dataclasses
 import numpy as np
 
-from .base import BaseAlgorithm, BaseAlgoConfig
+from .base_algorithm import BaseAlgorithm, BaseAlgoConfig
 from .registration import register_algo, register_algo_config
 
 UID = "dummy"

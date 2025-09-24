@@ -3,7 +3,7 @@ from typing import Type, Dict
 from loguru import logger
 from vlarl_launcher.policy.base_policy import BasePolicy, BasePolicyConfig
 
-from vlarl_launcher.algorithm.base import BaseAlgorithm, BaseAlgoConfig
+from vlarl_launcher.algorithm.base_algorithm import BaseAlgorithm, BaseAlgoConfig
 class AlgoSpec:
     def __init__(self, uid: str, cls: Type[BaseAlgorithm], default_kwargs: dict | None = None):
         self.uid = uid
