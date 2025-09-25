@@ -52,10 +52,10 @@ def _main(args: Args):
     logger.info(f"Policy: {args.policy_uid}, Config: {args.policy}")
     
     policy = make_policy(args.policy_uid, config=args.policy)
-    logger.info(f"Policy created: {policy}")
+    logger.info(f"Policy created: \n{policy}")
     
     algo = make_algo(args.algo_uid, policy=policy, config=args.algo)
-    logger.info(f"Algorithm created: {algo}")
+    logger.info(f"Algorithm created: \n{algo}")
 
     server = WebSocketAgentServer(algo, host=args.host, port=args.port)
     server.serve_forever()

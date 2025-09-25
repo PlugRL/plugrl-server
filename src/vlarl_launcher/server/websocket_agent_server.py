@@ -31,7 +31,7 @@ class WebSocketAgentServer:
         async with _server.serve(
             self._handler, self._host, self._port, compression=None, max_size=None
         ) as server:
-            logger.info(f"Mock Agent Server is listening on {self._host}:{self._port}")
+            logger.info(f"Agent Server is listening on {self._host}:{self._port}")
             await server.serve_forever()
             
     async def _handler(self, websocket: _server.ServerConnection):
@@ -39,25 +39,20 @@ class WebSocketAgentServer:
         packer = msgpack_numpy.Packer()
         
         try:
-            mock_weights = {"dummy_key": 1.0}
-            metadata_message = dict(message_type=str(MessageType.METADATA), data=mock_weights)
+            metadata_message = dict(message_type=str(MessageType.METADATA), data=self._metadata)
             await websocket.send(packer.pack(metadata_message))
             logger.info("Sent initial metadata to client.")
 
             while True:
-                # 2. 等待 INFER 请求
-                # 这是每个 step 的开始
                 packed_infer_msg = await websocket.recv()
                 infer_msg = msgpack_numpy.unpackb(packed_infer_msg)
                 
                 if infer_msg.get("message_type") != str(MessageType.INFER):
                     logger.warning(f"Expected an INFER message but received: {infer_msg.get('message_type')}")
-                    continue # 跳过，继续等待下一个INFER请求
+                    continue
 
                 obs = infer_msg.get("data")
-                # logger.info(f"Received inference request for observation: {obs}")
 
-                # 3. 模拟推理并发送动作
                 action_dict = self._algorithm.infer(obs)
                 action_response = dict(message_type=str(MessageType.ACTION), data=action_dict)
                 await websocket.send(packer.pack(action_response))
@@ -67,6 +62,8 @@ class WebSocketAgentServer:
 
                 if feedback_msg.get("message_type") == str(MessageType.FEEDBACK):
                     feedback_data = feedback_msg.get("data")
+                    obs, reward, terminated, truncated, info = feedback_data.values()
+                    self._algorithm.feedback(obs, reward, terminated, truncated, info)
                 else:
                     logger.warning(f"Expected a FEEDBACK message but received: {feedback_msg.get('message_type')}")
         
