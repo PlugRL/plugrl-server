@@ -1,4 +1,5 @@
 import dataclasses
+from collections import defaultdict
 from typing import Type, Dict
 from loguru import logger
 from vlarl_launcher.policy.base_policy import BasePolicy, BasePolicyConfig
@@ -15,7 +16,7 @@ class AlgoSpec:
         _kwargs.update(kwargs)
         return self.cls(**_kwargs)
 
-REGISTERED_ALGO_CONFIGS: Dict[str, BaseAlgoConfig] = {}
+REGISTERED_ALGO_CONFIGS: Dict[str, Dict[str, BaseAlgoConfig]] = defaultdict(dict)
 REGISTERED_ALGORITHMS: Dict[str, AlgoSpec] = {}
 
 def register_algo(uid: str, override: bool = False, **default_kwargs):
@@ -37,10 +38,10 @@ def make_algo(uid: str, policy: BasePolicy, **kwargs) -> BaseAlgorithm:
         raise KeyError(f"Algorithm {uid} is not registered.")
     return REGISTERED_ALGORITHMS[uid].create(policy=policy, **kwargs)
 
-def register_algo_config(uid: str):
+def register_algo_config(uid: str, variant: str = "default"):
     def _register_algo_config(cls):
-        if uid in REGISTERED_ALGO_CONFIGS:
-            raise KeyError(f"Algo config {uid} is already registered.")
-        REGISTERED_ALGO_CONFIGS[uid] = cls()
+        if uid in REGISTERED_ALGO_CONFIGS and variant in REGISTERED_ALGO_CONFIGS[uid]:
+            raise KeyError(f"Algo config {uid} with variant {variant} is already registered.")
+        REGISTERED_ALGO_CONFIGS[uid][variant] = cls()
         return cls
     return _register_algo_config

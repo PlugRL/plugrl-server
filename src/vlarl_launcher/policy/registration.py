@@ -30,7 +30,7 @@ def register_policy(uid: str, override: bool = False, **default_kwargs):
         return cls
     return _register_policy
     
-def register_policy_config(uid: str, supported_algos: list[str] | None = None):
+def register_policy_config(uid: str, supported_algos: list[tuple[str, str]] | None = None):
     def _register_policy_config(cls):
         if uid in REGISTERED_POLICY_CONFIGS:
             raise KeyError(f"Policy config {uid} is already registered.")

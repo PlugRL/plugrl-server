@@ -4,17 +4,18 @@ import numpy as np
 import torch
 import torch.nn as nn
 from typing import Any
+from loguru import logger
 
 from ..registration import register_policy, register_policy_config
 from ..base_policy import BasePolicyConfig, BasePolicy, InternalState
 
-UID = "atari-policy"
+UID = "classic-policy"
 
-@register_policy_config(UID, supported_algos=[("ppo-discrete", "atari")])
+@register_policy_config(UID, supported_algos=[("ppo-discrete", "classic")])
 @dataclasses.dataclass
-class AtariPolicyConfig(BasePolicyConfig):
-    n_actions: int = 4
-    ...
+class ClassicPolicyConfig(BasePolicyConfig):
+    n_actions: int = 2
+    obs_dim: int = 4
     
 def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
     torch.nn.init.orthogonal_(layer.weight, std)
@@ -22,31 +23,29 @@ def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
     return layer
 
 @register_policy(UID)
-class AtariPolicy(BasePolicy):
-    def __init__(self, config: AtariPolicyConfig):
+class ClassicPolicy(BasePolicy):
+    config: ClassicPolicyConfig
+    
+    def __init__(self, config: ClassicPolicyConfig):
         super().__init__(config)
-        self.config = config
-        self.network = nn.Sequential(
-            layer_init(nn.Conv2d(4, 32, 8, stride=4)),
-            nn.ReLU(),
-            layer_init(nn.Conv2d(32, 64, 4, stride=2)),
-            nn.ReLU(),
-            layer_init(nn.Conv2d(64, 64, 3, stride=1)),
-            nn.ReLU(),
-            nn.Flatten(),
-            layer_init(nn.Linear(7 * 7 * 64, 512)),
-            nn.ReLU(),
+        self.critic = nn.Sequential(
+            layer_init(nn.Linear(self.config.obs_dim, 64)),
+            nn.Tanh(),
+            layer_init(nn.Linear(64, 64)),
+            nn.Tanh(),
+            layer_init(nn.Linear(64, 1), std=1),
         )
-        self.actor = layer_init(nn.Linear(512, self.config.n_actions), std=0.01)
-        self.critic = layer_init(nn.Linear(512, 1), std=1)
+        self.actor = nn.Sequential(
+            layer_init(nn.Linear(self.config.obs_dim, 64)),
+            nn.Tanh(),
+            layer_init(nn.Linear(64, 64)),
+            nn.Tanh(),
+            layer_init(nn.Linear(64, self.config.n_actions), std=0.01),
+        )
         self.to(self.device)
         
     def prepare_observation(self, _obs: dict):
-        frames = [_obs["images"][f"{i}"][..., 0] for i in range(4)]
-        
-        # frames [(1, 84, 84), ...] -> (1, *, 84, 84)
-        obs = np.stack(frames, axis=1)
-        obs = torch.as_tensor(obs, dtype=torch.float32) / 255.0
+        obs = torch.as_tensor(_obs["states"]["obs"].copy(), dtype=torch.float32)
         return obs.to(self.device)
 
     def get_action_and_internal_state(self, _obs: dict) -> tuple[Any, InternalState]:
@@ -54,10 +53,9 @@ class AtariPolicy(BasePolicy):
         return self._get_action_and_internal_state(obs)
 
     def _get_action_and_internal_state(self, obs: torch.Tensor, action: torch.Tensor | None = None) -> tuple[Any, InternalState]:
-        hidden = self.network(obs)
-        logits = self.actor(hidden)
-        value = self.critic(hidden).squeeze(-1)
-        
+        logits = self.actor(obs)
+        value = self.critic(obs).squeeze(-1)
+
         distribution = torch.distributions.Categorical(logits=logits)
         if action is None:
             action = distribution.sample()
@@ -81,12 +79,11 @@ class AtariPolicy(BasePolicy):
         return self._get_value(obs)
         
     def _get_value(self, obs: torch.Tensor) -> torch.Tensor:
-        hidden = self.network(obs)
-        value = self.critic(hidden).squeeze(-1)
+        value = self.critic(obs)
         return value.cpu()
     
     @torch.inference_mode()
     def fake_internal_state(self, batch_size: int = 1) -> InternalState:
-        obs = torch.zeros((batch_size, 4, 84, 84), dtype=torch.float32).to(self.device)
+        obs = torch.zeros((batch_size, self.config.obs_dim), dtype=torch.float32).to(self.device)
         _, internal_state = self._get_action_and_internal_state(obs)
         return internal_state

@@ -19,21 +19,21 @@ class Args:
     
     policy_uid: tyro.conf._markers.Suppress[str]
     policy: BasePolicyConfig
-    
-    log_level: Literal["DEBUG", "INFO"] = "INFO"
-    
+
+    log_level: Literal["debug", "info"] = "info"
+
     host: str = "0.0.0.0"
     port: int = 8000
     
-# _CONFIGS_DICT = {k.lower(): Args(algo_uid=k, algo=v) for k, v in REGISTERED_ALGO_CONFIGS.items()}
 _CONFIGS_DICT = {}
 for policy_uid, policy_cfg in REGISTERED_POLICY_CONFIGS.items():
-    support_algos = policy_cfg.supported_algos if policy_cfg.supported_algos is not None else REGISTERED_ALGO_CONFIGS.keys()
-    for algo_uid in support_algos:
-        if algo_uid not in REGISTERED_ALGO_CONFIGS:
+    support_algos = policy_cfg.supported_algos if policy_cfg.supported_algos is not None else [(k, "default") for k in REGISTERED_ALGO_CONFIGS.keys()]
+    for algo_uid, variant_uid in support_algos:
+        if algo_uid not in REGISTERED_ALGO_CONFIGS or variant_uid not in REGISTERED_ALGO_CONFIGS[algo_uid]:
+            logger.warning(f"Algorithm {algo_uid} with variant {variant_uid} is not registered, skipping...")
             continue
-        algo_cfg = REGISTERED_ALGO_CONFIGS[algo_uid]
-        key = f"{algo_uid}/{policy_uid}".lower()
+        algo_cfg = REGISTERED_ALGO_CONFIGS[algo_uid][variant_uid]
+        key = f"{algo_uid}-{variant_uid}/{policy_uid}".lower()
         _CONFIGS_DICT[key] = Args(
             algo_uid=algo_uid,
             algo=algo_cfg,
@@ -45,7 +45,7 @@ def cli() -> Args:
     return tyro.extras.overridable_config_cli({k: (k, v) for k, v in _CONFIGS_DICT.items()})
 
 def _main(args: Args):
-    logger.configure(handlers=[{"sink": sys.stdout, "level": args.log_level}])
+    logger.configure(handlers=[{"sink": sys.stdout, "level": args.log_level.upper()}])
     
     logger.info(f"vlarl_launcher version: {vlarl_launcher.__version__}")
     logger.info(f"Algorithm: {args.algo_uid}, Config: {args.algo}")
