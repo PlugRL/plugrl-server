@@ -7,11 +7,14 @@ import websockets.asyncio.server as _server
 import websockets.frames
 import uuid
 from loguru import logger
+import swanlab
+import wandb
 
 from vlarl_client import msgpack_numpy
 from vlarl_client.websocket_worker_agent import MessageType
 
 from vlarl_launcher.algorithm.base_algorithm import BaseAlgorithm
+from vlarl_launcher.common.checkpoint_manager import CheckpointManager
 from vlarl_launcher.common.data_utils import batch_aggregate
 
 SCHEDULER_SLEEP_INTERVAL = 0.001  # seconds
@@ -20,11 +23,15 @@ class WebSocketAgentServer:
     def __init__(
         self,
         algorithm: BaseAlgorithm,
+        checkpoint_manager: CheckpointManager,
+        tracker: swanlab.run.SwanLabRun | wandb.Run,
         host: str = "0.0.0.0", 
         port: int = 8000,
         metadata: dict | None = None,
     ):
         self._algorithm = algorithm
+        self._checkpoint_manager = checkpoint_manager
+        self._tracker = tracker
         self._host = host
         self._port = port
         self._metadata = metadata or {}
@@ -95,7 +102,7 @@ class WebSocketAgentServer:
 
                 next_obs, reward, next_terminated, next_truncated, info = feedback_data.values()
                 async with self._model_lock:
-                    prev_node = self._algorithm.feedback(
+                    prev_node, step, log_dict = self._algorithm.feedback(
                         internal_state=internal_state,
                         terminated=terminated,
                         truncated=truncated,
@@ -106,6 +113,8 @@ class WebSocketAgentServer:
                         info=info,
                         prev_node=prev_node
                     )
+                    self._tracker.log(log_dict, step=step)
+                    
                 terminated, truncated = next_terminated, next_truncated
                 
         except websockets.ConnectionClosed:
@@ -137,25 +146,38 @@ class WebSocketAgentServer:
             future = self._response_futures.get(req["id"])
             if future and not future.done():
                 future.set_result((action[i:i+1], internal_state[i:i+1]))
-        
-        self._infer_queue.task_done()
+            self._infer_queue.task_done()
 
     def should_learn(self) -> bool:
         return self._algorithm.should_learn()
 
     async def _process_learn(self):
-        async with self._model_lock:
-            await asyncio.to_thread(self._algorithm.learn)
+        step, log_dict = await asyncio.to_thread(self._algorithm.learn)
+        self._tracker.log(log_dict, step=step)
             
     def should_stop(self) -> bool:
         return self._algorithm.should_stop()
+
+    def should_save(self) -> bool:
+        return self._algorithm.should_save()
+    
+    async def _process_save(self):
+        checkpoint = self._algorithm.create_checkpoint()
+        self._checkpoint_manager.save_checkpoint(checkpoint)
 
     async def _main_scheduler_loop(self):
         while True:
             if self.should_infer():
                 await self._process_infer()
-            if self.should_learn():
-                await self._process_learn()
+                
+            async with self._model_lock:
+                if self.should_learn():
+                    await self._process_learn()
+                
+            async with self._model_lock:
+                if self.should_save() or self.should_stop():
+                    await self._process_save()
+                    
             if self.should_stop():
                 logger.info("Stopping server as the algorithm signaled to stop.")
                 break

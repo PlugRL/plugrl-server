@@ -5,10 +5,13 @@ import torch.nn as nn
 
 from loguru import logger
 
+from vlarl_launcher.common.checkpoint_manager import Checkpoint
+
 from ..base_algorithm import BaseAlgorithm, BaseAlgoConfig
 from ..registration import register_algo, register_algo_config
 from vlarl_launcher.policy.base_policy import BasePolicy, InternalState
 from vlarl_launcher.buffer.rollout_buffer import GAEBuffer
+from vlarl_launcher.common.checkpoint_manager import Checkpoint
 
 UID = "ppo-discrete"
 
@@ -49,6 +52,7 @@ class PPODiscreteAlgoConfig(BaseAlgoConfig):
     # to be filled in runtime
     batch_size: int = 256
     total_steps: int = 10000000
+    save_interval: int = 1000000
 
 @register_algo(UID)
 class PPODiscreteAlgorithm(BaseAlgorithm):
@@ -70,13 +74,14 @@ class PPODiscreteAlgorithm(BaseAlgorithm):
             eps=1e-5,
         )
         self.global_step = 0
+        self.last_save_step = 0
     
     def infer(self, obs: dict) -> tuple[np.ndarray, InternalState]:
         with torch.inference_mode():
             action, internal_state = self.policy.get_action_and_internal_state(obs)
         return action, internal_state
         
-    def learn(self) -> None:
+    def learn(self) -> tuple[int, dict]:
         logger.debug("Starting learning step")
         self.rollout_buffer.compute_advantages_and_returns()
         logger.debug("Computed advantages and returns")
@@ -146,7 +151,7 @@ class PPODiscreteAlgorithm(BaseAlgorithm):
                 
             if self.config.target_kl is not None and approx_kl > self.config.target_kl:
                 break
-            
+
         train_info = {
             "charts/learning_rate": self.optimizer.param_groups[0]["lr"],
             "losses/value_loss": v_loss.item(),
@@ -162,9 +167,10 @@ class PPODiscreteAlgorithm(BaseAlgorithm):
         train_info_str = "\n".join([f"  {k}: {v:.9f}" for k, v in train_info.items()])
 
         logger.debug(f"PPODiscreteAlgorithm learn info: \n{train_info_str}")
-
-        self.global_step += len(self.rollout_buffer)
+        
         self.rollout_buffer.reset()
+        
+        return self.global_step, train_info
         
     
     def feedback(
@@ -172,7 +178,7 @@ class PPODiscreteAlgorithm(BaseAlgorithm):
         *, 
         internal_state: InternalState, terminated: bool, truncated: bool, 
         next_obs: dict, reward: float, next_terminated: bool, next_truncated: bool, info: dict, prev_node: tuple
-    ) -> tuple:
+    ) -> tuple[tuple, int, dict]:
         if terminated or truncated:
             with torch.inference_mode():
                 last_value = self.policy.get_value(next_obs)
@@ -187,16 +193,43 @@ class PPODiscreteAlgorithm(BaseAlgorithm):
             last_value=last_value,
             next_done=next_truncated or next_terminated
         )
-    
+        log_dict = {}
         if next_terminated or next_truncated:
             if "episode" in info:
-                logger.info(f"global_step={self.global_step}, episode_reward={info['episode']['r']}, episode_length={info['episode']['l']}")
+                log_dict = {
+                    "episode/reward": info["episode"]["r"],
+                    "episode/length": info["episode"]["l"],
+                }
+                logger.info(f"global_step={self.global_step}, " + ", ".join([f"{k}={v}" for k, v in log_dict.items()]))
             self.rollout_buffer.finish_rollout(info=info)
-            
-        return current_node
+        self.global_step += 1    
+        return current_node, self.global_step, log_dict
 
     def should_learn(self) -> bool:
         return self.rollout_buffer.full()
     
     def should_stop(self) -> bool:
         return self.global_step >= self.config.total_steps
+    
+    def should_save(self) -> bool:
+        return self.global_step - self.last_save_step >= self.config.save_interval
+    
+    def create_checkpoint(self) -> Checkpoint:
+        self.last_save_step = self.global_step
+        return Checkpoint(
+            step=self.global_step,
+            model=self.policy.state_dict(),
+            optimizer=self.optimizer.state_dict(),
+        )
+        
+    def load_checkpoint(self, checkpoint: Checkpoint) -> None:
+        self.global_step = checkpoint.step
+        if checkpoint.model is not None:
+            self.policy.load_state_dict(checkpoint.model)
+        else:
+            logger.warning("No model state found in checkpoint")
+        if checkpoint.optimizer is not None:
+            self.optimizer.load_state_dict(checkpoint.optimizer)
+        else:
+            logger.warning("No optimizer state found in checkpoint")
+        logger.info(f"Loaded checkpoint at step {self.global_step}")

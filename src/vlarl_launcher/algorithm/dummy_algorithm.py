@@ -7,6 +7,7 @@ from .base_algorithm import BaseAlgorithm, BaseAlgoConfig
 from .registration import register_algo, register_algo_config
 
 from vlarl_launcher.policy.base_policy import InternalState
+from vlarl_launcher.common.checkpoint_manager import Checkpoint
 
 UID = "dummy"
 
@@ -36,9 +37,9 @@ class DummyAlgorithm(BaseAlgorithm):
         logger.debug(f"DummyAlgorithm.feedback called with prev_node {prev_node}")
         self.counter += 1
         logger.debug(f"Feedback processed. Current counter: {self.counter}")
-        return (-1, "")
+        return (-1, ""), 0, {}
 
-    def learn(self) -> None:
+    def learn(self) -> tuple[int, dict]:
         logger.debug("DummyAlgorithm.learn called")
         logger.debug(f"Simulating learning for {self.config.fake_learn_duration_sec} seconds...")
         
@@ -46,10 +47,21 @@ class DummyAlgorithm(BaseAlgorithm):
         self.counter = 0
         
         logger.debug("Learning step completed.")
-        
+        return 0, {}
+
     def should_learn(self) -> bool:
         return self.counter >= self.config.fake_learn_freq
     
     def should_stop(self) -> bool:
         return False
     
+    def should_save(self) -> bool:
+        return False
+    
+    def create_checkpoint(self) -> Checkpoint:
+        logger.debug("DummyAlgorithm.save_checkpoint called")
+        return Checkpoint(step=0)
+    
+    def load_checkpoint(self, checkpoint: Checkpoint):
+        logger.debug(f"DummyAlgorithm.load_checkpoint called with checkpoint at step {checkpoint.step}")
+        pass

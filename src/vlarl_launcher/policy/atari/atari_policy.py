@@ -74,7 +74,7 @@ class AtariPolicy(BasePolicy):
             value=value
         )
 
-        return action.cpu().numpy(), internal_state.cpu()
+        return action.cpu().numpy()[:, None], internal_state.cpu()
     
     def get_value(self, _obs: dict) -> torch.Tensor:
         obs = self.prepare_observation(_obs)

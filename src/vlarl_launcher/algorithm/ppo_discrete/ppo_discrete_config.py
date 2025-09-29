@@ -15,3 +15,4 @@ class PPODiscreteAlgoConfigClassic(PPODiscreteAlgoConfig):
     
     batch_size: int = 128
     total_steps: int = 500000
+    save_interval: int = 50000
