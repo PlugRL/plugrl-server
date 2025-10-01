@@ -8,7 +8,6 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.10,<3.14"
 dependencies = [
-    "vlarl-client @ file:///home/polaris/tea/vlarl/vlarl_client",
     "websockets (>=15.0.1,<16.0.0)",
     "tyro (>=0.9.32,<0.10.0)",
     "torch (>=2.8.0,<3.0.0)",
@@ -18,10 +17,15 @@ dependencies = [
     "pyyaml (>=6.0.3,<7.0.0)",
     "swanlab (>=0.6.10,<0.7.0)",
     "wandb (>=0.22.0,<0.23.0)",
+    "vlarl-client @ git+ssh://git@github.com/CTP314/vlarl-client.git",
+    "tensordict (>=0.10.0,<0.11.0)",
 ]
 
 [tool.poetry.scripts]
 vlarl-run-server = "vlarl_launcher.cli:main"
+
+[tool.poetry.group.dppo.dependencies]
+dppo = {git = "git@github.com:CTP314/dppo.git"}
 
 [tool.poetry]
 packages = [{include = "vlarl_launcher", from = "src"}]

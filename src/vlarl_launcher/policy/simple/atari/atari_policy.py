@@ -5,8 +5,8 @@ import torch
 import torch.nn as nn
 from typing import Any
 
-from ..registration import register_policy, register_policy_config
-from ..base_policy import BasePolicyConfig, BasePolicy, InternalState
+from ...registration import register_policy, register_policy_config
+from ...base_policy import BasePolicyConfig, BasePolicy, InternalState
 
 UID = "atari-policy"
 

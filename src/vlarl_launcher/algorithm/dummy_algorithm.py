@@ -1,6 +1,7 @@
 import dataclasses
 import numpy as np
 import time
+import torch
 from loguru import logger
 
 from .base_algorithm import BaseAlgorithm, BaseAlgoConfig
@@ -28,7 +29,8 @@ class DummyAlgorithm(BaseAlgorithm):
     
     def infer(self, obs: dict) -> tuple[np.ndarray, InternalState]:
         logger.debug(f"DummyAlgorithm.infer called with batch size {len(obs['text'])}")
-        action, internal_state = self.policy.get_action_and_internal_state(obs)
+        with torch.inference_mode():
+            action, internal_state = self.policy.get_action_and_internal_state(obs)
         time.sleep(self.config.fake_inference_duration_sec)
         logger.debug(f"DummyAlgorithm.infer returning action shape {action.shape}")
         return action, internal_state
