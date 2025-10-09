@@ -4,7 +4,7 @@ import time
 import dataclasses
 import yaml
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any
 
 from loguru import logger
 
@@ -25,7 +25,7 @@ def get_latest_checkpoint_step(checkpoint_dir: Path) -> Optional[int]:
 class Checkpoint:
     step: int
     model: dict[str, torch.Tensor] | None = None
-    optimizer: dict[str, torch.Tensor] | None = None
+    optimizer: dict[str, Any] | None = None
     meta: dict = dataclasses.field(default_factory=lambda: {})
 
 class CheckpointManager:

@@ -10,6 +10,7 @@ model:
   _target_: dppo.model.diffusion.diffusion.DiffusionModel
   predict_epsilon: true
   denoised_clip_value: 1.0
+  randn_clip_value: 3
   network:
     _target_: dppo.model.diffusion.mlp_diffusion.DiffusionMLP
     time_dim: 32

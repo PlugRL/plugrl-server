@@ -433,7 +433,7 @@ robomimic = ["cython (<3)", "d4rl", "patchelf", "robomimic @ git+https://github.
 type = "git"
 url = "ssh://git@github.com/CTP314/dppo.git"
 reference = "HEAD"
-resolved_reference = "9a524625997c862ca63a0e407306788a5d7bcf50"
+resolved_reference = "89ac4169b3c145a54ce4dc2f8f55ef6cc8980b1c"
 
 [[package]]
 name = "einops"

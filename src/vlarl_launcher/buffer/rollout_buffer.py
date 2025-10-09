@@ -3,11 +3,12 @@ import torch
 import numpy as np
 from typing import Any
 from torch.utils.data import Dataset
+import tensordict
 from ..policy.base_policy import InternalState
 import uuid
 
 class RolloutBuffer(torch.utils.data.Dataset):
-    obs: torch.Tensor
+    obs: torch.Tensor | tensordict.TensorDict
     actions: torch.Tensor
     logprobs: torch.Tensor
     rewards: torch.Tensor
@@ -25,7 +26,7 @@ class RolloutBuffer(torch.utils.data.Dataset):
     
     def __init__(self, buffer_size, example_internal_state: InternalState):
         self.buffer_size = buffer_size
-        self.obs = torch.concatenate([example_internal_state.obs] * buffer_size, dim=0)
+        self.obs = tensordict.stack([example_internal_state.obs[0]] * buffer_size, dim=0)
         self.actions = torch.concatenate([example_internal_state.action] * buffer_size, dim=0)
         self.logprobs = torch.concatenate([example_internal_state.logprob] * buffer_size, dim=0)
         self.rewards = torch.zeros(buffer_size, dtype=torch.float32)
@@ -54,7 +55,6 @@ class RolloutBuffer(torch.utils.data.Dataset):
     def add_frame(self, *, prev_node: tuple[int, uuid.UUID], internal_state: InternalState, reward: float, done: bool, last_value: torch.Tensor | None, next_done: bool) -> tuple[int, uuid.UUID]:        
         if self.idx >= self.buffer_size:
             return (-1, self.buffer_signature) 
-        
         prev_idx, prev_signature = prev_node
         if prev_signature != self.buffer_signature:
             prev_idx = -1  # Ignore previous index if signature doesn't match
@@ -110,6 +110,9 @@ class RolloutBuffer(torch.utils.data.Dataset):
             "losses/explained_variance": explained_var,
         }
         
+    def collate_fn(self, batch: list[tuple]) -> tuple:
+        return tuple(torch.stack(items, dim=0) for items in zip(*batch))
+
 class GAEBuffer(RolloutBuffer):
     def __init__(self, buffer_size, example_internal_state: InternalState, gamma: float = 0.99, gae_lambda: float = 0.95):
         super().__init__(buffer_size, example_internal_state)

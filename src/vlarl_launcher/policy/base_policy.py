@@ -43,8 +43,8 @@ class BasePolicy(abc.ABC, nn.Module):
         ...
     
     @abc.abstractmethod
-    def _get_value(self, obs: torch.Tensor) -> torch.Tensor:
+    def _get_value(self, obs: torch.Tensor | tensordict.TensorDict) -> torch.Tensor:
         ...
-        
-    def _get_action_and_internal_state(self, obs: torch.Tensor, action: torch.Tensor | None = None) -> tuple[Any, InternalState]:
+
+    def _get_action_and_internal_state(self, obs: torch.Tensor | tensordict.TensorDict, action: torch.Tensor | None = None) -> tuple[Any, InternalState]:
         ...

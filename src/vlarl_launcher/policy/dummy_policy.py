@@ -24,7 +24,7 @@ class DummyPolicy(BasePolicy):
         self.action_dim = config.action_dim
         self.action_horizon = config.action_horizon
 
-    def get_action_and_internal_state(self, obs: dict) -> tuple[np.ndarray, InternalState]:
+    def get_action_and_internal_state(self, obs: dict, **kwargs) -> tuple[np.ndarray, InternalState]:
         batch_size = len(obs["text"])
         if self.discrete:
             action = np.random.randint(0, self.action_dim, size=(batch_size, self.action_horizon))

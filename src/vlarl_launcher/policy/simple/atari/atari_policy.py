@@ -49,7 +49,7 @@ class AtariPolicy(BasePolicy):
         obs = torch.as_tensor(obs, dtype=torch.float32) / 255.0
         return obs.to(self.device)
 
-    def get_action_and_internal_state(self, _obs: dict) -> tuple[Any, InternalState]:
+    def get_action_and_internal_state(self, _obs: dict, **kwargs) -> tuple[Any, InternalState]:
         obs = self.prepare_observation(_obs)
         return self._get_action_and_internal_state(obs)
 

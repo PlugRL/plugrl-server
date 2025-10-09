@@ -30,8 +30,6 @@ class PPODiscreteAlgoConfig(BaseAlgoConfig):
     """the discount factor gamma"""
     gae_lambda: float = 0.95
     """the lambda for the general advantage estimation"""
-    num_minibatches: int = 4
-    """the number of mini-batches"""
     update_epochs: int = 4
     """the K epochs to update the policy"""
     norm_adv: bool = True
@@ -49,7 +47,6 @@ class PPODiscreteAlgoConfig(BaseAlgoConfig):
     target_kl: float | None = None
     """the target KL divergence threshold"""
 
-    # to be filled in runtime
     batch_size: int = 256
     total_steps: int = 10000000
     save_interval: int = 1000000
@@ -60,8 +57,7 @@ class PPODiscreteAlgorithm(BaseAlgorithm):
     
     def __init__(self, config: PPODiscreteAlgoConfig, policy: BasePolicy):
         super().__init__(config, policy)
-
-        self.policy = policy
+        
         self.rollout_buffer = GAEBuffer(
             buffer_size=config.buffer_size,
             example_internal_state=policy.fake_internal_state(batch_size=1),
