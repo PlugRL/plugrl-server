@@ -13,7 +13,7 @@ import torch
 import numpy as np
 from typing import Tuple
 from vlarl_launcher.paths import PACKAGE_DIR
-from ..base_dppo_policy import BaseDPPOPolicy, BaseDPPOPolicyConfig
+from ..base_pg_diffusion_policy import BasePGDiffusionPolicy, BasePGDiffusionPolicyConfig
 from ...registration import register_policy, register_policy_config
 
 UID = "dppo-policy"
@@ -26,14 +26,14 @@ class DPPOCriticObsConfig:
 
 @register_policy_config(UID, supported_algos=[("dppo", "default")])
 @dataclasses.dataclass
-class DPPOPolicyConfig(BaseDPPOPolicyConfig):
+class DPPOPolicyConfig(BasePGDiffusionPolicyConfig):
     env_type: str = "robomimic"
     env_name: str = "square"
     checkpoint_path: pathlib.Path | None = None
     critic: DPPOCriticObsConfig = dataclasses.field(default_factory=DPPOCriticObsConfig)
 
 @register_policy(UID)
-class DPPOPolicy(BaseDPPOPolicy):
+class DPPOPolicy(BasePGDiffusionPolicy):
     config: DPPOPolicyConfig
     obskeys: list[str]
     normalization: dict[str, np.ndarray]

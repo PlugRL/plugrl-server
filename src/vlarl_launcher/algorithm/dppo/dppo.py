@@ -10,7 +10,7 @@ from ..base_algorithm import BaseAlgorithm, BaseAlgoConfig
 from ..registration import register_algo, register_algo_config
 from vlarl_launcher.policy.base_policy import InternalState
 from vlarl_launcher.common.checkpoint_manager import Checkpoint
-from vlarl_launcher.policy.dppo.base_dppo_policy import BaseDPPOPolicy
+from vlarl_launcher.policy.dppo.base_pg_diffusion_policy import BasePGDiffusionPolicy
 
 from .dppo_buffer import DPPOBuffer
 
@@ -93,9 +93,9 @@ class DPPOAlgoConfig(BaseAlgoConfig):
 @register_algo(UID)
 class DPPOAlgorithm(BaseAlgorithm):
     config: DPPOAlgoConfig
-    policy: BaseDPPOPolicy
+    policy: BasePGDiffusionPolicy
 
-    def __init__(self, config: DPPOAlgoConfig, policy: BaseDPPOPolicy):
+    def __init__(self, config: DPPOAlgoConfig, policy: BasePGDiffusionPolicy):
         super().__init__(config, policy)
 
         self.rollout_buffer = DPPOBuffer(
@@ -193,7 +193,7 @@ class DPPOAlgorithm(BaseAlgorithm):
         v_loss, pg_loss, entropy_loss, old_approx_kl, approx_kl, clipfracs = torch.tensor(0.0), torch.tensor(0.0), torch.tensor(0.0), torch.tensor(0.0), torch.tensor(0.0), []
 
         max_actor_grad_norms, max_critic_grad_norms = [], []
-        import ipdb; ipdb.set_trace()
+        # import ipdb; ipdb.set_trace()
         for update_epoch in range(self.config.update_epochs):
             break_flag = False
             for batch in dataloader:
@@ -250,7 +250,7 @@ class DPPOAlgorithm(BaseAlgorithm):
                 # Value loss
                 if self.policy.critic is not None:
                     newvalue = self.policy._get_value(obs["cond"][:, 0]).view(-1)
-                    import ipdb; ipdb.set_trace()
+                    # import ipdb; ipdb.set_trace()
                     if self.config.clip_vloss_coef is not None:
                         v_loss_unclipped = (newvalue - ret) ** 2
                         v_clipped = value + torch.clamp(newvalue - value, -self.config.clip_vloss_coef, self.config.clip_vloss_coef)
