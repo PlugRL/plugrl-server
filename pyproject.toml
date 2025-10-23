@@ -27,6 +27,12 @@ vlarl-run-server = "vlarl_launcher.cli:main"
 [tool.poetry.group.dppo.dependencies]
 dppo = {git = "git@github.com:CTP314/dppo.git"}
 
+
+[[tool.poetry.source]]
+name = "mirrors"
+url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/"
+priority = "primary"
+
 [tool.poetry]
 packages = [{include = "vlarl_launcher", from = "src"}]
 
