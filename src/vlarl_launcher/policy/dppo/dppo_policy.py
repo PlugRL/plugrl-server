@@ -14,7 +14,7 @@ import numpy as np
 from typing import Tuple
 from vlarl_launcher.paths import PACKAGE_DIR
 from ..base_pg_diffusion_policy import BasePGDiffusionPolicy, BasePGDiffusionPolicyConfig
-from ...registration import register_policy, register_policy_config
+from ..registration import register_policy, register_policy_config
 
 UID = "dppo-policy"
 

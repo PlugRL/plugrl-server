@@ -3,7 +3,7 @@ import torch
 import tensordict
 from typing import Any
 from loguru import logger
-from ..base_policy import BasePolicy, BasePolicyConfig, InternalState
+from .base_policy import BasePolicy, BasePolicyConfig, InternalState
 
 class BasePGDiffusionPolicyConfig(BasePolicyConfig):
     ...

@@ -10,7 +10,7 @@ from ..base_algorithm import BaseAlgorithm, BaseAlgoConfig
 from ..registration import register_algo, register_algo_config
 from vlarl_launcher.policy.base_policy import InternalState
 from vlarl_launcher.common.checkpoint_manager import Checkpoint
-from vlarl_launcher.policy.dppo.base_pg_diffusion_policy import BasePGDiffusionPolicy
+from vlarl_launcher.policy.base_pg_diffusion_policy import BasePGDiffusionPolicy
 
 from .dppo_buffer import DPPOBuffer
 
@@ -178,8 +178,10 @@ class DPPOAlgorithm(BaseAlgorithm):
     
     def learn(self) -> tuple[int, dict]:
         logger.info("Starting learning step")
+        logger.info(f"Buffer size: {self.rollout_buffer.idx}/{self.rollout_buffer.buffer_size}")
         self.rollout_buffer.compute_advantages_and_returns()
-        logger.debug("Computed advantages and returns")
+        logger.info("Computed advantages and returns")
+        logger.info("Creating dataloader...")
         dataloader = torch.utils.data.DataLoader(
             self.rollout_buffer,
             batch_size=self.config.batch_size,
@@ -188,15 +190,23 @@ class DPPOAlgorithm(BaseAlgorithm):
             pin_memory=True,
             num_workers=0,
         )
+        logger.info("Dataloader created successfully")
         description = self.rollout_buffer.description()
+        logger.info("Buffer description computed")
         
         v_loss, pg_loss, entropy_loss, old_approx_kl, approx_kl, clipfracs = torch.tensor(0.0), torch.tensor(0.0), torch.tensor(0.0), torch.tensor(0.0), torch.tensor(0.0), []
 
         max_actor_grad_norms, max_critic_grad_norms = [], []
         # import ipdb; ipdb.set_trace()
+        logger.info(f"Starting {self.config.update_epochs} update epochs...")
         for update_epoch in range(self.config.update_epochs):
+            logger.info(f"Update epoch {update_epoch + 1}/{self.config.update_epochs}")
             break_flag = False
+            batch_count = 0
             for batch in dataloader:
+                batch_count += 1
+                if batch_count == 1:
+                    logger.info(f"Processing first batch in epoch {update_epoch + 1}...")
                 obs, action, oldlogprob, reward, value, advantage, ret = tuple(t.to(self.policy.device) for t in batch)
                 
                 _, newlogprob, entropy = self.policy._denoising_step(
