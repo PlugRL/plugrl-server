@@ -42,7 +42,6 @@ class BasePolicy(abc.ABC, nn.Module):
     def get_value(self, _obs: dict) -> torch.Tensor:
         ...
     
-    @abc.abstractmethod
     def _get_value(self, obs: torch.Tensor | tensordict.TensorDict) -> torch.Tensor:
         ...
 
