@@ -43,3 +43,14 @@ class DummyPolicy(BasePolicy):
             value=torch.zeros((batch_size,)),
             entropy=torch.zeros((batch_size,))
         )
+
+    def _get_value(self, obs: torch.Tensor | dict) -> torch.Tensor:
+        # Return a zero value per batch element. Accept raw dict or tensor input.
+        try:
+            if isinstance(obs, dict):
+                batch_size = len(obs.get("text", []))
+            else:
+                batch_size = obs.shape[0]
+        except Exception:
+            batch_size = 1
+        return torch.zeros((batch_size,), device=self.device)

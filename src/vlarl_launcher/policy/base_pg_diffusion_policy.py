@@ -3,19 +3,19 @@ import torch
 import tensordict
 from typing import Any
 from loguru import logger
-from ..base_policy import BasePolicy, BasePolicyConfig, InternalState
+from .base_policy import BasePolicy, BasePolicyConfig, InternalState
 
-class BaseDPPOPolicyConfig(BasePolicyConfig):
+class BasePGDiffusionPolicyConfig(BasePolicyConfig):
     ...
 
-class BaseDPPOPolicy(BasePolicy):
+class BasePGDiffusionPolicy(BasePolicy):
     actor: torch.nn.Module
     critic: torch.nn.Module | None
     action_dim: int
     action_horizon: int
     num_denoising_steps: int
     
-    def __init__(self, config: BaseDPPOPolicyConfig):
+    def __init__(self, config: BasePGDiffusionPolicyConfig):
         super().__init__(config)
 
     @abc.abstractmethod

@@ -5,3 +5,8 @@ try:
     from .dppo.dppo_config import DPPOAlgoConfig
 except ImportError:
     pass
+
+try:
+    from .grpo_diffusion.grpo_diffusion import GRPODiffusionAlgoConfig
+except ImportError:
+    pass
