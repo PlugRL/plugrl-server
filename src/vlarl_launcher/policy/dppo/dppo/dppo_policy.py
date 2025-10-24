@@ -24,11 +24,11 @@ class DPPOCriticObsConfig:
     activation: str = "Mish"
     residual_style: bool = True
 
-@register_policy_config(UID, supported_algos=[("dppo", "default")])
+@register_policy_config(UID, supported_algos=[("dppo", "hopper")])
 @dataclasses.dataclass
 class DPPOPolicyConfig(BaseDPPOPolicyConfig):
-    env_type: str = "robomimic"
-    env_name: str = "square"
+    env_type: str = "gym"
+    env_name: str = "hopper-medium-v2"
     checkpoint_path: pathlib.Path | None = None
     critic: DPPOCriticObsConfig = dataclasses.field(default_factory=DPPOCriticObsConfig)
 
@@ -62,7 +62,7 @@ class DPPOPolicy(BaseDPPOPolicy):
         
         if self.config.checkpoint_path is not None:
             checkpoint = torch.load(self.config.checkpoint_path, map_location="cpu")
-            self.actor.load_state_dict(checkpoint["model"])
+            self.actor.load_state_dict(checkpoint["model"], strict=False)
             logger.info(f"Loaded model weights from {self.config.checkpoint_path}")
         self.low_dim_keys = cfg.low_dim_keys
         self.action_dim = self.actor.action_dim
@@ -92,7 +92,7 @@ class DPPOPolicy(BaseDPPOPolicy):
         return tensordict.TensorDict({"state": torch.tensor(normalized_state_tensor, dtype=torch.float32)}, batch_size=[batch_size])
     
     def fake_diffusion_cond(self, batch_size: int) -> tensordict.TensorDict:
-        return tensordict.TensorDict({"state": torch.zeros(batch_size, self.num_denoising_steps, self.obs_dim)}, batch_size=[batch_size])
+        return tensordict.TensorDict({"state": torch.zeros(batch_size, self.num_denoising_steps, self.obs_dim)}, batch_size=[batch_size, self.num_denoising_steps])
     
     def _iterative_process_action(self, action: torch.Tensor) -> torch.Tensor:
         return action
@@ -124,14 +124,14 @@ class DPPOPolicy(BaseDPPOPolicy):
         x = x.to(device)
 
         mean_logvar: Tuple[torch.Tensor, torch.Tensor] = self.actor.p_mean_var(
-            x=x, t=t, cond=cond,
+            x=x, t=t.long(), cond=cond,
         )
         mean, logvar = mean_logvar
         if min_sampling_denoising_std is not None:
             std = torch.clamp(torch.exp(0.5 * logvar), min=min_sampling_denoising_std)
         else:
             std = torch.exp(0.5 * logvar)
-
+            
         dist = torch.distributions.Normal(mean, std)
 
         if x_next is None:
@@ -146,6 +146,7 @@ class DPPOPolicy(BaseDPPOPolicy):
         return x_next, logprob, entropy
     
     def _get_value(self, obs: tensordict.TensorDict) -> torch.Tensor:
+        obs = obs.to(self.device)
         batch_size = obs.shape[0]
         cond = {k: v for k, v in obs.items()}
         if self.critic is not None:

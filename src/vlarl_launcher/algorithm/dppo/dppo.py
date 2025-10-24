@@ -2,6 +2,7 @@ import dataclasses
 import numpy as np
 import torch
 import torch.nn as nn
+import tqdm
 
 from loguru import logger
 
@@ -125,7 +126,7 @@ class DPPOAlgorithm(BaseAlgorithm):
             self.critic_lr_scheduler = _dppo_scheduler.CosineAnnealingWarmupRestarts(
                 self.critic_optimizer,
                 first_cycle_steps=self.config.train_itrs,
-                max_lr=self.config.actor_lr,
+                max_lr=self.config.critic_lr,
                 min_lr=self.config.critic_lr_scheduler.min_lr,
                 warmup_steps=self.config.critic_lr_scheduler.warmup_steps
             )
@@ -187,25 +188,26 @@ class DPPOAlgorithm(BaseAlgorithm):
             drop_last=True,
             pin_memory=True,
             num_workers=0,
+            collate_fn=self.rollout_buffer.collate_fn,
         )
         description = self.rollout_buffer.description()
         
         v_loss, pg_loss, entropy_loss, old_approx_kl, approx_kl, clipfracs = torch.tensor(0.0), torch.tensor(0.0), torch.tensor(0.0), torch.tensor(0.0), torch.tensor(0.0), []
 
         max_actor_grad_norms, max_critic_grad_norms = [], []
-        import ipdb; ipdb.set_trace()
+        
         for update_epoch in range(self.config.update_epochs):
             break_flag = False
             for batch in dataloader:
                 obs, action, oldlogprob, reward, value, advantage, ret = tuple(t.to(self.policy.device) for t in batch)
-                
+                batch_size, ft_denoising_steps = action.shape[:2]
+                x, t, cond = obs["x"].reshape(-1, *obs["x"].shape[2:]), obs["t"].reshape(-1), obs["cond"].reshape(-1)
                 _, newlogprob, entropy = self.policy._denoising_step(
-                    x=obs["x"], t=obs["t"], cond=obs["cond"], x_next=action, 
+                    x=x, t=t, cond=cond, x_next=action.reshape(-1, *action.shape[2:]), 
                     min_sampling_denoising_std=self.config.min_logprob_denoising_std
                 )
-                newlogprob = newlogprob.clamp(min=-5, max=2).mean(dim=(-1, -2)).view(-1)
-                oldlogprob = oldlogprob.clamp(min=-5, max=2).mean(dim=(-1, -2)).view(-1)
-                
+                newlogprob = newlogprob.clamp(min=-5, max=2).mean(dim=(-1, -2)).reshape(batch_size, ft_denoising_steps)
+                oldlogprob = oldlogprob.clamp(min=-5, max=2).mean(dim=(-1, -2)).reshape(batch_size, ft_denoising_steps)
                 if self.config.norm_adv:
                     advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
                     
@@ -213,15 +215,8 @@ class DPPOAlgorithm(BaseAlgorithm):
                 advantage_max = torch.quantile(advantage, self.config.clip_advantage_upper_quantile)
                 advantage = torch.clamp(advantage, advantage_min, advantage_max)
                 
-                # ft_denoising_steps = action.shape[1]
-                # discount = torch.tensor([
-                #     self.config.gamma_denoising ** (ft_denoising_steps - i - 1) for i in range(ft_denoising_steps)
-                # ], device=advantage.device).unsqueeze(0)
-                ft_denoising_steps = action.shape[1]
                 denoising_inds = torch.arange(ft_denoising_steps, device=advantage.device)
                 discount = self.config.gamma_denoising ** (ft_denoising_steps - denoising_inds - 1)
-                # advantage shape (batch size, )
-                # new advantage shape (batch size, ft_denoising_steps)
                 advantage = advantage.unsqueeze(1) * discount.unsqueeze(0)
                 
                 logratio = newlogprob - oldlogprob
@@ -237,12 +232,11 @@ class DPPOAlgorithm(BaseAlgorithm):
                 else:
                     clip_ploss_coef = t
                 clip_ploss_coef = clip_ploss_coef.unsqueeze(0)
-
                 with torch.no_grad():
                     old_approx_kl = (-logratio).mean()
                     approx_kl = ((ratio - 1) - logratio).mean()
                     clipfracs += [((ratio - 1.0).abs() > clip_ploss_coef).float().mean().item()]
-                    
+                
                 # Policy loss
                 pg_loss1 = -advantage * ratio
                 pg_loss2 = -advantage * torch.clamp(ratio, 1 - clip_ploss_coef, 1 + clip_ploss_coef)
@@ -250,7 +244,6 @@ class DPPOAlgorithm(BaseAlgorithm):
                 # Value loss
                 if self.policy.critic is not None:
                     newvalue = self.policy._get_value(obs["cond"][:, 0]).view(-1)
-                    import ipdb; ipdb.set_trace()
                     if self.config.clip_vloss_coef is not None:
                         v_loss_unclipped = (newvalue - ret) ** 2
                         v_clipped = value + torch.clamp(newvalue - value, -self.config.clip_vloss_coef, self.config.clip_vloss_coef)

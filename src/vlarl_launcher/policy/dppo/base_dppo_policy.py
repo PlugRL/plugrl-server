@@ -10,7 +10,7 @@ class BaseDPPOPolicyConfig(BasePolicyConfig):
 
 class BaseDPPOPolicy(BasePolicy):
     actor: torch.nn.Module
-    critic: torch.nn.Module | None = None
+    critic: torch.nn.Module | None
     action_dim: int
     action_horizon: int
     num_denoising_steps: int
@@ -64,7 +64,6 @@ class BaseDPPOPolicy(BasePolicy):
 
         x = self._postprocess_action(x)
         value = self._get_value(obs)
-        
         chain_tensor: tensordict.TensorDict = tensordict.stack(chain, dim=1)
         obs, action, logprob, entropy = [chain_tensor.get(key) for key in ["obs", "action", "logprob", "entropy"]]
         return x, InternalState(obs=obs, action=action, logprob=logprob, entropy=entropy, value=value).cpu()
