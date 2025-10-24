@@ -11,7 +11,7 @@ from ..base_algorithm import BaseAlgorithm, BaseAlgoConfig
 from ..registration import register_algo, register_algo_config
 from vlarl_launcher.policy.base_policy import InternalState
 from vlarl_launcher.common.checkpoint_manager import Checkpoint
-from vlarl_launcher.policy.dppo.base_pg_diffusion_policy import BasePGDiffusionPolicy
+from vlarl_launcher.policy.base_pg_diffusion_policy import BasePGDiffusionPolicy
 
 from .dppo_buffer import DPPOBuffer
 
@@ -137,6 +137,7 @@ class DPPOAlgorithm(BaseAlgorithm):
         self.save_interval = config.save_interval
         self.global_step = 0
         self.curr_train_itrs = 0
+        self.last_saved_itr = 0
             
     def infer(self, obs: dict) -> tuple[np.ndarray, InternalState]:
         with torch.inference_mode():
@@ -330,9 +331,10 @@ class DPPOAlgorithm(BaseAlgorithm):
         return self.curr_train_itrs >= self.config.train_itrs
     
     def should_save(self) -> bool:
-        return (self.curr_train_itrs % self.save_interval == 0) and (self.curr_train_itrs > 0)
+        return (self.curr_train_itrs % self.save_interval == 0) and (self.curr_train_itrs > self.last_saved_itr)
     
     def create_checkpoint(self) -> Checkpoint:
+        self.last_saved_itr = self.curr_train_itrs
         return Checkpoint(
             step=self.global_step,
             model=self.policy.state_dict(),
@@ -342,6 +344,7 @@ class DPPOAlgorithm(BaseAlgorithm):
             },
             meta={
                 "train_itrs": self.curr_train_itrs,
+                "last_saved_itr": self.last_saved_itr,
             }
         )
         
@@ -355,4 +358,6 @@ class DPPOAlgorithm(BaseAlgorithm):
                 self.critic_optimizer.load_state_dict(checkpoint.optimizer["critic"])
         if "train_itrs" in checkpoint.meta:
             self.curr_train_itrs = checkpoint.meta["train_itrs"]
-        logger.info(f"Loaded checkpoint at step {self.global_step}, train_itrs {self.curr_train_itrs}")
+        if "last_saved_itr" in checkpoint.meta:
+            self.last_saved_itr = checkpoint.meta["last_saved_itr"]
+        logger.info(f"Loaded checkpoint at step {self.global_step}, train_itrs {self.curr_train_itrs}, last_saved_itr {self.last_saved_itr}")
