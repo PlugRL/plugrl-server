@@ -10,7 +10,7 @@ from ..base_algorithm import BaseAlgorithm, BaseAlgoConfig
 from ..registration import register_algo, register_algo_config
 from vlarl_launcher.policy.base_policy import InternalState
 from vlarl_launcher.common.checkpoint_manager import Checkpoint
-from vlarl_launcher.policy.base_pg_diffusion_policy import BasePGDiffusionPolicy
+from vlarl_launcher.policy.dppo.base_pg_diffusion_policy import BasePGDiffusionPolicy
 
 from .dppo_buffer import DPPOBuffer
 
@@ -198,7 +198,6 @@ class DPPOAlgorithm(BaseAlgorithm):
 
         max_actor_grad_norms, max_critic_grad_norms = [], []
         # import ipdb; ipdb.set_trace()
-        logger.info(f"Starting {self.config.update_epochs} update epochs...")
         for update_epoch in range(self.config.update_epochs):
             logger.info(f"Update epoch {update_epoch + 1}/{self.config.update_epochs}")
             break_flag = False
