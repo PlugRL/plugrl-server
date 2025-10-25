@@ -13,7 +13,7 @@ import torch
 import numpy as np
 from typing import Tuple
 from vlarl_launcher.paths import PACKAGE_DIR
-from ..base_pg_diffusion_policy import BasePGDiffusionPolicy, BasePGDiffusionPolicyConfig
+from ..base_policy_gradient_diffusion_policy import BasePolicyGradientDiffusionPolicy, BasePolicyGradientDiffusionPolicyConfig
 from ..registration import register_policy, register_policy_config
 
 UID = "dppo-policy"
@@ -26,14 +26,14 @@ class DPPOCriticObsConfig:
 
 @register_policy_config(UID, supported_algos=[("dppo", "hopper")])
 @dataclasses.dataclass
-class DPPOPolicyConfig(BasePGDiffusionPolicyConfig):
+class DPPOPolicyConfig(BasePolicyGradientDiffusionPolicyConfig):
     env_type: str = "gym"
     env_name: str = "hopper-medium-v2"
     checkpoint_path: pathlib.Path | None = None
     critic: DPPOCriticObsConfig = dataclasses.field(default_factory=DPPOCriticObsConfig)
 
 @register_policy(UID)
-class DPPOPolicy(BasePGDiffusionPolicy):
+class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
     config: DPPOPolicyConfig
     obskeys: list[str]
     normalization: dict[str, np.ndarray]

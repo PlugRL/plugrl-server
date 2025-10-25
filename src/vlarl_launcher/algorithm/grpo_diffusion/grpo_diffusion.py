@@ -10,7 +10,7 @@ from ..base_algorithm import BaseAlgorithm, BaseAlgoConfig
 from ..registration import register_algo, register_algo_config
 from vlarl_launcher.policy.base_policy import InternalState
 from vlarl_launcher.common.checkpoint_manager import Checkpoint
-from vlarl_launcher.policy.base_pg_diffusion_policy import BasePGDiffusionPolicy
+from vlarl_launcher.policy.base_policy_gradient_diffusion_policy import BasePolicyGradientDiffusionPolicy
 
 from .grpo_diffusion_buffer import GRPODiffusionBuffer
 
@@ -81,9 +81,9 @@ class GRPODiffusionAlgoConfig(BaseAlgoConfig):
 @register_algo(UID)
 class GRPODiffusionAlgorithm(BaseAlgorithm):
     config: GRPODiffusionAlgoConfig
-    policy: BasePGDiffusionPolicy
+    policy: BasePolicyGradientDiffusionPolicy
 
-    def __init__(self, config: GRPODiffusionAlgoConfig, policy: BasePGDiffusionPolicy):
+    def __init__(self, config: GRPODiffusionAlgoConfig, policy: BasePolicyGradientDiffusionPolicy):
         super().__init__(config, policy)
 
         self.rollout_buffer = GRPODiffusionBuffer(

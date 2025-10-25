@@ -5,17 +5,17 @@ from typing import Any
 from loguru import logger
 from .base_policy import BasePolicy, BasePolicyConfig, InternalState
 
-class BasePGDiffusionPolicyConfig(BasePolicyConfig):
+class BasePolicyGradientDiffusionPolicyConfig(BasePolicyConfig):
     ...
 
-class BasePGDiffusionPolicy(BasePolicy):
+class BasePolicyGradientDiffusionPolicy(BasePolicy):
     actor: torch.nn.Module
     critic: torch.nn.Module | None
     action_dim: int
     action_horizon: int
     num_denoising_steps: int
     
-    def __init__(self, config: BasePGDiffusionPolicyConfig):
+    def __init__(self, config: BasePolicyGradientDiffusionPolicyConfig):
         super().__init__(config)
 
     @abc.abstractmethod
