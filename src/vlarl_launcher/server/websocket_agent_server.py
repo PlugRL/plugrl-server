@@ -136,23 +136,35 @@ class WebSocketAgentServer:
         batch = []
         for _ in range(self._infer_queue.qsize()):
             batch.append(await self._infer_queue.get())
-        
-        obs = batch_aggregate([req["obs"] for req in batch])
-        logger.debug(f"Processing inference for batch size {len(batch)}")
-        async with self._model_lock:
-            action, internal_state = self._algorithm.infer(obs)
-        logger.debug(f"Inference done for batch size {len(batch)}")
-        for i, req in enumerate(batch):
-            future = self._response_futures.get(req["id"])
-            if future and not future.done():
-                future.set_result((action[i:i+1], internal_state[i:i+1]))
-            self._infer_queue.task_done()
+        try:
+            obs = batch_aggregate([req["obs"] for req in batch])
+            logger.debug(f"Processing inference for batch size {len(batch)}")
+            async with self._model_lock:
+                action, internal_state = self._algorithm.infer(obs)
+            logger.debug(f"Inference done for batch size {len(batch)}")
+            for i, req in enumerate(batch):
+                future = self._response_futures.get(req["id"])
+                if future and not future.done():
+                    future.set_result((action[i:i+1], internal_state[i:i+1]))
+                self._infer_queue.task_done()
+        except Exception:
+            traceback_str = traceback.format_exc()
+            logger.error(f"Error during inference processing:\n{traceback_str}")
+            for req in batch:
+                future = self._response_futures.get(req["id"])
+                if future and not future.done():
+                    future.set_exception(Exception("Inference processing error."))
 
     def should_learn(self) -> bool:
         return self._algorithm.should_learn()
 
     async def _process_learn(self):
-        step, log_dict = await asyncio.to_thread(self._algorithm.learn)
+        try:
+            step, log_dict = await asyncio.to_thread(self._algorithm.learn)
+        except Exception:
+            traceback_str = traceback.format_exc()
+            logger.error(f"Error during learning processing:\n{traceback_str}")
+            return
         self._tracker.log(log_dict, step=step)
             
     def should_stop(self) -> bool:
@@ -162,8 +174,12 @@ class WebSocketAgentServer:
         return self._algorithm.should_save()
     
     async def _process_save(self):
-        checkpoint = self._algorithm.create_checkpoint()
-        self._checkpoint_manager.save_checkpoint(checkpoint)
+        try: 
+            checkpoint = self._algorithm.create_checkpoint()
+            self._checkpoint_manager.save_checkpoint(checkpoint)
+        except Exception:
+            traceback_str = traceback.format_exc()
+            logger.error(f"Error during saving checkpoint:\n{traceback_str}")
 
     async def _main_scheduler_loop(self):
         while True:

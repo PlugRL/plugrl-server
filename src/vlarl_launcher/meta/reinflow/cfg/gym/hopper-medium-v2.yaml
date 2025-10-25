@@ -1,0 +1,34 @@
+obs_dim: 11
+low_dim_keys: ['obs']
+action_dim: 3
+transition_dim: ${action_dim}
+horizon_steps: 4
+denoising_steps: 20
+seed: 42
+device: cpu
+
+model:
+  _target_: reinflow.model.flow.reflow.ReFlow
+  network:
+    _target_: reinflow.model.flow.mlp_flow.FlowMLP
+    time_dim: 16
+    mlp_dims:
+    - 512
+    - 512
+    - 512
+    activation_type: ReLU
+    residual_style: true
+    out_activation_type: Identity
+    use_layernorm: False
+    cond_dim: ${obs_dim}
+    horizon_steps: ${horizon_steps}
+    action_dim: ${action_dim}
+  sample_t_type: uniform # beta, logitnormal
+  horizon_steps: ${horizon_steps}
+  obs_dim: ${obs_dim}
+  action_dim: ${action_dim}
+  act_min: -1
+  act_max: 1
+  max_denoising_steps: ${denoising_steps}
+  seed: ${seed}
+  device: ${device}

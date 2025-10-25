@@ -28,6 +28,10 @@ vlarl-run-server = "vlarl_launcher.cli:main"
 dppo = {git = "git@github.com:CTP314/dppo.git"}
 
 
+
+[tool.poetry.group.reinflow.dependencies]
+reinflow = {git = "git@github.com:CTP314/ReinFlow.git"}
+
 [[tool.poetry.source]]
 name = "mirrors"
 url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/"
