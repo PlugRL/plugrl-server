@@ -71,25 +71,37 @@ class WebSocketAgentServer:
             self._total_connections += 1
             prev_node: tuple = (-1, "")
             terminated, truncated = False, False  
+            action_buffer = deque()
             while True:
                 packed_infer_msg = await websocket.recv()
                 infer_msg = msgpack_numpy.unpackb(packed_infer_msg)
                 
-                req_id = f"{session_id}-{uuid.uuid4()}"
-                response_future = asyncio.Future()
-
-                async with self._lock:
-                    self._response_futures[req_id] = response_future
-
-                infer_request = dict(id=req_id, obs=infer_msg.get("data"))
-                await self._infer_queue.put(infer_request)
+                obs, internal_state = infer_msg.get("data"), None
                 
-                action, internal_state = await response_future
+                if not action_buffer:
+                    req_id = f"{session_id}-{uuid.uuid4()}"
+                    response_future = asyncio.Future()
+
+                    async with self._lock:
+                        self._response_futures[req_id] = response_future
+
+                    infer_request = dict(id=req_id, obs=obs)
+                    await self._infer_queue.put(infer_request)
+                    
+                    action, internal_state = await response_future
+                
+                    async with self._lock:
+                        self._response_futures.pop(req_id, None)
+                        
+                    action_buffer.extend(action.swapaxes(1, 0))
+                
+                if self._algorithm.break_action_chunk:
+                    action = action_buffer.popleft()
+                else:
+                    action = np.array([action_buffer.popleft() for _ in range(len(action_buffer))])
+                
                 action_response = dict(message_type=str(MessageType.ACTION), data=dict(action=action))
                 await websocket.send(packer.pack(action_response))
-                
-                async with self._lock:
-                    self._response_futures.pop(req_id, None)
                     
                 packed_feedback_msg = await websocket.recv()
                 feedback_msg = msgpack_numpy.unpackb(packed_feedback_msg)
@@ -103,6 +115,7 @@ class WebSocketAgentServer:
                 next_obs, reward, next_terminated, next_truncated, info = feedback_data.values()
                 async with self._model_lock:
                     prev_node, step, log_dict = self._algorithm.feedback(
+                        obs=obs,
                         internal_state=internal_state,
                         terminated=terminated,
                         truncated=truncated,

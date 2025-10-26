@@ -9,18 +9,19 @@ from vlarl_launcher.common.checkpoint_manager import Checkpoint
 class BaseAlgoConfig:
     ...
 
-class BaseAlgorithm(abc.ABC):                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+class BaseAlgorithm(abc.ABC):
+    break_action_chunk: bool
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
     def __init__(self, config: BaseAlgoConfig, policy: BasePolicy):
         self.config = config
         self.policy = policy
-        ...
         
     @abc.abstractmethod
     def infer(self, obs: dict) -> tuple[np.ndarray, InternalState]:
         ...
     
     @abc.abstractmethod
-    def feedback(self, *, internal_state: InternalState, terminated: bool, truncated: bool, next_obs: dict, reward: float, info: dict, next_terminated: bool, next_truncated: bool, prev_node: tuple) -> tuple[tuple, int, dict]:
+    def feedback(self, *, obs: dict, internal_state: InternalState | None, terminated: bool, truncated: bool, next_obs: dict, reward: float, info: dict, next_terminated: bool, next_truncated: bool, prev_node: tuple) -> tuple[tuple, int, dict]:
         ...
         
     @abc.abstractmethod

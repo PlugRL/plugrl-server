@@ -54,6 +54,7 @@ class PPODiscreteAlgoConfig(BaseAlgoConfig):
 @register_algo(UID)
 class PPODiscreteAlgorithm(BaseAlgorithm):
     config: PPODiscreteAlgoConfig
+    break_action_chunk: bool = False
     
     def __init__(self, config: PPODiscreteAlgoConfig, policy: BasePolicy):
         super().__init__(config, policy)
@@ -172,9 +173,10 @@ class PPODiscreteAlgorithm(BaseAlgorithm):
     def feedback(
         self, 
         *, 
-        internal_state: InternalState, terminated: bool, truncated: bool, 
+        obs: dict, internal_state: InternalState | None, terminated: bool, truncated: bool, 
         next_obs: dict, reward: float, next_terminated: bool, next_truncated: bool, info: dict, prev_node: tuple
     ) -> tuple[tuple, int, dict]:
+        assert internal_state is not None, "Internal state must be provided for feedback."
         if terminated or truncated:
             with torch.inference_mode():
                 last_value = self.policy.get_value(next_obs)

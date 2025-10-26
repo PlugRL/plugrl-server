@@ -82,7 +82,8 @@ class GRPODiffusionAlgoConfig(BaseAlgoConfig):
 class GRPODiffusionAlgorithm(BaseAlgorithm):
     config: GRPODiffusionAlgoConfig
     policy: BasePolicyGradientDiffusionPolicy
-
+    break_action_chunk: bool = False
+    
     def __init__(self, config: GRPODiffusionAlgoConfig, policy: BasePolicyGradientDiffusionPolicy):
         super().__init__(config, policy)
 
@@ -117,9 +118,10 @@ class GRPODiffusionAlgorithm(BaseAlgorithm):
     def feedback(
         self, 
         *, 
-        internal_state: InternalState, terminated: bool, truncated: bool, 
+        obs: dict, internal_state: InternalState | None, terminated: bool, truncated: bool, 
         next_obs: dict, reward: float, next_terminated: bool, next_truncated: bool, info: dict, prev_node: tuple
     ) -> tuple[tuple, int, dict]:
+        assert internal_state is not None, "Internal state must be provided for feedback."
         current_node = self.rollout_buffer.add_frame(
             prev_node=prev_node,
             internal_state=internal_state,

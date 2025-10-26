@@ -19,6 +19,8 @@ class DummyAlgoConfig(BaseAlgoConfig):
     fake_learn_duration_sec: float = 10.
     fake_learn_freq: int = 100
     
+    break_action_chunk: bool = False
+    
 @register_algo(UID)
 class DummyAlgorithm(BaseAlgorithm):
     config: DummyAlgoConfig
@@ -26,6 +28,7 @@ class DummyAlgorithm(BaseAlgorithm):
     def __init__(self, config: DummyAlgoConfig, policy):
         super().__init__(config, policy)
         self.counter = 0
+        self.break_action_chunk = config.break_action_chunk
     
     def infer(self, obs: dict) -> tuple[np.ndarray, InternalState]:
         logger.debug(f"DummyAlgorithm.infer called with batch size {len(obs['text'])}")
@@ -35,7 +38,7 @@ class DummyAlgorithm(BaseAlgorithm):
         logger.debug(f"DummyAlgorithm.infer returning action shape {action.shape}")
         return action, internal_state
 
-    def feedback(self, *, internal_state: InternalState, terminated: bool, truncated: bool, next_obs: dict, reward: float, info: dict, next_terminated: bool, next_truncated: bool, prev_node: tuple) -> tuple:
+    def feedback(self, *, obs: dict, internal_state: InternalState | None, terminated: bool, truncated: bool, next_obs: dict, reward: float, info: dict, next_terminated: bool, next_truncated: bool, prev_node: tuple) -> tuple:
         logger.debug(f"DummyAlgorithm.feedback called with prev_node {prev_node}")
         self.counter += 1
         logger.debug(f"Feedback processed. Current counter: {self.counter}")
