@@ -10,3 +10,8 @@ try:
     from .grpo_diffusion.grpo_diffusion import GRPODiffusionAlgoConfig
 except ImportError:
     pass
+
+try:
+    from .nft.nft import NFTAlgoConfig
+except ImportError:
+    pass
