@@ -47,3 +47,33 @@ class BaseAlgorithm(abc.ABC):
     @abc.abstractmethod
     def load_checkpoint(self, checkpoint: Checkpoint) -> None:
         ...
+        
+    def pre_learn(self) -> None:
+        ...
+        
+    def post_learn(self) -> None:
+        ...
+
+class DDPAlgorithm(BaseAlgorithm):
+    @abc.abstractmethod
+    def activate_ddp(self, ddp_policy) -> None:
+        ...
+
+    @abc.abstractmethod
+    def set_device(self, device) -> None:
+        ...
+
+    @abc.abstractmethod
+    def get_server_data(self) -> tuple[int, dict, dict]:
+        ...
+
+    @abc.abstractmethod
+    def load_server_data(self, global_step: int, meta_info: dict, data: dict) -> None:
+        ...
+        
+    def get_active_policy(self) -> BasePolicy:
+        return self.policy
+
+    @abc.abstractmethod
+    def load_learner_state(self, checkpoint: Checkpoint) -> None:
+        ...

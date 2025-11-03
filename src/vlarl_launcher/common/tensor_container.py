@@ -25,22 +25,28 @@ class TensorContainer:
         return self.__class__(**new_items)
     
     def __getattr__(self, name: str) -> Any:
-        if not self._fields:
+        try:
+            _fields = super().__getattribute__('_fields')
+        except AttributeError:
             raise AttributeError(f"'{type(self).__name__}' object has no _fields defined.")
             
-        first_tensor = getattr(self, self._fields[0])
+        if not _fields:
+            raise AttributeError(f"'{type(self).__name__}' object has no _fields defined.")
+            
+        try:
+            first_tensor = super().__getattribute__(_fields[0])
+        except AttributeError:
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
         
         if callable(getattr(first_tensor, name, None)):
-            
             def wrapper(*args, **kwargs):
                 new_items = {}
-                for field in self._fields:
-                    item = getattr(self, field)
+                for field in _fields: 
+                    item = super(TensorContainer, self).__getattribute__(field) 
                     new_items[field] = getattr(item, name)(*args, **kwargs)
                 return self.__class__(**new_items)
             
             return wrapper
-        
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
 

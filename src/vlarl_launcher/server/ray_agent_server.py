@@ -6,32 +6,42 @@ import numpy as np
 import websockets.asyncio.server as _server
 import websockets.frames
 import uuid
+import ray
+import torch.distributed as dist
+
 from loguru import logger
-import swanlab
-import wandb
+from typing import Any, Dict
 
 from vlarl_client import msgpack_numpy
 from vlarl_client.websocket_worker_agent import MessageType
 
-from vlarl_launcher.algorithm.base_algorithm import BaseAlgorithm
-from vlarl_launcher.common.checkpoint_manager import CheckpointManager
+from vlarl_launcher.algorithm.base_algorithm import DDPAlgorithm
+from vlarl_launcher.common.checkpoint_manager import CheckpointManager, Checkpoint 
 from vlarl_launcher.common.data_utils import batch_aggregate
+from vlarl_launcher.server.ray_learner import LearnerActor
+
+import swanlab
+import wandb
 
 SCHEDULER_SLEEP_INTERVAL = 0.001  # seconds
 
-class WebSocketAgentServer:
+class RayAgentServer:
     def __init__(
         self,
-        algorithm: BaseAlgorithm,
+        inference_algorithm: DDPAlgorithm,
         checkpoint_manager: CheckpointManager,
         tracker: swanlab.run.SwanLabRun | wandb.Run,
+        learner_actor_ref: ray.ObjectRef,
+        
         host: str = "0.0.0.0", 
         port: int = 8000,
         metadata: dict | None = None,
     ):
-        self._algorithm = algorithm
-        self._checkpoint_manager = checkpoint_manager
+        self._algorithm: DDPAlgorithm = inference_algorithm 
+        self._checkpoint_manager: CheckpointManager = checkpoint_manager
         self._tracker = tracker
+        self._learner_actor: LearnerActor = learner_actor_ref # 存储 Ray Actor 句柄
+        
         self._host = host
         self._port = port
         self._metadata = metadata or {}
@@ -113,8 +123,9 @@ class WebSocketAgentServer:
                 feedback_data = feedback_msg.get("data")
 
                 next_obs, reward, next_terminated, next_truncated, info = feedback_data.values()
-                async with self._model_lock:
-                    prev_node, step, log_dict = self._algorithm.feedback(
+                
+                async with self._model_lock: 
+                    prev_node, step, log_dict = self._algorithm.feedback( 
                         obs=obs,
                         internal_state=internal_state,
                         terminated=terminated,
@@ -126,7 +137,7 @@ class WebSocketAgentServer:
                         info=info,
                         prev_node=prev_node
                     )
-                    self._tracker.log(log_dict, step=step)
+                    await asyncio.to_thread(self._tracker.log, log_dict, step=step)
                     
                 terminated, truncated = next_terminated, next_truncated
                 
@@ -145,6 +156,23 @@ class WebSocketAgentServer:
     def should_infer(self) -> bool:
         return self._infer_queue.qsize() == self._total_connections and self._total_connections > 0
     
+    def should_learn(self) -> bool:
+        return self._algorithm.should_learn()
+
+    def should_stop(self) -> bool:
+        return self._algorithm.should_stop()
+
+    def should_save(self) -> bool:
+        return self._algorithm.should_save()
+
+    async def _update_inference_policy(self, checkpoint: Checkpoint):
+        try:
+            self._algorithm.load_learner_state(checkpoint)
+            logger.info("Local inference policy successfully updated.")
+        except Exception:
+            logger.error(f"Failed to update local inference policy.")
+            raise
+
     async def _process_infer(self):
         batch = []
         for _ in range(self._infer_queue.qsize()):
@@ -168,30 +196,31 @@ class WebSocketAgentServer:
                 if future and not future.done():
                     future.set_exception(Exception("Inference processing error."))
 
-    def should_learn(self) -> bool:
-        return self._algorithm.should_learn()
-
     async def _process_learn(self):
+        logger.info("Scheduler initiating distributed training via LearnerActor.")
         try:
             self._algorithm.pre_learn()
-            step, log_dict = await asyncio.to_thread(self._algorithm.learn)
-            self._algorithm.post_learn()
-        except Exception:
-            traceback_str = traceback.format_exc()
-            logger.error(f"Error during learning processing:\n{traceback_str}")
-            return
-        self._tracker.log(log_dict, step=step)
-            
-    def should_stop(self) -> bool:
-        return self._algorithm.should_stop()
+            global_step, meta_info, serializable_buffer_data = self._algorithm.get_server_data()
+            buffer_data_ref = await asyncio.to_thread(ray.put, serializable_buffer_data)
 
-    def should_save(self) -> bool:
-        return self._algorithm.should_save()
-    
+            learn_ref = self._learner_actor.learn.remote(global_step, meta_info, buffer_data_ref)
+            checkpoint, global_step, train_info = await asyncio.to_thread(ray.get, learn_ref)
+            
+            await self._update_inference_policy(checkpoint)
+
+            await asyncio.to_thread(self._tracker.log, train_info, step=global_step)
+            logger.info(f"Logged training info for step {global_step}.")
+            self._algorithm.post_learn()
+            
+        except Exception:
+            logger.error(f"Error during distributed learning.")
+            traceback.print_exc()
+
     async def _process_save(self):
         try: 
-            checkpoint = self._algorithm.create_checkpoint()
-            self._checkpoint_manager.save_checkpoint(checkpoint)
+            checkpoint = await asyncio.to_thread(self._algorithm.create_checkpoint) 
+            await asyncio.to_thread(self._checkpoint_manager.save_checkpoint, checkpoint)
+            logger.info(f"Checkpoint saved locally at step {checkpoint.step}.")
         except Exception:
             traceback_str = traceback.format_exc()
             logger.error(f"Error during saving checkpoint:\n{traceback_str}")
@@ -211,6 +240,8 @@ class WebSocketAgentServer:
                     
             if self.should_stop():
                 logger.info("Stopping server as the algorithm signaled to stop.")
+                if ray.is_initialized():
+                    await asyncio.to_thread(ray.shutdown) 
                 break
                 
             await asyncio.sleep(SCHEDULER_SLEEP_INTERVAL)
