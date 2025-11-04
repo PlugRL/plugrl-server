@@ -40,6 +40,8 @@ class WebSocketAgentServer:
         self._response_futures = {}
         self._lock = asyncio.Lock()
         self._model_lock = asyncio.Lock()
+        self._server = None
+        self._stop_event = asyncio.Event()
         
         self._total_connections = 0
     
@@ -53,8 +55,14 @@ class WebSocketAgentServer:
                 self._handler, self._host, self._port, compression=None, max_size=None
             ) as server:
                 logger.info(f"Agent Server is listening on {self._host}:{self._port}")
-                await server.serve_forever()
+                self._server = server
+                await self._stop_event.wait()
         finally:
+            if self._server is not None:
+                self._server.close()
+                await self._server.wait_closed()
+                logger.info("WebSocket server closed.")
+
             scheduler_task.cancel()
             await asyncio.gather(scheduler_task, return_exceptions=True)
             logger.info("Scheduler task cancelled and cleaned up.")
@@ -210,6 +218,7 @@ class WebSocketAgentServer:
                     await self._process_save()
                     
             if self.should_stop():
+                self._stop_event.set()
                 logger.info("Stopping server as the algorithm signaled to stop.")
                 break
                 

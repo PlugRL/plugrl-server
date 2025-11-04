@@ -110,12 +110,14 @@ class PPODiscreteAlgorithm(DDPAlgorithm):
                 shuffle=True,
                 drop_last=True,
             )
+            batch_size = self.config.batch_size // dist.get_world_size()
         else:
             sampler = None
+            batch_size = self.config.batch_size
             
         dataloader = torch.utils.data.DataLoader(
             self.rollout_buffer,
-            batch_size=self.config.batch_size,
+            batch_size=batch_size,
             shuffle=(sampler is None),
             sampler=sampler,
             drop_last=True,
@@ -136,6 +138,8 @@ class PPODiscreteAlgorithm(DDPAlgorithm):
         policy = self.policy.module if self.ddp_enabled else self.policy
 
         for epoch in range(self.config.update_epochs):
+            if sampler is not None and self.ddp_enabled:
+                sampler.set_epoch(epoch)
             for batch in dataloader:
                 obs, action, oldlogprob, reward, value, advantage, ret = tuple(t.to(policy.device) for t in batch)
 
