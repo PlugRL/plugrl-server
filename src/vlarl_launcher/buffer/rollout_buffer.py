@@ -25,6 +25,7 @@ class RolloutBuffer(torch.utils.data.Dataset):
     episode_info_buffer: list[dict[str, Any]]
     
     def __init__(self, buffer_size, example_internal_state: InternalState):
+        self.example_internal_state = example_internal_state
         self.buffer_size = buffer_size
         self.obs = tensordict.stack([example_internal_state.obs[0]] * buffer_size, dim=0)
         self.actions = torch.concatenate([example_internal_state.action] * buffer_size, dim=0)
@@ -112,6 +113,49 @@ class RolloutBuffer(torch.utils.data.Dataset):
         
     def collate_fn(self, batch: list[tuple]) -> tuple:
         return tuple(torch.stack(items, dim=0) for items in zip(*batch))
+    
+    def as_dict(self) -> dict:
+        idx = self.idx
+        obs_slice = self.obs[:idx]
+        if isinstance(obs_slice, tensordict.TensorDict):
+            obs_slice = obs_slice.to_dict(convert_tensors='numpy')
+        else:
+            obs_slice = obs_slice.cpu().numpy()
+        data = dict(
+            obs=obs_slice,
+            actions=self.actions[:idx].cpu().numpy(),
+            logprobs=self.logprobs[:idx].cpu().numpy(),
+            rewards=self.rewards[:idx].cpu().numpy(),
+            values=self.values[:idx].cpu().numpy(),
+            advantages=self.advantages[:idx].cpu().numpy(),
+            returns=self.returns[:idx].cpu().numpy(),
+            dones=self.dones[:idx].cpu().numpy(),
+            next_indices=self.next_indices[:idx].copy(),
+            
+            idx=idx,
+            buffer_signature=self.buffer_signature,
+            episode_info_buffer=self.episode_info_buffer.copy(),
+            obs_batch_shape=self.obs.batch_size if isinstance(self.obs, tensordict.TensorDict) else self.obs.shape
+        )
+        return data
+
+    def load_dict(self, data: dict) -> None:
+        self.idx = data['idx']
+        if isinstance(self.obs, tensordict.TensorDict):
+            self.obs[:self.idx] = tensordict.TensorDict(
+                data['obs'], batch_size=data['obs_batch_shape']
+            )
+        else:
+            self.obs[:self.idx] = torch.from_numpy(data['obs'])
+        self.actions[:self.idx] = torch.from_numpy(data['actions'])
+        self.logprobs[:self.idx] = torch.from_numpy(data['logprobs'])
+        self.rewards[:self.idx] = torch.from_numpy(data['rewards'])
+        self.values[:self.idx] = torch.from_numpy(data['values'])
+        self.advantages[:self.idx] = torch.from_numpy(data['advantages'])
+        self.returns[:self.idx] = torch.from_numpy(data['returns'])
+        self.dones[:self.idx] = torch.from_numpy(data['dones'])
+        
+        # [WARNING] next_indices is not a tensor, and for some reason it is read-only so we just ignore it here
 
 class GAEBuffer(RolloutBuffer):
     def __init__(self, buffer_size, example_internal_state: InternalState, gamma: float = 0.99, gae_lambda: float = 0.95):
