@@ -11,7 +11,7 @@ import hydra
 import tensordict
 import torch
 import numpy as np
-from typing import Tuple
+from typing import Tuple, Any
 from vlarl_launcher.paths import PACKAGE_DIR
 from ..base_policy_gradient_diffusion_policy import BasePolicyGradientDiffusionPolicy, BasePolicyGradientDiffusionPolicyConfig
 from ..registration import register_policy, register_policy_config
@@ -96,8 +96,8 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
     
     def _iterative_process_action(self, action: torch.Tensor) -> torch.Tensor:
         return action
-    
-    def _postprocess_action(self, action: torch.Tensor) -> np.ndarray:
+
+    def _postprocess_action(self, action: torch.Tensor, obs: tensordict.TensorDict) -> np.ndarray:
         if self.actor.final_action_clip_value is not None:
             action = torch.clamp(action, -self.actor.final_action_clip_value, self.actor.final_action_clip_value)
         action_numpy = action.cpu().numpy()
@@ -112,6 +112,7 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         cond: dict | tensordict.TensorDict, 
         x_next: torch.Tensor | None = None,
         *,
+        processed_cond: Any = None,
         min_sampling_denoising_std: float | None = None
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         B = x.shape[0]

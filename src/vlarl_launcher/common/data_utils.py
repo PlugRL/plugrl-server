@@ -31,3 +31,45 @@ def batch_aggregate(list_of_dicts: List[Dict[str, Any]]) -> BatchDict:
             result[key] = values
 
     return result
+
+def unbatch_aggregate(batched_dict: BatchDict) -> List[Dict[str, Any]]:
+    if not batched_dict:
+        return []
+
+    keys = batched_dict.keys()
+    batch_size = None
+
+    for key in keys:
+        value = batched_dict[key]
+        if isinstance(value, np.ndarray):
+            batch_size = value.shape[0]
+            break
+        elif isinstance(value, dict):
+            nested_values = list(value.values())
+            for nv in nested_values:
+                if isinstance(nv, np.ndarray):
+                    batch_size = nv.shape[0]
+                    break
+        if batch_size is not None:
+            break
+
+    if batch_size is None:
+        return [batched_dict]
+
+    result = [{} for _ in range(batch_size)]
+
+    for key in keys:
+        value = batched_dict[key]
+
+        if isinstance(value, np.ndarray):
+            for i in range(batch_size):
+                result[i][key] = value[i]
+        elif isinstance(value, dict):
+            nested_unbatched = unbatch_aggregate(value)
+            for i in range(batch_size):
+                result[i][key] = nested_unbatched[i]
+        else:
+            for i in range(batch_size):
+                result[i][key] = value[i]
+
+    return result

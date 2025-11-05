@@ -26,6 +26,7 @@ class BasePolicyGradientDiffusionPolicy(BasePolicy):
         cond: dict | tensordict.TensorDict, 
         x_next: torch.Tensor | None = None,
         *,
+        processed_cond: Any = None,
         min_sampling_denoising_std: float | None = None
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         "return x_next, logprob, entropy"
@@ -40,15 +41,19 @@ class BasePolicyGradientDiffusionPolicy(BasePolicy):
         ...
     
     @abc.abstractmethod
-    def _postprocess_action(self, action: torch.Tensor) -> Any:
+    def _postprocess_action(self, action: torch.Tensor, obs: torch.Tensor | tensordict.TensorDict) -> Any:
         ...
     
     @abc.abstractmethod
     def _initialize_x(self, obs: dict | tensordict.TensorDict) -> torch.Tensor:
         ...
+
+    def preprocess_observation(self, obs: tensordict.TensorDict | torch.Tensor) -> Any:
+        ...
     
-    def get_action_and_internal_state(self, _obs: dict, min_sampling_denoising_std: float | None = None, **kwargs) -> tuple[Any, InternalState]:
+    def get_action_and_internal_state(self, _obs: dict, min_sampling_denoising_std: float | None = None) -> tuple[Any, InternalState]:
         obs = self.prepare_observation(_obs)
+        processed_obs = self.preprocess_observation(obs)
         timesteps = self._get_timesteps()
         b = obs.shape[0]
         x = self._initialize_x(obs)
@@ -56,13 +61,16 @@ class BasePolicyGradientDiffusionPolicy(BasePolicy):
         chain: list[tensordict.TensorDict] = []
         
         for t in timesteps:
-            x_next, logprob, entropy = self._denoising_step(x, t.repeat(b), obs, min_sampling_denoising_std=min_sampling_denoising_std)
+            x_next, logprob, entropy = self._denoising_step(
+                x, t.repeat(b), obs, 
+                processed_cond=processed_obs, min_sampling_denoising_std=min_sampling_denoising_std
+            )
             chain.append(tensordict.TensorDict(dict(
               obs=dict(x=x, t=t.repeat(b), cond=obs), action=x_next, logprob=logprob, entropy=entropy
             ), batch_size=[b]))
             x = self._iterative_process_action(x_next)
 
-        x = self._postprocess_action(x)
+        x = self._postprocess_action(x, obs)
         value = self._get_value(obs)
         chain_tensor: tensordict.TensorDict = tensordict.stack(chain, dim=1)
         obs, action, logprob, entropy = [chain_tensor.get(key) for key in ["obs", "action", "logprob", "entropy"]]

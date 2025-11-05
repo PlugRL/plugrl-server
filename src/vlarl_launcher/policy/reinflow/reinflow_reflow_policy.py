@@ -11,7 +11,7 @@ import hydra
 import tensordict
 import torch
 import numpy as np
-from typing import Tuple
+from typing import Tuple, Any
 from vlarl_launcher.paths import PACKAGE_DIR
 from ..base_policy_gradient_diffusion_policy import BasePolicyGradientDiffusionPolicy, BasePolicyGradientDiffusionPolicyConfig
 from ..registration import register_policy, register_policy_config
@@ -111,8 +111,8 @@ class ReinFlowReflowPolicy(BasePolicyGradientDiffusionPolicy):
     def _iterative_process_action(self, action: torch.Tensor) -> torch.Tensor:
         action = action.clamp(*self.actor.act_range)
         return action
-    
-    def _postprocess_action(self, action: torch.Tensor) -> np.ndarray:
+
+    def _postprocess_action(self, action: torch.Tensor, obs: tensordict.TensorDict) -> np.ndarray:
         action_numpy = action.cpu().numpy()
         unnormalized_action = 0.5 * (action_numpy + 1) * (self.normalization["action_max"] - self.normalization["action_min"]) + self.normalization["action_min"]
         unnormalized_action = np.clip(unnormalized_action, self.normalization["action_min"], self.normalization["action_max"])
@@ -128,6 +128,7 @@ class ReinFlowReflowPolicy(BasePolicyGradientDiffusionPolicy):
         cond: dict | tensordict.TensorDict, 
         x_next: torch.Tensor | None = None,
         *,
+        processed_cond: Any = None,
         min_sampling_denoising_std: float | None = None
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         B = x.shape[0]
