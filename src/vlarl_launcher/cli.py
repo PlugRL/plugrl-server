@@ -128,7 +128,7 @@ def init_tracker(args: Args, *, resuming: bool, log_code: bool, enabled: bool = 
     return tracker
 
 def _main(args: Args):
-    logger.configure(handlers=[{"sink": sys.stdout, "level": args.log_level.upper()}])
+    logger.configure(handlers=[{"sink": sys.stdout, "level": args.log_level.upper(), "format": "{time:HH:mm:ss}|{level}|{message}"}])
     
     if args.track.tracker == "wandb":
         import wandb

@@ -83,16 +83,14 @@ class WebSocketAgentServer:
             while True:
                 packed_infer_msg = await websocket.recv()
                 infer_msg = msgpack_numpy.unpackb(packed_infer_msg)
-                
+                logger.debug(f"Received message: {infer_msg.get('message_type')}")
                 obs, internal_state = infer_msg.get("data"), None
                 
                 if not action_buffer:
                     req_id = f"{session_id}-{uuid.uuid4()}"
                     response_future = asyncio.Future()
-
                     async with self._lock:
                         self._response_futures[req_id] = response_future
-
                     infer_request = dict(id=req_id, obs=obs)
                     await self._infer_queue.put(infer_request)
                     
@@ -205,21 +203,25 @@ class WebSocketAgentServer:
             logger.error(f"Error during saving checkpoint:\n{traceback_str}")
 
     async def _main_scheduler_loop(self):
-        while True:
-            if self.should_infer():
-                await self._process_infer()
-                
-            async with self._model_lock:
-                if self.should_learn():
-                    await self._process_learn()
-                
-            async with self._model_lock:
-                if self.should_save() or self.should_stop():
-                    await self._process_save()
+        try:
+            while True:
+                if self.should_infer():
+                    await self._process_infer()
                     
-            if self.should_stop():
-                self._stop_event.set()
-                logger.info("Stopping server as the algorithm signaled to stop.")
-                break
-                
-            await asyncio.sleep(SCHEDULER_SLEEP_INTERVAL)
+                async with self._model_lock:
+                    if self.should_learn():
+                        await self._process_learn()
+                    
+                async with self._model_lock:
+                    if self.should_save() or self.should_stop():
+                        await self._process_save()
+                        
+                if self.should_stop():
+                    self._stop_event.set()
+                    logger.info("Stopping server as the algorithm signaled to stop.")
+                    break
+                    
+                await asyncio.sleep(SCHEDULER_SLEEP_INTERVAL)
+        except Exception:
+            traceback_str = traceback.format_exc()
+            logger.error(f"Error in main scheduler loop:\n{traceback_str}")

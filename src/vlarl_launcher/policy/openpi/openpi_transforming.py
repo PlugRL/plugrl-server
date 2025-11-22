@@ -10,6 +10,14 @@ _TRANSFORMS_DICT: dict[str, list[_transforms.DataTransformFn]] = {
             "prompt": "text",
         }
     )],
+    "pi05_tiny_libero": [_transforms.RepackTransform(
+        {
+            "observation/image": "images/base",
+            "observation/wrist_image": "images/wrist",
+            "observation/state": "states/eef",
+            "prompt": "text",
+        }
+    )],
 }
 
 def get_transform(config_name: str) -> list[_transforms.DataTransformFn]:

@@ -17,7 +17,7 @@ from vlarl_launcher.buffer.replay_buffer import ReplayBuffer
 
 UID = "nft"
 
-@register_algo_config(UID)
+# @register_algo_config(UID)
 @dataclasses.dataclass
 class NFTAlgoConfig(BaseAlgoConfig):
     gamma: float = 0.99

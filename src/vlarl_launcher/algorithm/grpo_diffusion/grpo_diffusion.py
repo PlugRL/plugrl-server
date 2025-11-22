@@ -26,7 +26,7 @@ class SchedulerConfig:
     min_lr: float
     warmup_steps: int = 0
 
-@register_algo_config(UID)
+# @register_algo_config(UID)
 @dataclasses.dataclass
 class GRPODiffusionAlgoConfig(BaseAlgoConfig):
     gamma: float = 0.999

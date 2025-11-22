@@ -58,23 +58,24 @@ class BasePolicyGradientDiffusionPolicy(BasePolicy):
         b = obs.shape[0]
         x = self._initialize_x(obs)
         
-        chain: list[tensordict.TensorDict] = []
-        
-        for t in timesteps:
+        internal_state = self.fake_internal_state(b)
+        for i, t in enumerate(timesteps):
             x_next, logprob, entropy = self._denoising_step(
                 x, t.repeat(b), obs, 
                 processed_cond=processed_obs, min_sampling_denoising_std=min_sampling_denoising_std
             )
-            chain.append(tensordict.TensorDict(dict(
-              obs=dict(x=x, t=t.repeat(b), cond=obs), action=x_next, logprob=logprob, entropy=entropy
-            ), batch_size=[b]))
+            internal_state.obs["x"][:, i] = x
+            internal_state.obs["t"][:, i] = t.repeat(b)
+            internal_state.action[:, i] = x_next
+            internal_state.logprob[:, i] = logprob
+            internal_state.entropy[:, i] = entropy            
             x = self._iterative_process_action(x_next)
 
         x = self._postprocess_action(x, obs)
         value = self._get_value(obs)
-        chain_tensor: tensordict.TensorDict = tensordict.stack(chain, dim=1)
-        obs, action, logprob, entropy = [chain_tensor.get(key) for key in ["obs", "action", "logprob", "entropy"]]
-        return x, InternalState(obs=obs, action=action, logprob=logprob, entropy=entropy, value=value).cpu()
+        internal_state.obs["cond"] = obs
+        internal_state.value[:] = value
+        return x, internal_state
     
     def get_value(self, _obs: dict) -> torch.Tensor:
         obs = self.prepare_observation(_obs)

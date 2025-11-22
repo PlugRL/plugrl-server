@@ -23,10 +23,10 @@ from ..registration import register_policy, register_policy_config
 
 UID = "pi0-policy"
 
-@register_policy_config(UID)
+@register_policy_config(UID, supported_algos=[("dppo", "libero")])
 @dataclasses.dataclass
 class Pi0PolicyConfig(BasePolicyGradientDiffusionPolicyConfig):
-    name: str = "pi05_libero"
+    name: str = "pi05_tiny_libero"
     checkpoint_path: pathlib.Path | None = None
     default_prompt: str | None = None
     denoising_steps: int = 10
@@ -52,7 +52,6 @@ class Pi0Policy(BasePolicyGradientDiffusionPolicy):
             str(checkpoint_path / "assets"), data_config.asset_id
         )
         pytorch_device = config.device
-
         repack_transforms = get_transform(config.name)
 
         self.actor = model
@@ -77,6 +76,8 @@ class Pi0Policy(BasePolicyGradientDiffusionPolicy):
         self.actor.paligemma_with_expert.paligemma.language_model.config._attn_implementation = "eager"  # noqa: SLF001
 
         self.actor.paligemma_with_expert.to_bfloat16_for_selected_params("bfloat16")
+        
+        self.critic = None
 
     def _get_timesteps(self) -> torch.Tensor:
         timestep = torch.linspace(1, 1. / self.num_denoising_steps, self.num_denoising_steps)
@@ -124,20 +125,20 @@ class Pi0Policy(BasePolicyGradientDiffusionPolicy):
         return tensordict.TensorDict(
             dict(
                 image=dict(
-                    base_0_rgb=torch.zeros(batch_size, self.num_denoising_steps, 3, 224, 224),
-                    left_wrist_0_rgb=torch.zeros(batch_size, self.num_denoising_steps, 3, 224, 224),
-                    right_wrist_0_rgb=torch.zeros(batch_size, self.num_denoising_steps, 3, 224, 224),
+                    base_0_rgb=torch.zeros(batch_size, 224, 224, 3, dtype=torch.uint8),
+                    left_wrist_0_rgb=torch.zeros(batch_size, 224, 224, 3, dtype=torch.uint8),
+                    right_wrist_0_rgb=torch.zeros(batch_size, 224, 224, 3, dtype=torch.uint8),
                 ),
                 image_mask=dict(
-                    base_0_rgb=torch.zeros(batch_size, self.num_denoising_steps, dtype=torch.bool),
-                    left_wrist_0_rgb=torch.zeros(batch_size, self.num_denoising_steps, dtype=torch.bool),
-                    right_wrist_0_rgb=torch.zeros(batch_size, self.num_denoising_steps, dtype=torch.bool),
+                    base_0_rgb=torch.zeros(batch_size, dtype=torch.bool),
+                    left_wrist_0_rgb=torch.zeros(batch_size, dtype=torch.bool),
+                    right_wrist_0_rgb=torch.zeros(batch_size, dtype=torch.bool),
                 ),
-                state=torch.zeros(batch_size, self.num_denoising_steps, self.action_dim),
-                tokenized_prompt=torch.zeros(batch_size, self.num_denoising_steps, self.max_token_len, dtype=torch.long),
-                tokenized_prompt_mask=torch.zeros(batch_size, self.num_denoising_steps, self.max_token_len, dtype=torch.bool),
+                state=torch.zeros(batch_size, self.action_dim),
+                tokenized_prompt=torch.zeros(batch_size, self.max_token_len, dtype=torch.long),
+                tokenized_prompt_mask=torch.zeros(batch_size, self.max_token_len, dtype=torch.bool),
             ),
-            batch_size=[batch_size, self.num_denoising_steps]
+            batch_size=[batch_size]
         )
         
     def _iterative_process_action(self, action: torch.Tensor) -> torch.Tensor:
@@ -166,18 +167,25 @@ class Pi0Policy(BasePolicyGradientDiffusionPolicy):
         processed_cond: Any = None,
         min_sampling_denoising_std: float | None = None
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        B = x.shape[0]
-        assert t.shape == (B,)
-        assert x.shape == (B, self.action_horizon, self.action_dim)
+        b = x.shape[0]
+        assert t.shape == (b,)
+        assert x.shape == (b, self.action_horizon, self.action_dim)
         
         device = self.device
         t = t.to(device)
         x = x.to(device)
         
+        b_cond = cond.shape[0]        
         if processed_cond is None:
             cond = cond.to(device)
             processed_cond = self.preprocess_observation(cond)
         state, prefix_pad_masks, past_key_values = processed_cond
+        
+        if b_cond * self.num_denoising_steps == b:
+            state = torch.repeat_interleave(state, self.num_denoising_steps, dim=0)
+            prefix_pad_masks = torch.repeat_interleave(prefix_pad_masks, self.num_denoising_steps, dim=0)
+            past_key_values.batch_repeat_interleave(self.num_denoising_steps)
+        
         vt = self.actor.denoise_step(
             state, prefix_pad_masks, past_key_values, x, t
         )
@@ -192,7 +200,8 @@ class Pi0Policy(BasePolicyGradientDiffusionPolicy):
 
         if x_next is None:
             noise = torch.randn_like(x)
-            x_next = mean + std * noise
+            # x_next = mean + std * noise
+            x_next = mean
 
         logprob = dist.log_prob(x_next)
         entropy = dist.entropy()

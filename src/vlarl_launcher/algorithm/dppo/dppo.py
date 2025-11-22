@@ -99,13 +99,14 @@ class DPPOAlgorithm(BaseAlgorithm):
     
     def __init__(self, config: DPPOAlgoConfig, policy: BasePolicyGradientDiffusionPolicy):
         super().__init__(config, policy)
-
+        logger.info("Initializing DPPO Buffer...")
         self.rollout_buffer = DPPOBuffer(
             buffer_size=config.buffer_size,
             example_internal_state=policy.fake_internal_state(batch_size=1),
             gamma=config.gamma,
             gae_lambda=config.gae_lambda,
         )
+        logger.info("Initializing DPPO Optimizers and Schedulers...")
         self.actor_optimizer = torch.optim.AdamW(
             self.policy.actor.parameters(),
             lr=config.actor_lr,
@@ -134,7 +135,7 @@ class DPPOAlgorithm(BaseAlgorithm):
         else:
             self.critic_optimizer = None
             self.critic_lr_scheduler = None
-            
+        logger.info("DPPOAlgorithm initialized")
         self.save_interval = config.save_interval
         self.global_step = 0
         self.curr_train_itrs = 0
@@ -190,7 +191,7 @@ class DPPOAlgorithm(BaseAlgorithm):
             self.rollout_buffer,
             batch_size=self.config.batch_size,
             shuffle=True,
-            drop_last=True,
+            drop_last=False,
             pin_memory=True,
             num_workers=0,
             collate_fn=self.rollout_buffer.collate_fn,
@@ -206,11 +207,7 @@ class DPPOAlgorithm(BaseAlgorithm):
         for update_epoch in range(self.config.update_epochs):
             logger.info(f"Update epoch {update_epoch + 1}/{self.config.update_epochs}")
             break_flag = False
-            batch_count = 0
-            for batch in dataloader:
-                batch_count += 1
-                if batch_count == 1:
-                    logger.info(f"Processing first batch in epoch {update_epoch + 1}...")
+            for batch in tqdm.tqdm(dataloader):
                 obs, action, oldlogprob, reward, value, advantage, ret = tuple(t.to(self.policy.device) for t in batch)
                 batch_size, ft_denoising_steps = action.shape[:2]
                 x, t, cond = obs["x"].reshape(-1, *obs["x"].shape[2:]), obs["t"].reshape(-1), obs["cond"].reshape(-1)

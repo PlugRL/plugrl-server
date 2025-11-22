@@ -32,15 +32,14 @@ class DPPOBuffer(GAEBuffer):
             self.rets[current_idx] = self.rets[prev_idx] * self.gamma + reward
         else:
             self.rets[current_idx] = reward
-            
         self.obs[current_idx] = internal_state.obs[0]
         self.actions[current_idx] = internal_state.action
         self.logprobs[current_idx] = internal_state.logprob
         self.values[current_idx] = internal_state.value
         self.rewards[current_idx] = reward
-        self.dones[current_idx] = done
+        self.dones[current_idx] = bool(done)
         if last_value is not None: self.last_values[current_idx] = last_value
-        self.next_done[current_idx] = next_done
+        self.next_done[current_idx] = bool(next_done)
         self.idx += 1
         return (current_idx, self.buffer_signature)
     
