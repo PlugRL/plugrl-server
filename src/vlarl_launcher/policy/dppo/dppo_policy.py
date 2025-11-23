@@ -113,7 +113,7 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         x_next: torch.Tensor | None = None,
         *,
         processed_cond: Any = None,
-        min_sampling_denoising_std: float | None = None
+        sampling_noise_level: float | None = None
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         B = x.shape[0]
         assert t.shape == (B,)
@@ -128,8 +128,8 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
             x=x, t=t.long(), cond=cond,
         )
         mean, logvar = mean_logvar
-        if min_sampling_denoising_std is not None:
-            std = torch.clamp(torch.exp(0.5 * logvar), min=min_sampling_denoising_std)
+        if sampling_noise_level is not None:
+            std = torch.clamp(torch.exp(0.5 * logvar), min=sampling_noise_level)
         else:
             std = torch.exp(0.5 * logvar)
             

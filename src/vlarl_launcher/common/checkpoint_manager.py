@@ -76,7 +76,9 @@ class CheckpointManager:
         tmp_ckpt_dir.mkdir(parents=True, exist_ok=False)
         
         if checkpoint.model:
-            safetensors.torch.save_file(checkpoint.model, tmp_ckpt_dir / 'model.safetensors')
+            model_state_dict = checkpoint.model
+            safe_state_dict = {k: v.cpu().clone().detach() for k, v in model_state_dict.items()}
+            safetensors.torch.save_file(safe_state_dict, tmp_ckpt_dir / 'model.safetensors')
             del checkpoint.model
         
         if checkpoint.optimizer:

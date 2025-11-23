@@ -83,7 +83,7 @@ class WebSocketAgentServer:
             while True:
                 packed_infer_msg = await websocket.recv()
                 infer_msg = msgpack_numpy.unpackb(packed_infer_msg)
-                logger.debug(f"Received message: {infer_msg.get('message_type')}")
+                
                 obs, internal_state = infer_msg.get("data"), None
                 
                 if not action_buffer:

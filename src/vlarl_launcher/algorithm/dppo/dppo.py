@@ -77,11 +77,12 @@ class DPPOAlgoConfig(BaseAlgoConfig):
     target_kl: float | None = 1
     """the target KL divergence threshold"""
     
-    min_logprob_denoising_std: float = 0.1
-    min_sampling_denoising_std: float = 0.1
+    logprob_noise_level: float = 0.1
+    sampling_noise_level: float = 0.1
     clip_advantage_lower_quantile: float = 0
     clip_advantage_upper_quantile: float = 1
     n_critic_warmup_itrs: int = 2
+    use_normalized_rewards: bool = True
 
     batch_size: int = 1024
     train_itrs: int = 200
@@ -105,6 +106,7 @@ class DPPOAlgorithm(BaseAlgorithm):
             example_internal_state=policy.fake_internal_state(batch_size=1),
             gamma=config.gamma,
             gae_lambda=config.gae_lambda,
+            use_normalized_rewards=config.use_normalized_rewards,
         )
         logger.info("Initializing DPPO Optimizers and Schedulers...")
         self.actor_optimizer = torch.optim.AdamW(
@@ -143,7 +145,7 @@ class DPPOAlgorithm(BaseAlgorithm):
             
     def infer(self, obs: dict) -> tuple[np.ndarray, InternalState]:
         with torch.inference_mode():
-            action, internal_state = self.policy.get_action_and_internal_state(obs, min_sampling_denoising_std=self.config.min_sampling_denoising_std)
+            action, internal_state = self.policy.get_action_and_internal_state(obs, sampling_noise_level=self.config.sampling_noise_level)
         return action, internal_state
     
     def feedback(
@@ -207,13 +209,13 @@ class DPPOAlgorithm(BaseAlgorithm):
         for update_epoch in range(self.config.update_epochs):
             logger.info(f"Update epoch {update_epoch + 1}/{self.config.update_epochs}")
             break_flag = False
-            for batch in tqdm.tqdm(dataloader):
+            for batch in tqdm.tqdm(dataloader, ncols=0):
                 obs, action, oldlogprob, reward, value, advantage, ret = tuple(t.to(self.policy.device) for t in batch)
                 batch_size, ft_denoising_steps = action.shape[:2]
                 x, t, cond = obs["x"].reshape(-1, *obs["x"].shape[2:]), obs["t"].reshape(-1), obs["cond"].reshape(-1)
                 _, newlogprob, entropy = self.policy._denoising_step(
                     x=x, t=t, cond=cond, x_next=action.reshape(-1, *action.shape[2:]), 
-                    min_sampling_denoising_std=self.config.min_logprob_denoising_std
+                    sampling_noise_level=self.config.logprob_noise_level
                 )
                 newlogprob = newlogprob.clamp(min=-5, max=2).mean(dim=(-1, -2)).reshape(batch_size, ft_denoising_steps)
                 oldlogprob = oldlogprob.clamp(min=-5, max=2).mean(dim=(-1, -2)).reshape(batch_size, ft_denoising_steps)
@@ -252,7 +254,7 @@ class DPPOAlgorithm(BaseAlgorithm):
                 pg_loss = torch.max(pg_loss1, pg_loss2).mean()
                 # Value loss
                 if self.policy.critic is not None:
-                    newvalue = self.policy._get_value(obs["cond"][:, 0]).view(-1)
+                    newvalue = self.policy._get_value(obs["cond"]).view(-1)
                     if self.config.clip_vloss_coef is not None:
                         v_loss_unclipped = (newvalue - ret) ** 2
                         v_clipped = value + torch.clamp(newvalue - value, -self.config.clip_vloss_coef, self.config.clip_vloss_coef)

@@ -27,7 +27,7 @@ class BasePolicyGradientDiffusionPolicy(BasePolicy):
         x_next: torch.Tensor | None = None,
         *,
         processed_cond: Any = None,
-        min_sampling_denoising_std: float | None = None
+        sampling_noise_level: float | None = None
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         "return x_next, logprob, entropy"
         ...
@@ -51,7 +51,7 @@ class BasePolicyGradientDiffusionPolicy(BasePolicy):
     def preprocess_observation(self, obs: tensordict.TensorDict | torch.Tensor) -> Any:
         ...
     
-    def get_action_and_internal_state(self, _obs: dict, min_sampling_denoising_std: float | None = None) -> tuple[Any, InternalState]:
+    def get_action_and_internal_state(self, _obs: dict, sampling_noise_level: float | None = None) -> tuple[Any, InternalState]:
         obs = self.prepare_observation(_obs)
         processed_obs = self.preprocess_observation(obs)
         timesteps = self._get_timesteps()
@@ -62,7 +62,7 @@ class BasePolicyGradientDiffusionPolicy(BasePolicy):
         for i, t in enumerate(timesteps):
             x_next, logprob, entropy = self._denoising_step(
                 x, t.repeat(b), obs, 
-                processed_cond=processed_obs, min_sampling_denoising_std=min_sampling_denoising_std
+                processed_cond=processed_obs, sampling_noise_level=sampling_noise_level
             )
             internal_state.obs["x"][:, i] = x
             internal_state.obs["t"][:, i] = t.repeat(b)
@@ -72,14 +72,18 @@ class BasePolicyGradientDiffusionPolicy(BasePolicy):
             x = self._iterative_process_action(x_next)
 
         x = self._postprocess_action(x, obs)
-        value = self._get_value(obs)
+        value = self._get_value(obs, processed_obs)
         internal_state.obs["cond"] = obs
         internal_state.value[:] = value
         return x, internal_state
     
     def get_value(self, _obs: dict) -> torch.Tensor:
         obs = self.prepare_observation(_obs)
-        return self._get_value(obs).cpu()
+        processed_obs = self.preprocess_observation(obs)
+        return self._get_value(obs, processed_obs).cpu()
+    
+    def _get_value(self, obs: torch.Tensor | tensordict.TensorDict, processed_obs: Any = None) -> torch.Tensor:
+        ...
     
     @abc.abstractmethod
     def fake_diffusion_cond(self, batch_size: int) -> tensordict.TensorDict:

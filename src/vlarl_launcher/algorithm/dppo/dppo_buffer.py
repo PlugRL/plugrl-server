@@ -10,7 +10,7 @@ class DPPOBuffer(GAEBuffer):
     def __init__(
         self, buffer_size, example_internal_state: InternalState, 
         gamma: float = 0.99, gae_lambda: float = 0.95,
-        cliprew: float = 10., epsilon: float = 1e-8,
+        cliprew: float = 10., epsilon: float = 1e-8, use_normalized_rewards: bool = True,
     ):
         super().__init__(buffer_size, example_internal_state)
         self.gamma = gamma
@@ -18,6 +18,7 @@ class DPPOBuffer(GAEBuffer):
         self.ret_rms = RunningMeanStd(shape=()) # per env = true
         self.cliprew = cliprew
         self.epsilon = epsilon
+        self.use_normalized_rewards = use_normalized_rewards
         self.rets = self.rewards.clone()
     
     def add_frame(self, *, prev_node: tuple[int, uuid.UUID], internal_state: InternalState, reward: float, done: bool, last_value: torch.Tensor | None, next_done: bool) -> tuple[int, uuid.UUID]:        
@@ -47,9 +48,10 @@ class DPPOBuffer(GAEBuffer):
         # Normalize rewards
         rets = self.rets[:self.idx].cpu().numpy()
         self.ret_rms.update(rets)
-        self.rewards[:self.idx] = torch.clamp(
-            self.rewards[:self.idx] / torch.sqrt(torch.tensor(self.ret_rms.var + self.epsilon).float()), 
-            -self.cliprew, self.cliprew
-        )
+        if self.use_normalized_rewards:
+            self.rewards[:self.idx] = torch.clamp(
+                self.rewards[:self.idx] / torch.sqrt(torch.tensor(self.ret_rms.var + self.epsilon).float()), 
+                -self.cliprew, self.cliprew
+            )
         
         return super().compute_advantages_and_returns()
