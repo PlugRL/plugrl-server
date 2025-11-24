@@ -117,10 +117,7 @@ class ReinFlowReflowPolicy(BasePolicyGradientDiffusionPolicy):
         unnormalized_action = 0.5 * (action_numpy + 1) * (self.normalization["action_max"] - self.normalization["action_min"]) + self.normalization["action_min"]
         unnormalized_action = np.clip(unnormalized_action, self.normalization["action_min"], self.normalization["action_max"])
         return unnormalized_action
-    
-    def get_denoising_logvar(self, t: torch.Tensor) -> torch.Tensor:
-        return torch.log(1e-5 * torch.ones_like(t).unsqueeze(-1).unsqueeze(-1))
-    
+
     def _denoising_step(
         self, 
         x: torch.Tensor, 
@@ -131,21 +128,31 @@ class ReinFlowReflowPolicy(BasePolicyGradientDiffusionPolicy):
         processed_cond: Any = None,
         sampling_noise_level: float | None = None
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        B = x.shape[0]
-        assert t.shape == (B,)
-        assert x.shape == (B, self.action_horizon, self.action_dim)
+        b = x.shape[0]
+        assert t.shape == (b,)
+        assert x.shape == (b, self.action_horizon, self.action_dim)
+        
+        b_cond = next(iter(cond.values())).shape[0]
         
         device = self.device
         t = t.to(device)
-        cond = {key: value.to(device) for key, value in cond.items()}
+        if b_cond != b:
+            assert b == b_cond * self.num_denoising_steps
+            cond = {key: value.to(device).repeat_interleave(self.num_denoising_steps, dim=0) for key, value in cond.items()}
+        else:
+            cond = {key: value.to(device) for key, value in cond.items()}
         x = x.to(device)
 
         vt = self.actor.network(x, t, cond)
-        mean, logvar = x + self.dt * vt, self.get_denoising_logvar(t)
-        if sampling_noise_level is not None:
-            std = torch.clamp(torch.exp(0.5 * logvar), min=sampling_noise_level)
+        if sampling_noise_level is None:
+            mean, std = x + self.dt * vt, torch.zeros_like(x)
         else:
-            std = torch.exp(0.5 * logvar)
+            t_expanded = t[:, None, None]
+            sigma_t = sampling_noise_level * torch.sqrt(t_expanded / (1 - t_expanded).clamp(min=abs(self.dt)))
+            mean = x + (
+                vt + sigma_t**2 / (2 * t_expanded) * (x + (1 - t_expanded) * vt)
+            ) * self.dt
+            std = sigma_t * np.sqrt(abs(self.dt))
             
         dist = torch.distributions.Normal(mean, std)
 
@@ -153,12 +160,15 @@ class ReinFlowReflowPolicy(BasePolicyGradientDiffusionPolicy):
             noise = torch.randn_like(x)
             x_next = mean + std * noise
 
-        logprob = dist.log_prob(x_next)
+        if sampling_noise_level is not None:
+            logprob = dist.log_prob(x_next)
+        else:
+            logprob = torch.zeros_like(x_next)
         entropy = dist.entropy()
         
         return x_next, logprob, entropy
     
-    def _get_value(self, obs: tensordict.TensorDict) -> torch.Tensor:
+    def _get_value(self, obs: tensordict.TensorDict, processed_obs = None) -> torch.Tensor:
         obs = obs.to(self.device)
         batch_size = obs.shape[0]
         cond = {k: v for k, v in obs.items()}

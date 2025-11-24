@@ -92,7 +92,7 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         return tensordict.TensorDict({"state": torch.tensor(normalized_state_tensor, dtype=torch.float32)}, batch_size=[batch_size])
     
     def fake_diffusion_cond(self, batch_size: int) -> tensordict.TensorDict:
-        return tensordict.TensorDict({"state": torch.zeros(batch_size, self.num_denoising_steps, self.obs_dim)}, batch_size=[batch_size, self.num_denoising_steps])
+        return tensordict.TensorDict({"state": torch.zeros(batch_size, self.obs_dim)}, batch_size=[batch_size])
     
     def _iterative_process_action(self, action: torch.Tensor) -> torch.Tensor:
         return action
@@ -115,13 +115,19 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         processed_cond: Any = None,
         sampling_noise_level: float | None = None
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        B = x.shape[0]
-        assert t.shape == (B,)
-        assert x.shape == (B, self.action_horizon, self.action_dim)
+        b = x.shape[0]
+        assert t.shape == (b,)
+        assert x.shape == (b, self.action_horizon, self.action_dim)
+        
+        b_cond = next(iter(cond.values())).shape[0]
         
         device = self.actor.betas.device
         t = t.to(device)
-        cond = {key: value.to(device) for key, value in cond.items()}
+        if b_cond != b:
+            assert b == b_cond * self.actor.denoising_steps
+            cond = {key: value.to(device).repeat_interleave(self.actor.denoising_steps, dim=0) for key, value in cond.items()}
+        else:
+            cond = {key: value.to(device) for key, value in cond.items()}
         x = x.to(device)
 
         mean_logvar: Tuple[torch.Tensor, torch.Tensor] = self.actor.p_mean_var(
@@ -146,7 +152,7 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         
         return x_next, logprob, entropy
     
-    def _get_value(self, obs: tensordict.TensorDict) -> torch.Tensor:
+    def _get_value(self, obs: tensordict.TensorDict, processed_obs = None) -> torch.Tensor:
         obs = obs.to(self.device)
         batch_size = obs.shape[0]
         cond = {k: v for k, v in obs.items()}
