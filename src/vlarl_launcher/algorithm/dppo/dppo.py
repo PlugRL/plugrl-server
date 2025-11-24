@@ -87,6 +87,8 @@ class DPPOAlgoConfig(BaseAlgoConfig):
     batch_size: int = 1024
     train_itrs: int = 200
     save_interval: int = 10
+    """number of steps to accumulate gradients over before calling optimizer.step()"""
+    grad_accum_steps: int = 1
     
     @property
     def total_steps(self) -> int:
@@ -209,6 +211,13 @@ class DPPOAlgorithm(BaseAlgorithm):
         for update_epoch in range(self.config.update_epochs):
             logger.info(f"Update epoch {update_epoch + 1}/{self.config.update_epochs}")
             break_flag = False
+            # gradient accumulation handling
+            accum_steps = 0
+            # zero grads at start of epoch to begin accumulation
+            self.actor_optimizer.zero_grad()
+            if self.critic_optimizer is not None:
+                self.critic_optimizer.zero_grad()
+
             for batch in tqdm.tqdm(dataloader, ncols=0):
                 obs, action, oldlogprob, reward, value, advantage, ret = tuple(t.to(self.policy.device) for t in batch)
                 batch_size, ft_denoising_steps = action.shape[:2]
@@ -268,30 +277,59 @@ class DPPOAlgorithm(BaseAlgorithm):
                     
                 entropy_loss = entropy.mean()
                 loss = pg_loss - self.config.ent_coef * entropy_loss + self.config.vf_coef * v_loss
-                
-                
-                self.actor_optimizer.zero_grad()
-                if self.critic_optimizer is not None:
-                    self.critic_optimizer.zero_grad()
-                loss.backward()
 
-                max_actor_grad_norms.append(torch.nn.utils.clip_grad_norm_(self.policy.parameters(), float('inf')).item())
-                max_critic_grad_norms.append(torch.nn.utils.clip_grad_norm_(self.policy.parameters(), float('inf')).item())
-                
-                if self.config.max_grad_norm is not None:
-                    nn.utils.clip_grad_norm_(self.policy.parameters(), self.config.max_grad_norm)
-                    
-                if self.curr_train_itrs >= self.config.n_critic_warmup_itrs:
-                    self.actor_optimizer.step()
-                
-                if self.critic_optimizer is not None:
-                    self.critic_optimizer.step()
+                # scale loss for accumulation
+                grad_accum = max(1, int(self.config.grad_accum_steps))
+                loss = loss / grad_accum
+                loss.backward()
+                accum_steps += 1
+
+                # step optimizers when we've accumulated enough steps
+                if accum_steps % grad_accum == 0:
+                    # record unconstrained grad norms
+                    try:
+                        max_actor_grad_norms.append(torch.nn.utils.clip_grad_norm_(self.policy.parameters(), float('inf')).item())
+                        max_critic_grad_norms.append(torch.nn.utils.clip_grad_norm_(self.policy.parameters(), float('inf')).item())
+                    except Exception:
+                        # if parameters have no grads yet
+                        pass
+
+                    if self.config.max_grad_norm is not None:
+                        nn.utils.clip_grad_norm_(self.policy.parameters(), self.config.max_grad_norm)
+
+                    # perform optimizer steps (respecting critic warmup)
+                    if self.curr_train_itrs >= self.config.n_critic_warmup_itrs:
+                        self.actor_optimizer.step()
+                    if self.critic_optimizer is not None:
+                        self.critic_optimizer.step()
+
+                    # zero grads after stepping
+                    self.actor_optimizer.zero_grad()
+                    if self.critic_optimizer is not None:
+                        self.critic_optimizer.zero_grad()
                     
                 if self.config.target_kl is not None and approx_kl > self.config.target_kl:
                     break_flag = True
                     logger.info(f"Early stopping at epoch {update_epoch} due to reaching max KL.")
                     break
                 
+            # flush remaining gradients if dataloader size not divisible by grad_accum_steps
+            if accum_steps % max(1, int(self.config.grad_accum_steps)) != 0:
+                try:
+                    max_actor_grad_norms.append(torch.nn.utils.clip_grad_norm_(self.policy.parameters(), float('inf')).item())
+                    max_critic_grad_norms.append(torch.nn.utils.clip_grad_norm_(self.policy.parameters(), float('inf')).item())
+                except Exception:
+                    pass
+                if self.config.max_grad_norm is not None:
+                    nn.utils.clip_grad_norm_(self.policy.parameters(), self.config.max_grad_norm)
+                if self.curr_train_itrs >= self.config.n_critic_warmup_itrs:
+                    self.actor_optimizer.step()
+                if self.critic_optimizer is not None:
+                    self.critic_optimizer.step()
+                self.actor_optimizer.zero_grad()
+                if self.critic_optimizer is not None:
+                    self.critic_optimizer.zero_grad()
+
             if break_flag:
                 break
             
