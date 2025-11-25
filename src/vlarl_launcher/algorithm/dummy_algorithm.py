@@ -2,12 +2,11 @@ import dataclasses
 import numpy as np
 import time
 import torch
-from loguru import logger
 
-from .base_algorithm import BaseAlgorithm, BaseAlgoConfig
+from .base_algorithm import DDPAlgorithm, BaseAlgoConfig
 from .registration import register_algo, register_algo_config
 
-from vlarl_launcher.policy.base_policy import InternalState
+from vlarl_launcher.policy.base_policy import InternalState, BasePolicy
 from vlarl_launcher.common.checkpoint_manager import Checkpoint
 
 UID = "dummy"
@@ -22,36 +21,27 @@ class DummyAlgoConfig(BaseAlgoConfig):
     break_action_chunk: bool = False
     
 @register_algo(UID)
-class DummyAlgorithm(BaseAlgorithm):
+class DummyAlgorithm(DDPAlgorithm):
     config: DummyAlgoConfig
     
-    def __init__(self, config: DummyAlgoConfig, policy):
+    def __init__(self, config: DummyAlgoConfig, policy: BasePolicy):
         super().__init__(config, policy)
         self.counter = 0
         self.break_action_chunk = config.break_action_chunk
     
     def infer(self, obs: dict) -> tuple[np.ndarray, InternalState]:
-        logger.debug(f"DummyAlgorithm.infer called with batch size {len(obs['text'])}")
         with torch.inference_mode():
             action, internal_state = self.policy.get_action_and_internal_state(obs)
         time.sleep(self.config.fake_inference_duration_sec)
-        logger.debug(f"DummyAlgorithm.infer returning action shape {action.shape}")
         return action, internal_state
 
     def feedback(self, *, obs: dict, internal_state: InternalState | None, terminated: bool, truncated: bool, next_obs: dict, reward: float, info: dict, next_terminated: bool, next_truncated: bool, prev_node: tuple) -> tuple:
-        logger.debug(f"DummyAlgorithm.feedback called with prev_node {prev_node}")
         self.counter += 1
-        logger.debug(f"Feedback processed. Current counter: {self.counter}")
         return (-1, ""), 0, {}
 
     def learn(self) -> tuple[int, dict]:
-        logger.debug("DummyAlgorithm.learn called")
-        logger.debug(f"Simulating learning for {self.config.fake_learn_duration_sec} seconds...")
-        
         time.sleep(self.config.fake_learn_duration_sec)
         self.counter = 0
-        
-        logger.debug("Learning step completed.")
         return 0, {}
 
     def should_learn(self) -> bool:
@@ -64,9 +54,25 @@ class DummyAlgorithm(BaseAlgorithm):
         return False
     
     def create_checkpoint(self) -> Checkpoint:
-        logger.debug("DummyAlgorithm.save_checkpoint called")
         return Checkpoint(step=0)
     
     def load_checkpoint(self, checkpoint: Checkpoint):
-        logger.debug(f"DummyAlgorithm.load_checkpoint called with checkpoint at step {checkpoint.step}")
         pass
+    
+    def activate_ddp(self, ddp_policy) -> None:
+        ...
+
+    def set_device(self, device) -> None:
+        ...
+
+    def get_serializable_buffer_data(self) -> dict:
+        return {}
+
+    def load_serializable_buffer_data(self, data: dict) -> None:
+        ...
+
+    def get_active_policy(self) -> BasePolicy:
+        return self.policy
+
+    def load_learner_state(self, checkpoint: Checkpoint) -> None:
+        ...
