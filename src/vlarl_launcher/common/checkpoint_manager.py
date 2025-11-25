@@ -21,6 +21,21 @@ def get_latest_checkpoint_step(checkpoint_dir: Path) -> Optional[int]:
     ]
     return max(checkpoint_steps) if checkpoint_steps else None
 
+def move_model_to_cpu(model_state: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
+    return {k: v.cpu() for k, v in model_state.items()}
+
+def move_optimizer_to_cpu(optimizer_state: dict[str, Any]) -> dict[str, Any]:
+    def move_to_cpu(obj: Any) -> Any:
+        if isinstance(obj, torch.Tensor):
+            return obj.cpu()
+        elif isinstance(obj, dict):
+            return {k: move_to_cpu(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [move_to_cpu(v) for v in obj]
+        else:
+            return obj
+    return move_to_cpu(optimizer_state)
+
 @dataclasses.dataclass
 class Checkpoint:
     step: int
