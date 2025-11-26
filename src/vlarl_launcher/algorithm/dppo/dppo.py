@@ -43,13 +43,9 @@ class DPPOAlgoConfig(BaseAlgoConfig):
     """the weight decay of the actor optimizer"""
     critic_weight_decay: float = 0.0
     """the weight decay of the critic optimizer"""
-    actor_lr_scheduler: SchedulerConfig = dataclasses.field(
-        default_factory=lambda: SchedulerConfig(min_lr=1e-4)
-    )
+    actor_lr_scheduler: SchedulerConfig | None = None
     """the learning rate scheduler of the actor optimizer"""
-    critic_lr_scheduler: SchedulerConfig = dataclasses.field(
-        default_factory=lambda: SchedulerConfig(min_lr=1e-3)
-    )
+    critic_lr_scheduler: SchedulerConfig | None = None
     """the learning rate scheduler of the critic optimizer"""
     
     buffer_size: int = 20000
@@ -116,26 +112,32 @@ class DPPOAlgorithm(BaseAlgorithm):
             lr=config.actor_lr,
             weight_decay=config.actor_weight_decay,
         )
-        self.actor_lr_scheduler = _dppo_scheduler.CosineAnnealingWarmupRestarts(
-            self.actor_optimizer,
-            first_cycle_steps=self.config.train_itrs,
-            max_lr=self.config.actor_lr,
-            min_lr=self.config.actor_lr_scheduler.min_lr,
-            warmup_steps=self.config.actor_lr_scheduler.warmup_steps,
-        )
+        if self.config.actor_lr_scheduler is not None:
+            self.actor_lr_scheduler = _dppo_scheduler.CosineAnnealingWarmupRestarts(
+                self.actor_optimizer,
+                first_cycle_steps=self.config.train_itrs,
+                max_lr=self.config.actor_lr,
+                min_lr=self.config.actor_lr_scheduler.min_lr,
+                warmup_steps=self.config.actor_lr_scheduler.warmup_steps,
+            )
+        else:
+            self.actor_lr_scheduler = None
         if self.policy.critic is not None:
             self.critic_optimizer = torch.optim.AdamW(
                 self.policy.critic.parameters(),
                 lr=config.critic_lr,
                 weight_decay=config.critic_weight_decay,
             )
-            self.critic_lr_scheduler = _dppo_scheduler.CosineAnnealingWarmupRestarts(
-                self.critic_optimizer,
-                first_cycle_steps=self.config.train_itrs,
-                max_lr=self.config.critic_lr,
-                min_lr=self.config.critic_lr_scheduler.min_lr,
-                warmup_steps=self.config.critic_lr_scheduler.warmup_steps
-            )
+            if self.config.critic_lr_scheduler is not None:
+                self.critic_lr_scheduler = _dppo_scheduler.CosineAnnealingWarmupRestarts(
+                    self.critic_optimizer,
+                    first_cycle_steps=self.config.train_itrs,
+                    max_lr=self.config.critic_lr,
+                    min_lr=self.config.critic_lr_scheduler.min_lr,
+                    warmup_steps=self.config.critic_lr_scheduler.warmup_steps
+                )
+            else:
+                self.critic_lr_scheduler = None
         else:
             self.critic_optimizer = None
             self.critic_lr_scheduler = None
