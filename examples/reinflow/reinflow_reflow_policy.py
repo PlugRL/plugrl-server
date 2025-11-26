@@ -24,7 +24,7 @@ class ReinFlowReflowCriticObsConfig:
     activation: str = "Mish"
     residual_style: bool = True
 
-@register_policy_config(UID, supported_algos=[("dummy", "default")])
+@register_policy_config(UID)
 @dataclasses.dataclass
 class ReinFlowReflowPolicyConfig(BasePolicyGradientDiffusionPolicyConfig):
     env_type: str = "gym"

@@ -25,7 +25,7 @@ from .value_head import ValueHead
 
 UID = "pi0-policy"
 
-@register_policy_config(UID, supported_algos=[("dppo", "libero")])
+@register_policy_config(UID)
 @dataclasses.dataclass
 class Pi0PolicyConfig(BasePolicyGradientDiffusionPolicyConfig):
     name: str = "pi05_tiny_libero"

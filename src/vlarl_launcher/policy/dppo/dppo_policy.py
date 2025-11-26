@@ -24,7 +24,7 @@ class DPPOCriticObsConfig:
     activation: str = "Mish"
     residual_style: bool = True
 
-@register_policy_config(UID, supported_algos=[("dppo", "hopper")])
+@register_policy_config(UID)
 @dataclasses.dataclass
 class DPPOPolicyConfig(BasePolicyGradientDiffusionPolicyConfig):
     env_type: str = "gym"

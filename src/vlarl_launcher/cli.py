@@ -1,12 +1,13 @@
 import dataclasses
 import sys
-from typing import Literal
+from typing import Literal, TypeVar
 import pathlib
 import tyro
 import uuid
 import datetime
 import dateutil.tz
 from loguru import logger
+import functools
 
 import vlarl_launcher
 from vlarl_launcher.algorithm.base_algorithm import BaseAlgoConfig
@@ -15,6 +16,7 @@ from vlarl_launcher.policy.registration import REGISTERED_POLICY_CONFIGS, make_p
 from vlarl_launcher.algorithm.registration import REGISTERED_ALGO_CONFIGS, make_algo
 from vlarl_launcher.server.websocket_agent_server import WebSocketAgentServer
 from vlarl_launcher.common.checkpoint_manager import CheckpointManager
+from vlarl_launcher.common.tyro_utils import subcommand_cli_from_nested_dict
 
 @dataclasses.dataclass
 class TrackArgs:
@@ -25,6 +27,7 @@ class TrackArgs:
     
 @dataclasses.dataclass
 class Args:
+    track: TrackArgs
     algo_uid: tyro.conf._markers.Suppress[str]
     algo: BaseAlgoConfig
     
@@ -41,7 +44,6 @@ class Args:
     exp_name: str | None = None
     overwrite: bool = False
     resume: bool = False
-    track: TrackArgs = dataclasses.field(default_factory=TrackArgs)
     
     checkpoint_base_dir: str = "./checkpoints"
     
@@ -51,9 +53,9 @@ class Args:
                 self.prefix = str(uuid.uuid4().fields[-1])[:5]
 
             self.exp_name = create_exp_name(self.prefix)
-            if self.suffix:
+            if self.suffix is not None:
                 self.exp_name = f"{self.exp_name}_{self.suffix}"
-
+                
     @property
     def checkpoint_dir(self):
         if not self.exp_name:
@@ -65,7 +67,9 @@ class Args:
         if not self.exp_name:
             raise ValueError("--exp_name must be set")
         return f"{self.algo_uid}/{self.policy_uid}/{self.exp_name}"
-                
+
+ArgsT = TypeVar("ArgsT", bound="Args")
+
 def create_exp_name(exp_prefix, exp_id=0, seed=0):
     """
     Create a semi-unique experiment name that has a timestamp
@@ -76,26 +80,29 @@ def create_exp_name(exp_prefix, exp_id=0, seed=0):
     now = datetime.datetime.now(dateutil.tz.tzlocal())
     timestamp = now.strftime('%Y_%m_%d_%H_%M_%S')
     return "%s_%s_%04d--s-%d" % (timestamp, exp_prefix, exp_id, seed)
-    
-_CONFIGS_DICT = {}
-for policy_uid, policy_cfg in REGISTERED_POLICY_CONFIGS.items():
-    support_algos = policy_cfg.supported_algos if policy_cfg.supported_algos is not None else [(k, "default") for k in REGISTERED_ALGO_CONFIGS.keys()]
-    for algo_uid, variant_uid in support_algos:
-        if algo_uid not in REGISTERED_ALGO_CONFIGS or variant_uid not in REGISTERED_ALGO_CONFIGS[algo_uid]:
-            logger.warning(f"Algorithm {algo_uid} with variant {variant_uid} is not registered, skipping...")
-            continue
-        algo_cfg = REGISTERED_ALGO_CONFIGS[algo_uid][variant_uid]
-        key = f"{algo_uid}-{variant_uid}/{policy_uid}".lower()
-        policy_cfg.algo = algo_uid
-        _CONFIGS_DICT[key] = Args(
-            algo_uid=algo_uid,
-            algo=algo_cfg,
-            policy_uid=policy_uid,
-            policy=policy_cfg,
-        )
 
 def cli() -> Args:
-    return tyro.extras.overridable_config_cli({k: (k, v) for k, v in _CONFIGS_DICT.items()})
+    return build_cli_from_registry(Args)
+
+
+def build_cli_from_registry(args_cls: type[ArgsT]) -> ArgsT:
+    configs = {}
+    for policy_uid, policy_variants in REGISTERED_POLICY_CONFIGS.items():
+        configs[policy_uid] = {}
+        for policy_variant, policy_config in policy_variants.items():
+            configs[policy_uid][policy_variant] = {}
+            for algo_uid, algo_variants in REGISTERED_ALGO_CONFIGS.items():
+                configs[policy_uid][policy_variant][algo_uid] = {}
+                for algo_variant, algo_config in algo_variants.items():
+                    configs[policy_uid][policy_variant][algo_uid][algo_variant] = functools.partial(
+                        args_cls,
+                        policy_uid=policy_uid,
+                        policy=policy_config,
+                        algo_uid=algo_uid,
+                        algo=algo_config,
+                    )
+    return subcommand_cli_from_nested_dict(configs)[0][0][0]
+        
 
 def init_tracker(args: Args, *, resuming: bool, log_code: bool, enabled: bool = True):
     if args.track.tracker == "wandb":
@@ -118,12 +125,15 @@ def init_tracker(args: Args, *, resuming: bool, log_code: bool, enabled: bool = 
     else:
         tracker = tracker_module.init(
             entity=args.track.entity or None,
-            project=args.track.project_name,
+            project=f"{args.track.project_name}-{args.algo_uid}-{args.policy_uid}",
             name=args.full_exp_name,
             config=dataclasses.asdict(args),
             save_code=log_code,
         )
-        (ckpt_dir / "run_id.txt").write_text(tracker.id)
+        run_id_value = tracker.id
+        if run_id_value is None:
+            raise RuntimeError("Tracker did not return a run id")
+        (ckpt_dir / "run_id.txt").write_text(run_id_value)
             
     return tracker
 

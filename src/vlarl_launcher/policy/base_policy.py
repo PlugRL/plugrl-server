@@ -10,7 +10,6 @@ from vlarl_launcher.common.tensor_container import tensor_container, TensorConta
 
 @dataclasses.dataclass
 class BasePolicyConfig:
-    supported_algos: tyro.conf._markers.Suppress[list[tuple[str, str]] | None]
     algo: tyro.conf._markers.Suppress[str] = "unknown"
     device: Literal["cpu", "cuda"] = "cuda"
 

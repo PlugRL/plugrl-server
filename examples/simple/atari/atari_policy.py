@@ -10,7 +10,7 @@ from ...base_policy import BasePolicyConfig, BasePolicy, InternalState
 
 UID = "atari-policy"
 
-@register_policy_config(UID, supported_algos=[("ppo-discrete", "atari")])
+@register_policy_config(UID)
 @dataclasses.dataclass
 class AtariPolicyConfig(BasePolicyConfig):
     n_actions: int = 4

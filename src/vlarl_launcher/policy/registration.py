@@ -1,5 +1,6 @@
 from typing import Dict, Type
 from loguru import logger
+from collections import defaultdict
 from vlarl_launcher.policy.base_policy import BasePolicy, BasePolicyConfig
 
 class PolicySpec:
@@ -13,7 +14,7 @@ class PolicySpec:
         _kwargs.update(kwargs)
         return self.cls(**_kwargs)
 
-REGISTERED_POLICY_CONFIGS: Dict[str, BasePolicyConfig] = {}
+REGISTERED_POLICY_CONFIGS: Dict[str, Dict[str, BasePolicyConfig]] = defaultdict(dict)
 REGISTERED_POLICIES: Dict[str, PolicySpec] = {}
 
 def register_policy(uid: str, override: bool = False, **default_kwargs):
@@ -30,11 +31,11 @@ def register_policy(uid: str, override: bool = False, **default_kwargs):
         return cls
     return _register_policy
     
-def register_policy_config(uid: str, supported_algos: list[tuple[str, str]] | None = None):
+def register_policy_config(uid: str, variant: str = "default"):
     def _register_policy_config(cls):
-        if uid in REGISTERED_POLICY_CONFIGS:
-            raise KeyError(f"Policy config {uid} is already registered.")
-        REGISTERED_POLICY_CONFIGS[uid] = cls(supported_algos=supported_algos)
+        if uid in REGISTERED_POLICY_CONFIGS and variant in REGISTERED_POLICY_CONFIGS[uid]:
+            raise KeyError(f"Policy config {uid} with variant {variant} is already registered.")
+        REGISTERED_POLICY_CONFIGS[uid][variant] = cls()
         return cls
     return _register_policy_config
 

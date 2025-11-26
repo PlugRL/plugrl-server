@@ -11,7 +11,7 @@ from ...base_policy import BasePolicyConfig, BasePolicy, InternalState
 
 UID = "classic-policy"
 
-@register_policy_config(UID, supported_algos=[("ppo-discrete", "classic")])
+@register_policy_config(UID)
 @dataclasses.dataclass
 class ClassicPolicyConfig(BasePolicyConfig):
     n_actions: int = 2
