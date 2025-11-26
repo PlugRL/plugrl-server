@@ -8,8 +8,8 @@ from loguru import logger
 
 from vlarl_launcher.common.checkpoint_manager import Checkpoint
 
-from ..base_algorithm import BaseAlgoConfig, DDPAlgorithm
-from ..registration import register_algo, register_algo_config
+from vlarl_launcher.algorithm.base_algorithm import BaseAlgoConfig, DDPAlgorithm
+from vlarl_launcher.algorithm.registration import register_algo, register_algo_config
 from vlarl_launcher.policy.base_policy import BasePolicy, InternalState
 from vlarl_launcher.buffer.rollout_buffer import GAEBuffer
 from vlarl_launcher.common.checkpoint_manager import Checkpoint, move_model_to_cpu, move_optimizer_to_cpu

@@ -21,7 +21,7 @@ The easiest way to get started is by cloning the repository and using Poetry to 
 
 `vlarl-launcher` comes with a command-line utility to launch environment workers.
 
-#### Running a Worker
+#### Running a Server
 
 To start a central RL server, use the `vlarl-run-server` command.
 
@@ -32,7 +32,7 @@ vlarl-run-server
 examples:
 
 ```
-vlarl-run-server dummy-discrete 
+vlarl-run-server dummy discrete dummy default
 ```
 
 This command will launch an server.

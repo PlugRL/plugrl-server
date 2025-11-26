@@ -13,8 +13,8 @@ import torch
 import numpy as np
 from typing import Tuple, Any
 from vlarl_launcher.paths import PACKAGE_DIR
-from ..base_policy_gradient_diffusion_policy import BasePolicyGradientDiffusionPolicy, BasePolicyGradientDiffusionPolicyConfig
-from ..registration import register_policy, register_policy_config
+from vlarl_launcher.policy.base_policy_gradient_diffusion_policy import BasePolicyGradientDiffusionPolicy, BasePolicyGradientDiffusionPolicyConfig
+from vlarl_launcher.policy.registration import register_policy, register_policy_config
 
 UID = "reinflow-r-policy"
 

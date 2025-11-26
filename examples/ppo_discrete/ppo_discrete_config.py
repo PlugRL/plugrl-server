@@ -1,6 +1,6 @@
 import dataclasses
 from .ppo_discrete import PPODiscreteAlgoConfig, UID
-from ..registration import register_algo_config
+from vlarl_launcher.algorithm.registration import register_algo_config
 
 @register_algo_config(UID, "atari")
 @dataclasses.dataclass
