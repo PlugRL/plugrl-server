@@ -25,7 +25,7 @@ class ReinFlowReflowCriticObsConfig:
     activation: str = "Mish"
     residual_style: bool = True
 
-@register_policy_config(UID, supported_algos=[("nft", "default")])
+@register_policy_config(UID)
 @dataclasses.dataclass
 class ReinFlowReflowPolicyNFTConfig(BaseNFTFlowPolicyConfig):
     env_type: str = "gym"

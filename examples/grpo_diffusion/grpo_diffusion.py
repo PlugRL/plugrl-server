@@ -6,8 +6,8 @@ import torch.nn as nn
 from loguru import logger
 
 from vlarl_launcher.common.checkpoint_manager import Checkpoint
-from ..base_algorithm import BaseAlgorithm, BaseAlgoConfig
-from ..registration import register_algo, register_algo_config
+from vlarl_launcher.algorithm.base_algorithm import BaseAlgorithm, BaseAlgoConfig
+from vlarl_launcher.algorithm.registration import register_algo, register_algo_config
 from vlarl_launcher.policy.base_policy import InternalState
 from vlarl_launcher.common.checkpoint_manager import Checkpoint
 from vlarl_launcher.policy.base_policy_gradient_diffusion_policy import BasePolicyGradientDiffusionPolicy
@@ -26,7 +26,7 @@ class SchedulerConfig:
     min_lr: float
     warmup_steps: int = 0
 
-@register_algo_config(UID)
+# @register_algo_config(UID)
 @dataclasses.dataclass
 class GRPODiffusionAlgoConfig(BaseAlgoConfig):
     gamma: float = 0.999
@@ -65,8 +65,8 @@ class GRPODiffusionAlgoConfig(BaseAlgoConfig):
     target_kl: float | None = 1
     """the target KL divergence threshold"""
     
-    min_logprob_denoising_std: float = 0.1
-    min_sampling_denoising_std: float = 0.1
+    logprob_noise_level: float = 0.1
+    sampling_noise_level: float = 0.1
     clip_advantage_lower_quantile: float = 0
     clip_advantage_upper_quantile: float = 1
 
@@ -112,7 +112,7 @@ class GRPODiffusionAlgorithm(BaseAlgorithm):
             
     def infer(self, obs: dict) -> tuple[np.ndarray, InternalState]:
         with torch.inference_mode():
-            action, internal_state = self.policy.get_action_and_internal_state(obs, min_sampling_denoising_std=self.config.min_sampling_denoising_std)
+            action, internal_state = self.policy.get_action_and_internal_state(obs, sampling_noise_level=self.config.sampling_noise_level)
         return action, internal_state
     
     def feedback(
@@ -169,7 +169,7 @@ class GRPODiffusionAlgorithm(BaseAlgorithm):
                 
                 _, newlogprob, entropy = self.policy._denoising_step(
                     x=obs["x"], t=obs["t"], cond=obs["cond"], x_next=action, 
-                    min_sampling_denoising_std=self.config.min_logprob_denoising_std
+                    sampling_noise_level=self.config.logprob_noise_level
                 )
                 newlogprob = newlogprob.clamp(min=-5, max=2).mean(dim=(-1, -2)).view(-1)
                 oldlogprob = oldlogprob.clamp(min=-5, max=2).mean(dim=(-1, -2)).view(-1)

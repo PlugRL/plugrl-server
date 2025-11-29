@@ -11,7 +11,7 @@ import hydra
 import tensordict
 import torch
 import numpy as np
-from typing import Tuple
+from typing import Tuple, Any
 from vlarl_launcher.paths import PACKAGE_DIR
 from ..base_policy_gradient_diffusion_policy import BasePolicyGradientDiffusionPolicy, BasePolicyGradientDiffusionPolicyConfig
 from ..registration import register_policy, register_policy_config
@@ -24,7 +24,7 @@ class DPPOCriticObsConfig:
     activation: str = "Mish"
     residual_style: bool = True
 
-@register_policy_config(UID, supported_algos=[("dppo", "hopper")])
+@register_policy_config(UID)
 @dataclasses.dataclass
 class DPPOPolicyConfig(BasePolicyGradientDiffusionPolicyConfig):
     env_type: str = "gym"
@@ -92,12 +92,12 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         return tensordict.TensorDict({"state": torch.tensor(normalized_state_tensor, dtype=torch.float32)}, batch_size=[batch_size])
     
     def fake_diffusion_cond(self, batch_size: int) -> tensordict.TensorDict:
-        return tensordict.TensorDict({"state": torch.zeros(batch_size, self.num_denoising_steps, self.obs_dim)}, batch_size=[batch_size, self.num_denoising_steps])
+        return tensordict.TensorDict({"state": torch.zeros(batch_size, self.obs_dim)}, batch_size=[batch_size])
     
     def _iterative_process_action(self, action: torch.Tensor) -> torch.Tensor:
         return action
-    
-    def _postprocess_action(self, action: torch.Tensor) -> np.ndarray:
+
+    def _postprocess_action(self, action: torch.Tensor, obs: tensordict.TensorDict) -> np.ndarray:
         if self.actor.final_action_clip_value is not None:
             action = torch.clamp(action, -self.actor.final_action_clip_value, self.actor.final_action_clip_value)
         action_numpy = action.cpu().numpy()
@@ -112,23 +112,30 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         cond: dict | tensordict.TensorDict, 
         x_next: torch.Tensor | None = None,
         *,
-        min_sampling_denoising_std: float | None = None
+        processed_cond: Any = None,
+        sampling_noise_level: float | None = None
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        B = x.shape[0]
-        assert t.shape == (B,)
-        assert x.shape == (B, self.action_horizon, self.action_dim)
+        b = x.shape[0]
+        assert t.shape == (b,)
+        assert x.shape == (b, self.action_horizon, self.action_dim)
+        
+        b_cond = next(iter(cond.values())).shape[0]
         
         device = self.actor.betas.device
         t = t.to(device)
-        cond = {key: value.to(device) for key, value in cond.items()}
+        if b_cond != b:
+            assert b == b_cond * self.actor.denoising_steps
+            cond = {key: value.to(device).repeat_interleave(self.actor.denoising_steps, dim=0) for key, value in cond.items()}
+        else:
+            cond = {key: value.to(device) for key, value in cond.items()}
         x = x.to(device)
 
         mean_logvar: Tuple[torch.Tensor, torch.Tensor] = self.actor.p_mean_var(
             x=x, t=t.long(), cond=cond,
         )
         mean, logvar = mean_logvar
-        if min_sampling_denoising_std is not None:
-            std = torch.clamp(torch.exp(0.5 * logvar), min=min_sampling_denoising_std)
+        if sampling_noise_level is not None:
+            std = torch.clamp(torch.exp(0.5 * logvar), min=sampling_noise_level)
         else:
             std = torch.exp(0.5 * logvar)
             
@@ -145,7 +152,7 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         
         return x_next, logprob, entropy
     
-    def _get_value(self, obs: tensordict.TensorDict) -> torch.Tensor:
+    def _get_value(self, obs: tensordict.TensorDict, processed_obs = None) -> torch.Tensor:
         obs = obs.to(self.device)
         batch_size = obs.shape[0]
         cond = {k: v for k, v in obs.items()}

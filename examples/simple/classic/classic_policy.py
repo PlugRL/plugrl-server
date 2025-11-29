@@ -6,12 +6,12 @@ import torch.nn as nn
 from typing import Any
 from loguru import logger
 
-from ...registration import register_policy, register_policy_config
-from ...base_policy import BasePolicyConfig, BasePolicy, InternalState
+from vlarl_launcher.policy.registration import register_policy, register_policy_config
+from vlarl_launcher.policy.base_policy import BasePolicyConfig, BasePolicy, InternalState
 
 UID = "classic-policy"
 
-@register_policy_config(UID, supported_algos=[("ppo-discrete", "classic")])
+@register_policy_config(UID)
 @dataclasses.dataclass
 class ClassicPolicyConfig(BasePolicyConfig):
     n_actions: int = 2

@@ -18,6 +18,8 @@ from vlarl_launcher.common.checkpoint_manager import CheckpointManager
 from vlarl_launcher.common.data_utils import batch_aggregate
 
 SCHEDULER_SLEEP_INTERVAL = 0.001  # seconds
+INFER_READY_TIMEOUT = 5.0  # seconds to wait for full infer batch before warning
+FEEDBACK_WAIT_TIMEOUT = 10.0  # seconds to wait for client feedback before closing
 
 class WebSocketAgentServer:
     def __init__(
@@ -44,6 +46,7 @@ class WebSocketAgentServer:
         self._stop_event = asyncio.Event()
         
         self._total_connections = 0
+        self._infer_wait_start: float | None = None
     
     def serve_forever(self) -> None:
         asyncio.run(self.run())
@@ -89,10 +92,8 @@ class WebSocketAgentServer:
                 if not action_buffer:
                     req_id = f"{session_id}-{uuid.uuid4()}"
                     response_future = asyncio.Future()
-
                     async with self._lock:
                         self._response_futures[req_id] = response_future
-
                     infer_request = dict(id=req_id, obs=obs)
                     await self._infer_queue.put(infer_request)
                     
@@ -110,8 +111,21 @@ class WebSocketAgentServer:
                 
                 action_response = dict(message_type=str(MessageType.ACTION), data=dict(action=action))
                 await websocket.send(packer.pack(action_response))
-                    
-                packed_feedback_msg = await websocket.recv()
+
+                try:
+                    packed_feedback_msg = await asyncio.wait_for(
+                        websocket.recv(), timeout=FEEDBACK_WAIT_TIMEOUT
+                    )
+                except asyncio.TimeoutError:
+                    logger.warning(
+                        f"Timed out waiting for feedback from {websocket.remote_address} after {FEEDBACK_WAIT_TIMEOUT:.1f}s, closing connection"
+                    )
+                    await websocket.close(
+                        code=websockets.frames.CloseCode.GOING_AWAY,
+                        reason="Feedback timeout",
+                    )
+                    self._total_connections = max(0, self._total_connections - 1)
+                    break
                 feedback_msg = msgpack_numpy.unpackb(packed_feedback_msg)
                 
                 if feedback_msg.get("message_type") != str(MessageType.FEEDBACK):
@@ -151,7 +165,25 @@ class WebSocketAgentServer:
             )
 
     def should_infer(self) -> bool:
-        return self._infer_queue.qsize() == self._total_connections and self._total_connections > 0
+        current_qsize = self._infer_queue.qsize()
+        now = time.monotonic()
+
+        if current_qsize == self._total_connections and self._total_connections > 0:
+            self._infer_wait_start = None
+            return True
+
+        if current_qsize > 0 and self._total_connections > 0:
+            if self._infer_wait_start is None:
+                self._infer_wait_start = now
+            elif now - self._infer_wait_start > INFER_READY_TIMEOUT:
+                logger.warning(
+                    f"Infer queue has been waiting {now - self._infer_wait_start:.1f}s for {current_qsize}/{self._total_connections} environments"
+                )
+                self._infer_wait_start = now
+        else:
+            self._infer_wait_start = None
+
+        return False
     
     async def _process_infer(self):
         batch = []
@@ -180,6 +212,7 @@ class WebSocketAgentServer:
         return self._algorithm.should_learn()
 
     async def _process_learn(self):
+        logger.info(f"should_learn check: {self._total_connections} active environments")
         try:
             self._algorithm.pre_learn()
             step, log_dict = await asyncio.to_thread(self._algorithm.learn)
@@ -205,21 +238,25 @@ class WebSocketAgentServer:
             logger.error(f"Error during saving checkpoint:\n{traceback_str}")
 
     async def _main_scheduler_loop(self):
-        while True:
-            if self.should_infer():
-                await self._process_infer()
-                
-            async with self._model_lock:
-                if self.should_learn():
-                    await self._process_learn()
-                
-            async with self._model_lock:
-                if self.should_save() or self.should_stop():
-                    await self._process_save()
+        try:
+            while True:
+                if self.should_infer():
+                    await self._process_infer()
                     
-            if self.should_stop():
-                self._stop_event.set()
-                logger.info("Stopping server as the algorithm signaled to stop.")
-                break
-                
-            await asyncio.sleep(SCHEDULER_SLEEP_INTERVAL)
+                async with self._model_lock:
+                    if self.should_learn():
+                        await self._process_learn()
+                    
+                async with self._model_lock:
+                    if self.should_save() or self.should_stop():
+                        await self._process_save()
+                        
+                if self.should_stop():
+                    self._stop_event.set()
+                    logger.info("Stopping server as the algorithm signaled to stop.")
+                    break
+                    
+                await asyncio.sleep(SCHEDULER_SLEEP_INTERVAL)
+        except Exception:
+            traceback_str = traceback.format_exc()
+            logger.error(f"Error in main scheduler loop:\n{traceback_str}")

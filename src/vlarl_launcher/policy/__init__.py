@@ -1,4 +1,3 @@
-from .dummy_policy import DummyPolicy
-from .simple import *
+from .dummy_policy import *
 from .dppo import *
-from .reinflow import *
+from .openpi import *
