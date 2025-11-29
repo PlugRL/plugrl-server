@@ -119,13 +119,14 @@ def init_tracker(args: Args, *, resuming: bool, log_code: bool, enabled: bool = 
     ckpt_dir = args.checkpoint_dir
     if not ckpt_dir.exists():
         raise FileNotFoundError(f"Checkpoint directory {ckpt_dir} does not exist.")
+    project_name = f"{args.track.project_name}-{args.algo_uid}-{args.policy_uid}"
     if resuming:
         run_id = (ckpt_dir / "run_id.txt").read_text().strip()
-        tracker = tracker_module.init(id=run_id, resume="must", project=args.track.project_name, entity=args.track.entity or None)
+        tracker = tracker_module.init(id=run_id, resume="must", project=project_name, entity=args.track.entity or None)
     else:
         tracker = tracker_module.init(
             entity=args.track.entity or None,
-            project=f"{args.track.project_name}-{args.algo_uid}-{args.policy_uid}",
+            project=project_name,
             name=args.full_exp_name,
             config=dataclasses.asdict(args),
             save_code=log_code,

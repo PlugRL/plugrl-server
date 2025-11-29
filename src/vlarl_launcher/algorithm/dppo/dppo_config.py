@@ -55,8 +55,8 @@ class DPPOAlgoConfigLibero(DPPOAlgoConfig):
     update_epochs: int = 4
     vf_coef: float = 0.5
     norm_adv: bool = True
-    clip_ploss_coef: float = 0.2
-    clip_ploss_coef_base: float = 0.2
+    clip_ploss_coef: float = 0.001
+    clip_ploss_coef_base: float = 0.001
     n_critic_warmup_itr: int = 0
     
     logprob_noise_level: float = 0.5

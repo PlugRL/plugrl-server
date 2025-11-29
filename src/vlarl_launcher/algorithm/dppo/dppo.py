@@ -1,4 +1,5 @@
 import dataclasses
+from collections import deque
 import numpy as np
 import torch
 import torch.nn as nn
@@ -146,6 +147,12 @@ class DPPOAlgorithm(BaseAlgorithm):
         self.global_step = 0
         self.curr_train_itrs = 0
         self.last_saved_itr = 0
+        self._episode_stats = deque()
+        self._buffer_pbar = tqdm.tqdm(
+            total=self.rollout_buffer.buffer_size,
+            ncols=0,
+            leave=False,
+        )
             
     def infer(self, obs: dict) -> tuple[np.ndarray, InternalState]:
         with torch.inference_mode():
@@ -181,10 +188,11 @@ class DPPOAlgorithm(BaseAlgorithm):
                     "episode/length": info["episode"]["l"],
                     "episode/success": info["episode"]["s"],
                 }
-                logger.info(f"global_step={self.global_step}, " + ", ".join([f"{k}={v}" for k, v in log_dict.items()]))
+                self._record_episode_stats(info["episode"])
+                self._buffer_pbar.set_description(self._format_buffer_desc(self._current_episode_metrics()))
             self.rollout_buffer.finish_rollout(info=info)
-        self.global_step += 1    
-        logger.debug(f"Feedback processed. Current buffer size: {self.rollout_buffer.idx}/{self.rollout_buffer.buffer_size}")
+        self.global_step += 1
+        self._buffer_pbar.update(1)
         return current_node, self.global_step, log_dict
     
     def learn(self) -> tuple[int, dict]:
@@ -355,12 +363,10 @@ class DPPOAlgorithm(BaseAlgorithm):
             "train/train_itrs": self.curr_train_itrs,
         }
         train_info.update(description)
-        
-        train_info_str = "\n".join([f"  {k}: {v:.9f}" for k, v in train_info.items()])
-
-        logger.debug(f"DPPOAlgorithm learn info: \n{train_info_str}")
-        
         self.rollout_buffer.reset()
+        self._episode_stats.clear()
+        self._buffer_pbar.reset(total=self.rollout_buffer.buffer_size)
+        self._buffer_pbar.set_description(self._format_buffer_desc(self._current_episode_metrics()))
         self.curr_train_itrs += 1
         
         return self.global_step, train_info
@@ -402,3 +408,18 @@ class DPPOAlgorithm(BaseAlgorithm):
         if "last_saved_itr" in checkpoint.meta:
             self.last_saved_itr = checkpoint.meta["last_saved_itr"]
         logger.info(f"Loaded checkpoint at step {self.global_step}, train_itrs {self.curr_train_itrs}, last_saved_itr {self.last_saved_itr}")
+
+    def _record_episode_stats(self, episode_info: dict) -> None:
+        success = float(episode_info.get("s", 0.0))
+        reward = float(episode_info.get("r", 0.0))
+        length = float(episode_info.get("l", 0.0))
+        self._episode_stats.append((success, reward, length))
+
+    def _current_episode_metrics(self) -> dict[str, float]:
+        if not self._episode_stats:
+            return {"success": 0.0, "reward": 0.0, "length": 0.0}
+        stats = np.asarray(self._episode_stats, dtype=np.float32)
+        return {"train/success": stats[:, 0].mean(), "train/reward": stats[:, 1].mean(), "train/length": stats[:, 2].mean()}
+
+    def _format_buffer_desc(self, metrics: dict[str, float]) -> str:
+        return ", ".join(f"{k}: {v:.2f}" for k, v in metrics.items())
