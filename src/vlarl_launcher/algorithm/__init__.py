@@ -1,6 +1,4 @@
-from .dummy_algorithm import DummyAlgorithm
+import vlarl_launcher.algorithm.dummy_algorithm
 
-try:
-    from .dppo.dppo_config import DPPOAlgoConfig
-except ImportError:
-    pass
+import vlarl_launcher.algorithm.dppo.dppo_config
+import vlarl_launcher.algorithm.dppo.dppo_dist_config

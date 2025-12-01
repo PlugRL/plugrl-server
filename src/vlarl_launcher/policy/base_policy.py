@@ -11,7 +11,7 @@ from vlarl_launcher.common.tensor_container import tensor_container, TensorConta
 @dataclasses.dataclass
 class BasePolicyConfig:
     algo: tyro.conf._markers.Suppress[str] = "unknown"
-    device: Literal["cpu", "cuda"] = "cuda"
+    device: torch.device | Literal["cpu", "cuda"] = "cuda"
 
 @tensor_container
 class InternalState(TensorContainer):
@@ -25,7 +25,7 @@ class BasePolicy(abc.ABC, nn.Module):
     def __init__(self, config: BasePolicyConfig):
         super().__init__()
         self.config = config
-        self.device = torch.device("cuda" if config.device == "cuda" and torch.cuda.is_available() else "cpu")
+        self.device = config.device if isinstance(config.device, torch.device) else torch.device(config.device)
         
     def prepare_observation(self, _obs: dict) -> torch.Tensor | tensordict.TensorDict:
         ...

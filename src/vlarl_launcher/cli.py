@@ -55,6 +55,8 @@ class Args:
             self.exp_name = create_exp_name(self.prefix)
             if self.suffix is not None:
                 self.exp_name = f"{self.exp_name}_{self.suffix}"
+        
+        self.policy.algo = self.algo_uid
                 
     @property
     def checkpoint_dir(self):
@@ -163,6 +165,7 @@ def _main(args: Args):
     logger.info(f"Policy created: \n{policy}")
     
     algo = make_algo(args.algo_uid, policy=policy, config=args.algo)
+    algo.init_optimizers()
     logger.info(f"Algorithm created: \n{algo}")
 
     if args.resume:

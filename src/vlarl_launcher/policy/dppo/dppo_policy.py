@@ -47,7 +47,7 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         
         cfg = omegaconf.OmegaConf.load(cfg_path)
         omegaconf.OmegaConf.resolve(cfg)
-        
+        cfg.model.device = str(self.device)
         self.actor: dppo.diffusion.DiffusionModel = hydra.utils.instantiate(cfg.model)
         self.obs_dim = self.actor.obs_dim
         if isinstance(config.critic, DPPOCriticObsConfig):

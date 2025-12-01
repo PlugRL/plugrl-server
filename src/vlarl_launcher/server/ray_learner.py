@@ -1,3 +1,4 @@
+import dataclasses
 import os
 import uuid
 import ray
@@ -7,18 +8,38 @@ import torch.nn.parallel
 from loguru import logger
 from typing import Any, Dict
 
-from vlarl_launcher.algorithm.base_algorithm import DDPAlgorithm
+from vlarl_launcher.algorithm.base_algorithm import DDPAlgorithm, BaseAlgoConfig
+from vlarl_launcher.policy.base_policy import BasePolicyConfig
+from vlarl_launcher.policy.registration import make_policy
+from vlarl_launcher.algorithm.registration import make_algo
 from vlarl_launcher.common.checkpoint_manager import Checkpoint
+
+@dataclasses.dataclass
+class LearnerAlgoSpec:
+    algo_uid: str
+    algo_config: BaseAlgoConfig
+    policy_uid: str
+    policy_config: BasePolicyConfig
+    initial_checkpoint: Checkpoint | None = None
 
 @ray.remote(num_gpus=1)
 class DDPWorker:
-    def __init__(self, algo_refs: list[ray.ObjectRef], rank: int, world_size: int, master_addr: str, master_port: str):
-        self.algo: DDPAlgorithm = ray.get(algo_refs[0])
+    algo: DDPAlgorithm
+    device: torch.device
+    def __init__(self, algo_spec: LearnerAlgoSpec, rank: int, world_size: int, master_addr: str, master_port: str):
+        policy = make_policy(
+            algo_spec.policy_uid, 
+            config=dataclasses.replace(algo_spec.policy_config, device="cuda")
+        )
+        algo = make_algo(
+            algo_spec.algo_uid, config=algo_spec.algo_config, policy=policy
+        )
+        assert isinstance(algo, DDPAlgorithm), f"Algorithm {algo_spec.algo_uid} is not a DDPAlgorithm."
+        self.algo = algo
+        self.device = torch.device("cuda")
         self.rank = rank
         self.world_size = world_size
         
-        self.device = torch.device("cuda", 0)
-        print(self.device, self.algo, self.rank)
         os.environ['MASTER_ADDR'] = master_addr
         os.environ['MASTER_PORT'] = master_port
         
@@ -27,22 +48,21 @@ class DDPWorker:
             rank=self.rank, 
             world_size=self.world_size,
         )
-        print(f"DDPWorker Rank {self.rank}: Initialized process group with master {master_addr}:{master_port}")
-        self.algo.set_device(self.device) 
-
         policy_ddp = torch.nn.parallel.DistributedDataParallel(
             self.algo.policy, 
             device_ids=[self.device], 
             output_device=self.device
         )
-
         self.algo.activate_ddp(policy_ddp)
-
+        self.algo.init_optimizers()
+        if algo_spec.initial_checkpoint is not None:
+            self.algo.load_checkpoint(algo_spec.initial_checkpoint)
+            
     def run_learn(self) -> tuple[Checkpoint | None, Dict[str, Any], int]:    
         global_step, train_info = self.algo.learn()
         
         if self.rank == 0:
-            checkpoint = self.algo.create_checkpoint()
+            checkpoint = self.algo.create_ddp_checkpoint()
             return checkpoint, train_info, global_step
         else:
             return None, {}, global_step
@@ -51,14 +71,14 @@ class DDPWorker:
         self.algo.load_server_data(global_step, meta_info, buffer_data_dict)
         
     def __del__(self):
-        if dist.is_initialized():
+        if dist is not None and dist.is_initialized():
             dist.destroy_process_group()
 
 
 @ray.remote(num_cpus=1)
 class LearnerActor:
     def __init__(self, 
-        learner_algo_refs: list[ray.ObjectRef], 
+        learner_algo_spec: LearnerAlgoSpec, 
         *,
         ddp_gpus: list[int],
         master_addr: str | None = None, master_port: str | None = None, 
@@ -71,7 +91,7 @@ class LearnerActor:
         logger.info(f"LearnerActor master address: {self.master_addr}, port: {self.master_port}")
         self.workers: list[DDPWorker] = [
             DDPWorker.remote(
-                learner_algo_refs, i, self.num_ddp_gpus, self.master_addr, self.master_port
+                learner_algo_spec, i, self.num_ddp_gpus, self.master_addr, self.master_port
             ) for i in ddp_gpus
         ]
         logger.info(f"LearnerActor initialized with {len(ddp_gpus)} DDP Workers.")

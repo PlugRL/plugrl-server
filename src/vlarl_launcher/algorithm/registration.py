@@ -1,6 +1,6 @@
 import dataclasses
 from collections import defaultdict
-from typing import Type, Dict
+from typing import Type, Dict, TypeVar, Callable
 from loguru import logger
 from vlarl_launcher.policy.base_policy import BasePolicy, BasePolicyConfig
 
@@ -19,11 +19,13 @@ class AlgoSpec:
 REGISTERED_ALGO_CONFIGS: Dict[str, Dict[str, BaseAlgoConfig]] = defaultdict(dict)
 REGISTERED_ALGORITHMS: Dict[str, AlgoSpec] = {}
 
-def register_algo(uid: str, override: bool = False, **default_kwargs):
-    def _register_algo(cls):
+T = TypeVar("T")
+
+def register_algo(uid: str, override: bool = False, **default_kwargs) -> Callable[[T], T]:
+    def _register_algo(cls: T) -> T:
         if uid in REGISTERED_ALGORITHMS and not override:
             raise KeyError(f"Algorithm {uid} is already registered.")
-        if not issubclass(cls, BaseAlgorithm):
+        if not issubclass(cls, BaseAlgorithm): # type: ignore
             raise TypeError(f"Algorithm {uid} must inherit from BaseAlgorithm")
         REGISTERED_ALGORITHMS[uid] = AlgoSpec(
             uid,

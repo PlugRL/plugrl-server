@@ -10,7 +10,6 @@ import ray
 import torch.distributed as dist
 
 from loguru import logger
-from typing import Any, Dict
 
 from vlarl_client import msgpack_numpy
 from vlarl_client.websocket_worker_agent import MessageType
@@ -40,7 +39,7 @@ class RayAgentServer:
         self._algorithm: DDPAlgorithm = inference_algorithm 
         self._checkpoint_manager: CheckpointManager = checkpoint_manager
         self._tracker = tracker
-        self._learner_actor: LearnerActor = learner_actor_ref # 存储 Ray Actor 句柄
+        self._learner_actor: LearnerActor = learner_actor_ref
         
         self._host = host
         self._port = port
@@ -54,6 +53,7 @@ class RayAgentServer:
         self._server = None
         
         self._total_connections = 0
+        self._fatal_reported = False
     
     def serve_forever(self) -> None:
         asyncio.run(self.run())
@@ -67,15 +67,42 @@ class RayAgentServer:
                 self._server = server
                 logger.info(f"Agent Server is listening on {self._host}:{self._port}")
                 await self._stop_event.wait()
+            await scheduler_task
+            logger.info("Scheduler task completed.")
+        except Exception as exc:
+            await self._handle_fatal("agent server runtime", exc)
+            raise
         finally:
             if self._server is not None:
                 self._server.close()
                 await self._server.wait_closed()
                 logger.info("WebSocket server closed.")
-            
-            scheduler_task.cancel()
-            await asyncio.gather(scheduler_task, return_exceptions=True)
-            logger.info("Scheduler task cancelled and cleaned up.")
+
+    async def _handle_fatal(self, context: str, exc: BaseException) -> None:
+        if not self._fatal_reported:
+            traceback_str = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+            logger.error(f"Fatal error in {context}:\n{traceback_str}")
+            self._fatal_reported = True
+        self._stop_event.set()
+        await self._shutdown_ray()
+
+    async def _shutdown_ray(self) -> None:
+        if ray.is_initialized():
+            await asyncio.to_thread(ray.shutdown)
+
+    def _resolve_infer_future(self, request: dict, *, result=None, exc: BaseException | None = None) -> None:
+        future = self._response_futures.get(request["id"])
+        if future and not future.done():
+            if exc is not None:
+                future.set_exception(exc)
+            else:
+                future.set_result(result)
+        self._infer_queue.task_done()
+
+    def _fail_infer_batch(self, batch: list[dict], exc: Exception) -> None:
+        for req in batch:
+            wrapped_exc = RuntimeError(f"Inference processing error: {exc}")
+            self._resolve_infer_future(req, exc=wrapped_exc)
             
     async def _handler(self, websocket: _server.ServerConnection):
         logger.info(f"Connection from {websocket.remote_address} opened")
@@ -174,17 +201,13 @@ class RayAgentServer:
         return self._algorithm.should_save()
 
     async def _update_inference_policy(self, checkpoint: Checkpoint):
-        try:
-            self._algorithm.load_learner_state(checkpoint)
-            logger.info("Local inference policy successfully updated.")
-        except Exception:
-            logger.error(f"Failed to update local inference policy.")
-            raise
+        self._algorithm.load_learner_state(checkpoint)
+        logger.info("Local inference policy successfully updated.")
 
     async def _process_infer(self):
-        batch = []
-        for _ in range(self._infer_queue.qsize()):
-            batch.append(await self._infer_queue.get())
+        batch = [await self._infer_queue.get() for _ in range(self._infer_queue.qsize())]
+        if not batch:
+            return
         try:
             obs = batch_aggregate([req["obs"] for req in batch])
             logger.debug(f"Processing inference for batch size {len(batch)}")
@@ -192,65 +215,52 @@ class RayAgentServer:
                 action, internal_state = self._algorithm.infer(obs)
             logger.debug(f"Inference done for batch size {len(batch)}")
             for i, req in enumerate(batch):
-                future = self._response_futures.get(req["id"])
-                if future and not future.done():
-                    future.set_result((action[i:i+1], internal_state[i:i+1]))
-                self._infer_queue.task_done()
-        except Exception:
-            traceback_str = traceback.format_exc()
-            logger.error(f"Error during inference processing:\n{traceback_str}")
-            for req in batch:
-                future = self._response_futures.get(req["id"])
-                if future and not future.done():
-                    future.set_exception(Exception("Inference processing error."))
+                self._resolve_infer_future(req, result=(action[i:i+1], internal_state[i:i+1]))
+        except Exception as exc:
+            self._fail_infer_batch(batch, exc)
+            raise
 
     async def _process_learn(self):
         logger.info("Scheduler initiating distributed training via LearnerActor.")
-        try:
-            self._algorithm.pre_learn()
-            global_step, meta_info, serializable_buffer_data = self._algorithm.get_server_data()
-            buffer_data_ref = await asyncio.to_thread(ray.put, serializable_buffer_data)
+        self._algorithm.pre_learn()
+        global_step, meta_info, serializable_buffer_data = self._algorithm.get_server_data()
+        buffer_data_ref = await asyncio.to_thread(ray.put, serializable_buffer_data)
 
-            learn_ref = self._learner_actor.learn.remote(global_step, meta_info, buffer_data_ref)
-            checkpoint, global_step, train_info = await asyncio.to_thread(ray.get, learn_ref)
-            
-            await self._update_inference_policy(checkpoint)
+        learn_ref = self._learner_actor.learn.remote(global_step, meta_info, buffer_data_ref)
+        checkpoint, global_step, train_info = await asyncio.to_thread(ray.get, learn_ref)
+        
+        await self._update_inference_policy(checkpoint)
 
-            await asyncio.to_thread(self._tracker.log, train_info, step=global_step)
-            logger.info(f"Logged training info for step {global_step}.")
-            self._algorithm.post_learn()
-            
-        except Exception:
-            logger.error(f"Error during distributed learning.")
-            traceback.print_exc()
+        await asyncio.to_thread(self._tracker.log, train_info, step=global_step)
+        logger.info(f"Logged training info for step {global_step}.")
+        self._algorithm.post_learn()
 
     async def _process_save(self):
-        try: 
-            checkpoint = await asyncio.to_thread(self._algorithm.create_checkpoint) 
-            await asyncio.to_thread(self._checkpoint_manager.save_checkpoint, checkpoint)
-            logger.info(f"Checkpoint saved locally at step {checkpoint.step}.")
-        except Exception:
-            traceback_str = traceback.format_exc()
-            logger.error(f"Error during saving checkpoint:\n{traceback_str}")
+        checkpoint = await asyncio.to_thread(self._algorithm.create_ddp_checkpoint) 
+        await asyncio.to_thread(self._checkpoint_manager.save_checkpoint, checkpoint)
+        logger.info(f"Checkpoint saved locally at step {checkpoint.step}.")
 
     async def _main_scheduler_loop(self):
-        while True:
-            if self.should_infer():
-                await self._process_infer()
-                
-            async with self._model_lock:
-                if self.should_learn():
-                    await self._process_learn()
-                
-            async with self._model_lock:
-                if self.should_save() or self.should_stop():
-                    await self._process_save()
-                    
-            if self.should_stop():
-                self._stop_event.set()
-                logger.info("Stopping server as the algorithm signaled to stop.")
-                if ray.is_initialized():
-                    await asyncio.to_thread(ray.shutdown) 
-                break
-                
-            await asyncio.sleep(SCHEDULER_SLEEP_INTERVAL)
+        try:
+            while not self._stop_event.is_set():
+                if self.should_infer():
+                    await self._process_infer()
+
+                async with self._model_lock:
+                    if self.should_learn():
+                        await self._process_learn()
+
+                    stop_requested = self.should_stop()
+                    if self.should_save() or stop_requested:
+                        await self._process_save()
+
+                    if stop_requested:
+                        self._stop_event.set()
+                        logger.info("Stopping server as the algorithm signaled to stop.")
+                        await self._shutdown_ray()
+                        break
+
+                await asyncio.sleep(SCHEDULER_SLEEP_INTERVAL)
+        except Exception as exc:
+            await self._handle_fatal("scheduler loop", exc)
+            raise

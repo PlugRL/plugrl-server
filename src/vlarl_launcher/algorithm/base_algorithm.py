@@ -16,6 +16,13 @@ class BaseAlgorithm(abc.ABC):
         self.config = config
         self.policy = policy
         
+    def init_optimizers(self) -> None:
+        ...
+        
+    @property
+    def active_policy(self) -> BasePolicy:
+        return self.policy
+        
     @abc.abstractmethod
     def infer(self, obs: dict) -> tuple[np.ndarray, InternalState]:
         ...
@@ -55,14 +62,12 @@ class BaseAlgorithm(abc.ABC):
         ...
 
 class DDPAlgorithm(BaseAlgorithm):
+    ddp_enabled: bool
+    
     @abc.abstractmethod
     def activate_ddp(self, ddp_policy) -> None:
         ...
-
-    @abc.abstractmethod
-    def set_device(self, device) -> None:
-        ...
-
+        
     @abc.abstractmethod
     def get_server_data(self) -> tuple[int, dict, dict]:
         ...
@@ -71,9 +76,10 @@ class DDPAlgorithm(BaseAlgorithm):
     def load_server_data(self, global_step: int, meta_info: dict, data: dict) -> None:
         ...
         
-    def get_active_policy(self) -> BasePolicy:
-        return self.policy
-
     @abc.abstractmethod
     def load_learner_state(self, checkpoint: Checkpoint) -> None:
+        ...
+        
+    @abc.abstractmethod
+    def create_ddp_checkpoint(self) -> Checkpoint:
         ...

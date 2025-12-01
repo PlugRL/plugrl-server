@@ -1,6 +1,6 @@
 import dataclasses
+from vlarl_launcher.algorithm.registration import register_algo_config
 from .dppo import DPPOAlgoConfig, UID, SchedulerConfig
-from ..registration import register_algo_config
 
 @register_algo_config(UID, "hopper")
 @dataclasses.dataclass
@@ -34,6 +34,8 @@ class DPPOAlgoConfigHopper(DPPOAlgoConfig):
     clip_ploss_coef: float = 0.01
     clip_ploss_coef_base: float = 0.01
     n_critic_warmup_itr: int = 0
+    logprob_noise_level: float = 0.1
+    sampling_noise_level: float = 0.1
     
 @register_algo_config(UID, "libero")
 @dataclasses.dataclass
