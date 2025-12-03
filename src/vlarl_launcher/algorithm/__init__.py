@@ -1,4 +1,5 @@
 import vlarl_launcher.algorithm.dummy_algorithm
+import vlarl_launcher.algorithm.evaluation
 
 import vlarl_launcher.algorithm.dppo.dppo_config
 import vlarl_launcher.algorithm.dppo.dppo_dist_config

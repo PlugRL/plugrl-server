@@ -36,6 +36,7 @@ def move_optimizer_to_cpu(optimizer_state: dict[str, Any]) -> dict[str, Any]:
             return obj
     return move_to_cpu(optimizer_state)
 
+
 @dataclasses.dataclass
 class Checkpoint:
     step: int
@@ -43,6 +44,41 @@ class Checkpoint:
     optimizer: dict[str, Any] | None = None
     meta: dict = dataclasses.field(default_factory=lambda: {})
 
+def load_checkpoint_from_path(checkpoint_path: Path, step=0) -> Checkpoint:
+    if not checkpoint_path.exists():
+        raise FileNotFoundError(f"Checkpoint path {checkpoint_path} does not exist.")
+    
+    checkpoint = Checkpoint(step=step)
+    
+    try:
+        logger.info(f"Loading model state from {checkpoint_path}...")
+        safetensors_path = checkpoint_path / 'model.safetensors'
+        if safetensors_path.exists():
+            checkpoint.model = safetensors.torch.load_file(safetensors_path)
+
+        logger.info(f"Loading optimizer state from {checkpoint_path}...")
+        optimizer_path = checkpoint_path / 'optimizer.pt'
+        if optimizer_path.exists():
+            checkpoint.optimizer = torch.load(optimizer_path, map_location='cpu', weights_only=False)
+            
+        logger.info(f"Loading metadata from {checkpoint_path}...")
+        metadata_path = checkpoint_path / 'metadata.pt'
+        if metadata_path.exists():
+            metadata = torch.load(metadata_path, map_location='cpu', weights_only=False)
+            checkpoint.meta = metadata.get('checkpoint_meta', {})
+            checkpoint.step = metadata.get('step', 0)
+        else:
+            logger.warning("Metadata file not found. Resuming step may be inaccurate.")
+        
+        logger.info(f"Checkpoint loaded from {checkpoint_path}.")
+        return checkpoint
+    except Exception as e:
+        if "out of memory" in str(e).lower():
+            torch.cuda.empty_cache()
+            gc.collect()
+            logger.error("Out of memory error while loading checkpoint. Try reducing batch size or using a machine with more memory.")
+        raise
+    
 class CheckpointManager:
     checkpoint_dir: Path
     config: dict
@@ -116,33 +152,5 @@ class CheckpointManager:
             torch.cuda.empty_cache()
             gc.collect()
             
-        checkpoint = Checkpoint(step=step)
-        
-        try:
-            logger.info(f"Loading model state...")
-            safetensors_path = ckpt_dir / 'model.safetensors'
-            if safetensors_path.exists():
-                checkpoint.model = safetensors.torch.load_file(safetensors_path)
-
-            logger.info(f"Loading optimizer state...")
-            optimizer_path = ckpt_dir / 'optimizer.pt'
-            if optimizer_path.exists():
-                checkpoint.optimizer = torch.load(optimizer_path, map_location='cpu', weights_only=False)
-                
-            logger.info(f"Loading metadata...")
-            metadata_path = ckpt_dir / 'metadata.pt'
-            if metadata_path.exists():
-                metadata = torch.load(metadata_path, map_location='cpu', weights_only=False)
-                checkpoint.meta = metadata.get('checkpoint_meta', {})
-                assert metadata['step'] == step, "Checkpoint step mismatch in metadata."
-            else:
-                logger.warning("Metadata file not found. Resuming step may be inaccurate.")
-            
-            logger.info(f"Checkpoint loaded from step {step}.")
-            return checkpoint
-        except Exception as e:
-            if "out of memory" in str(e).lower():
-                torch.cuda.empty_cache()
-                gc.collect()
-                logger.error("Out of memory error while loading checkpoint. Try reducing batch size or using a machine with more memory.")
-            raise
+        checkpoint = load_checkpoint_from_path(ckpt_dir, step=step)
+        return checkpoint
