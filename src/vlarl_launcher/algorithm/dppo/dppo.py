@@ -415,7 +415,7 @@ class DPPOAlgorithm(BaseAlgorithm):
     def load_checkpoint(self, checkpoint: Checkpoint) -> None:
         self.global_step = checkpoint.step
         if checkpoint.model is not None:
-            self.policy.load_state_dict(checkpoint.model)
+            self.active_policy.load_state_dict(checkpoint.model)
         if checkpoint.optimizer is not None:
             self.actor_optimizer.load_state_dict(checkpoint.optimizer["actor"])
             if self.critic_optimizer is not None and checkpoint.optimizer["critic"] is not None:
