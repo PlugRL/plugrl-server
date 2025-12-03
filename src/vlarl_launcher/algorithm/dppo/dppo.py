@@ -82,6 +82,7 @@ class DPPOAlgoConfig(BaseAlgoConfig):
     use_normalized_rewards: bool = True
 
     batch_size: int = 1024
+    critic_batch_size: int | None = None
     train_itrs: int = 200
     save_interval: int = 10
     """number of steps to accumulate gradients over before calling optimizer.step()"""
@@ -90,6 +91,10 @@ class DPPOAlgoConfig(BaseAlgoConfig):
     @property
     def total_steps(self) -> int:
         return self.buffer_size * self.train_itrs
+    
+    def __post_init__(self):
+        if self.critic_batch_size is None:
+            self.critic_batch_size = self.batch_size
     
 @register_algo(UID)
 class DPPOAlgorithm(BaseAlgorithm):
@@ -119,6 +124,7 @@ class DPPOAlgorithm(BaseAlgorithm):
             total=self.rollout_buffer.buffer_size,
             ncols=0,
             leave=False,
+            smoothing=0.01,
         )
     
     @property
@@ -177,20 +183,16 @@ class DPPOAlgorithm(BaseAlgorithm):
         next_obs: dict, reward: float, next_terminated: bool, next_truncated: bool, info: dict, prev_node: tuple
     ) -> tuple[tuple, int, dict]:
         assert internal_state is not None, "Internal state must be provided for feedback."
-        if terminated or truncated:
-            with torch.inference_mode():
-                last_value = self.active_policy.get_value(next_obs)
-        else:
-            last_value = None
-
         current_node = self.rollout_buffer.add_frame(
             prev_node=prev_node,
             internal_state=internal_state,
             reward=reward,
             done=truncated or terminated,
-            last_value=last_value,
+            last_value=None,
             next_done=next_truncated or next_terminated
         )
+        if terminated or truncated:
+            self.rollout_buffer.add_done_obs_value_request(obs=next_obs, end_node=prev_node)
         log_dict = {}
         if next_terminated or next_truncated:
             if "episode" in info:
@@ -207,7 +209,7 @@ class DPPOAlgorithm(BaseAlgorithm):
         return current_node, self.global_step, log_dict
     
     def pre_learn(self) -> None:
-        self.rollout_buffer.compute_advantages_and_returns()
+        self.rollout_buffer.compute_advantages_and_returns(policy=self.active_policy, batch_size=self.config.batch_size)
         
     def create_dataloaders(self) -> tuple[torch.utils.data.Sampler | None, torch.utils.data.DataLoader]:
         return None, torch.utils.data.DataLoader(
@@ -307,6 +309,7 @@ class DPPOAlgorithm(BaseAlgorithm):
 
         grad_accum = max(1, int(self.config.grad_accum_steps))
         for update_epoch in range(self.config.update_epochs):
+            logger.info(f"DPPO Update Epoch {update_epoch + 1}/{self.config.update_epochs}")
             if sampler is not None:
                 sampler.set_epoch(update_epoch) # type: ignore
 
@@ -316,7 +319,7 @@ class DPPOAlgorithm(BaseAlgorithm):
                 self.critic_optimizer.zero_grad()
             accum_steps = 0
 
-            for batch in tqdm.tqdm(dataloader, ncols=0):
+            for batch in dataloader:
                 obs, action, oldlogprob, reward, value, advantage, ret = (t.to(self.active_policy.device) for t in batch)
                 pg_loss, v_loss, entropy_loss, logratio, ratio = self._compute_loss(
                     obs, action, oldlogprob, reward, value, advantage, ret

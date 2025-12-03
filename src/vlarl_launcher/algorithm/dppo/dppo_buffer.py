@@ -1,10 +1,12 @@
 import uuid
 import numpy as np
 import torch
+from collections import deque
 from dppo.util.reward_scaling import RunningMeanStd
 
 from vlarl_launcher.buffer.rollout_buffer import GAEBuffer
-from vlarl_launcher.policy.base_policy import InternalState
+from vlarl_launcher.policy.base_policy import InternalState, BasePolicy
+from vlarl_launcher.common.data_utils import batch_aggregate
 
 class DPPOBuffer(GAEBuffer):
     def __init__(
@@ -20,8 +22,14 @@ class DPPOBuffer(GAEBuffer):
         self.epsilon = epsilon
         self.use_normalized_rewards = use_normalized_rewards
         self.rets = self.rewards.clone()
+        self.done_obs_value_requests = deque()
     
-    def add_frame(self, *, prev_node: tuple[int, uuid.UUID], internal_state: InternalState, reward: float, done: bool, last_value: torch.Tensor | None, next_done: bool) -> tuple[int, uuid.UUID]:        
+    def add_frame(self, 
+        *, 
+        prev_node: tuple[int, uuid.UUID], 
+        internal_state: InternalState, reward: float, done: bool, 
+        last_value: torch.Tensor | None, next_done: bool
+    ) -> tuple[int, uuid.UUID]:        
         if self.idx >= self.buffer_size:
             return (-1, self.buffer_signature) 
         prev_idx, prev_signature = prev_node
@@ -44,7 +52,10 @@ class DPPOBuffer(GAEBuffer):
         self.idx += 1
         return (current_idx, self.buffer_signature)
     
-    def compute_advantages_and_returns(self):
+    def add_done_obs_value_request(self, *, obs: dict, end_node: tuple[int, uuid.UUID]):
+        self.done_obs_value_requests.append((obs, end_node))
+    
+    def compute_advantages_and_returns(self, policy: BasePolicy | None = None, batch_size: int = 1):
         # Normalize rewards
         rets = self.rets[:self.idx].cpu().numpy()
         self.ret_rms.update(rets)
@@ -53,5 +64,19 @@ class DPPOBuffer(GAEBuffer):
                 self.rewards[:self.idx] / torch.sqrt(torch.tensor(self.ret_rms.var + self.epsilon).float()), 
                 -self.cliprew, self.cliprew
             )
+            
+        done_observations = [obs for obs, _ in self.done_obs_value_requests]
+        done_nodes = [node for _, node in self.done_obs_value_requests]
+        if len(done_observations) > 0:
+            assert policy is not None, "Policy must be provided to compute values for done observations."
+            for i in range(0, len(done_observations), batch_size):
+                batch_obs = batch_aggregate(done_observations[i:i+batch_size])
+                with torch.inference_mode():
+                    batch_values = policy.get_value(batch_obs).cpu()
+                for j, node in enumerate(done_nodes[i:i+batch_size]):
+                    idx, signature = node
+                    if signature == self.buffer_signature:
+                        self.last_values[idx] = batch_values[j]
+            self.done_obs_value_requests.clear()
         
         return super().compute_advantages_and_returns()
