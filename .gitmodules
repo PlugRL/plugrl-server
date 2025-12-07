@@ -1,3 +1,3 @@
 [submodule "third_party/openpi"]
     path = third_party/openpi
-    url = git@github.com:CTP314/openpi.git
+    url = https://github.com/CTP314/openpi.git
