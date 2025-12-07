@@ -1120,7 +1120,7 @@ robomimic = ["cython (<3)", "d4rl", "patchelf", "robomimic @ git+https://github.
 
 [package.source]
 type = "git"
-url = "ssh://git@github.com/CTP314/dppo.git"
+url = "https://github.com/CTP314/dppo.git"
 reference = "HEAD"
 resolved_reference = "89ac4169b3c145a54ce4dc2f8f55ef6cc8980b1c"
 
@@ -2340,7 +2340,7 @@ xarm = ["gym-xarm (>=0.1.1) ; python_version < \"4.0\""]
 
 [package.source]
 type = "git"
-url = "ssh://git@github.com/huggingface/lerobot.git"
+url = "https://github.com/huggingface/lerobot.git"
 reference = "ed83cbd"
 resolved_reference = "ed83cbd4f2091a3e97cdd0c48cc657020c037240"
 
@@ -5337,7 +5337,7 @@ robomimic = ["cython (<3)", "d4rl", "patchelf", "robomimic @ git+https://github.
 
 [package.source]
 type = "git"
-url = "ssh://git@github.com/CTP314/ReinFlow.git"
+url = "https://github.com/CTP314/ReinFlow.git"
 reference = "HEAD"
 resolved_reference = "1307057af17a065f4bfd752b1000558d0514da3f"
 
@@ -6443,7 +6443,7 @@ numpy = "<2.3.3"
 
 [package.source]
 type = "git"
-url = "ssh://git@github.com/CTP314/vlarl-client.git"
+url = "https://github.com/CTP314/vlarl-client.git"
 reference = "HEAD"
 resolved_reference = "ccae3ffab06dfd5fccadc982913d0a5184db5f48"
 
@@ -7103,4 +7103,4 @@ reference = "mirrors"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.14"
-content-hash = "519c26d8865e4f7215349c86fdb98d0e756f7feffe84909a4b87a7079816514e"
+content-hash = "8ceac510cbb91310f285b006b70c2374c35a7c871846e043a8bcc0dd09a239de"
