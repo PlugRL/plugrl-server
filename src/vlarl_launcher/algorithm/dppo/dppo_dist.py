@@ -76,6 +76,7 @@ class DPPOAlgoDistributed(_dppo.DPPOAlgorithm, DDPAlgorithm):
 
     def load_learner_state(self, checkpoint: Checkpoint) -> None:
         assert checkpoint.model is not None, "Checkpoint does not contain model state."
+        self.global_step = checkpoint.step
         self.policy.load_state_dict(checkpoint.model)
         self.checkpoint_cache = checkpoint
         self.curr_train_itrs = checkpoint.meta.get("train_itrs", 0)

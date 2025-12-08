@@ -19,7 +19,7 @@ from vlarl_launcher.common.data_utils import batch_aggregate
 
 SCHEDULER_SLEEP_INTERVAL = 0.001  # seconds
 INFER_READY_TIMEOUT = 5.0  # seconds to wait for full infer batch before warning
-FEEDBACK_WAIT_TIMEOUT = 10.0  # seconds to wait for client feedback before closing
+FEEDBACK_WAIT_TIMEOUT = 60.0  # seconds to wait for client feedback before closing
 
 class WebSocketAgentServer:
     def __init__(
@@ -71,14 +71,13 @@ class WebSocketAgentServer:
             logger.info("Scheduler task cancelled and cleaned up.")
             
     async def _handler(self, websocket: _server.ServerConnection):
-        logger.info(f"Connection from {websocket.remote_address} opened")
+        logger.info(f"Connection from {websocket.remote_address} opened. Total connections: {self._total_connections + 1}")
         packer = msgpack_numpy.Packer()
         session_id = str(websocket.remote_address)
 
         try:
             metadata_message = dict(message_type=str(MessageType.METADATA), data=self._metadata)
             await websocket.send(packer.pack(metadata_message))
-            logger.info("Sent initial metadata to client.")
             self._total_connections += 1
             prev_node: tuple = (-1, "")
             terminated, truncated = False, False  
@@ -153,8 +152,8 @@ class WebSocketAgentServer:
                 terminated, truncated = next_terminated, next_truncated
                 
         except websockets.ConnectionClosed:
-            logger.info(f"Connection from {websocket.remote_address} closed.")
             self._total_connections -= 1
+            logger.info(f"Connection from {websocket.remote_address} closed. Total connections: {self._total_connections}")
         except Exception:
             traceback_str = traceback.format_exc()
             logger.error(f"Internal server error:\n{traceback_str}")
