@@ -7,7 +7,7 @@ import websockets.asyncio.server as _server
 import websockets.frames
 import uuid
 import ray
-import torch.distributed as dist
+from torch.utils.tensorboard import SummaryWriter
 
 from loguru import logger
 
@@ -29,7 +29,7 @@ class RayAgentServer:
         self,
         inference_algorithm: DDPAlgorithm,
         checkpoint_manager: CheckpointManager,
-        tracker: swanlab.run.SwanLabRun | wandb.Run,
+        writer: SummaryWriter,
         learner_actor_ref: ray.ObjectRef,
         
         host: str = "0.0.0.0", 
@@ -38,7 +38,7 @@ class RayAgentServer:
     ):
         self._algorithm: DDPAlgorithm = inference_algorithm 
         self._checkpoint_manager: CheckpointManager = checkpoint_manager
-        self._tracker = tracker
+        self._writer = writer
         self._learner_actor: LearnerActor = learner_actor_ref
         
         self._host = host
@@ -172,7 +172,7 @@ class RayAgentServer:
                         info=info,
                         prev_node=prev_node
                     )
-                    await asyncio.to_thread(self._tracker.log, log_dict, step=step)
+                    await asyncio.to_thread(self.log, log_dict, step=step)
                     
                 terminated, truncated = next_terminated, next_truncated
                 
@@ -187,6 +187,10 @@ class RayAgentServer:
                 code=websockets.frames.CloseCode.INTERNAL_ERROR,
                 reason="Internal server error."
             )
+            
+    def log(self, log_dict: dict, step: int):
+        for key, value in log_dict.items():
+            self._writer.add_scalar(key, value, step)
 
     def should_infer(self) -> bool:
         return self._infer_queue.qsize() == self._total_connections and self._total_connections > 0
@@ -231,7 +235,7 @@ class RayAgentServer:
         
         await self._update_inference_policy(checkpoint)
 
-        await asyncio.to_thread(self._tracker.log, train_info, step=global_step)
+        await asyncio.to_thread(self.log, train_info, step=global_step)
         logger.info(f"Logged training info for step {global_step}.")
         self._algorithm.post_learn()
 

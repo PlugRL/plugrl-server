@@ -106,49 +106,48 @@ def build_cli_from_registry(args_cls: type[ArgsT]) -> ArgsT:
     return subcommand_cli_from_nested_dict(configs)[0][0][0]
         
 
-def init_tracker(args: Args, *, resuming: bool, log_code: bool, enabled: bool = True):
+def init_writer_by_tracker(args: Args, *, resuming: bool, log_code: bool, enabled: bool = True):
     if args.track.tracker == "wandb":
         import wandb
         tracker_module = wandb
     else:
         import swanlab
         tracker_module = swanlab
-
-    if not enabled:
-        tracker = tracker_module.init(mode="disabled")
-        return tracker
-
-    ckpt_dir = args.checkpoint_dir
-    if not ckpt_dir.exists():
-        raise FileNotFoundError(f"Checkpoint directory {ckpt_dir} does not exist.")
-    project_name = f"{args.track.project_name}-{args.algo_uid}-{args.policy_uid}"
-    if resuming:
-        run_id = (ckpt_dir / "run_id.txt").read_text().strip()
-        tracker = tracker_module.init(id=run_id, resume="must", project=project_name, entity=args.track.entity or None)
-    else:
-        tracker = tracker_module.init(
-            entity=args.track.entity or None,
-            project=project_name,
-            name=args.full_exp_name,
-            config=dataclasses.asdict(args),
-            save_code=log_code,
-        )
-        run_id_value = tracker.id
-        if run_id_value is None:
-            raise RuntimeError("Tracker did not return a run id")
-        (ckpt_dir / "run_id.txt").write_text(run_id_value)
             
-    return tracker
+    if not enabled:
+        tracker = tracker_module.init(mode="disabled", sync_tensorboard=True)
+    else:
+        ckpt_dir = args.checkpoint_dir
+        if not ckpt_dir.exists():
+            raise FileNotFoundError(f"Checkpoint directory {ckpt_dir} does not exist.")
+        project_name = f"{args.track.project_name}-{args.algo_uid}-{args.policy_uid}"
+        if resuming:
+            run_id = (ckpt_dir / "run_id.txt").read_text().strip()
+            tracker = tracker_module.init(id=run_id, resume="must", project=project_name, entity=args.track.entity or None, sync_tensorboard=True)
+        else:
+            tracker = tracker_module.init(
+                entity=args.track.entity or None,
+                project=project_name,
+                name=args.full_exp_name,
+                config=dataclasses.asdict(args),
+                save_code=log_code,
+                sync_tensorboard=True,
+            )
+            run_id_value = tracker.id
+            if run_id_value is None:
+                raise RuntimeError("Tracker did not return a run id")
+            (ckpt_dir / "run_id.txt").write_text(run_id_value)
+
+    from torch.utils.tensorboard import SummaryWriter
+    writer = SummaryWriter(log_dir=str(args.checkpoint_dir / "tensorboard"))
+    writer.add_text(
+        "hyperparameters",
+        "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
+    )
+    return writer, tracker
 
 def _main(args: Args):
     logger.configure(handlers=[{"sink": sys.stdout, "level": args.log_level.upper(), "format": "{time:HH:mm:ss}|{level}|{message}"}])
-    
-    if args.track.tracker == "wandb":
-        import wandb
-        tracker = wandb
-    else:
-        import swanlab
-        tracker = swanlab
             
     logger.info(f"vlarl_launcher version: {vlarl_launcher.__version__}")
     logger.info(f"Algorithm: {args.algo_uid}, Config: {args.algo}")
@@ -159,7 +158,7 @@ def _main(args: Args):
     )   
     logger.info(f"Checkpoint Manager created: \n{checkpoint_manager} at {args.checkpoint_dir}")
 
-    tracker = init_tracker(args, resuming=args.resume, log_code=not args.resume, enabled=args.track.enabled)
+    writer, tracker = init_writer_by_tracker(args, resuming=args.resume, log_code=not args.resume, enabled=args.track.enabled)
     
     policy = make_policy(args.policy_uid, config=args.policy)
     logger.info(f"Policy created: \n{policy}")
@@ -175,7 +174,7 @@ def _main(args: Args):
         logger.info(f"Resumed from checkpoint at step {checkpoint.step}")
         algo.load_checkpoint(checkpoint)
 
-    server = WebSocketAgentServer(algo, checkpoint_manager, tracker, host=args.host, port=args.port)
+    server = WebSocketAgentServer(algo, checkpoint_manager, writer, host=args.host, port=args.port)
     server.serve_forever()
     
 def main():

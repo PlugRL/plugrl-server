@@ -196,11 +196,6 @@ class DPPOAlgorithm(BaseAlgorithm):
         log_dict = {}
         if next_terminated or next_truncated:
             if "episode" in info:
-                log_dict = {
-                    "episode/reward": info["episode"]["r"],
-                    "episode/length": info["episode"]["l"],
-                    "episode/success": info["episode"]["s"],
-                }
                 self._record_episode_stats(info["episode"])
                 self._buffer_pbar.set_description(self._format_buffer_desc(self._current_episode_metrics()))
             self.rollout_buffer.finish_rollout(info=info)

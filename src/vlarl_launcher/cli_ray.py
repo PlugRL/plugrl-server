@@ -8,7 +8,7 @@ import torch
 from loguru import logger
 
 import vlarl_launcher
-from vlarl_launcher.cli import Args as BaseArgs, build_cli_from_registry, init_tracker
+from vlarl_launcher.cli import Args as BaseArgs, build_cli_from_registry, init_writer_by_tracker
 from vlarl_launcher.policy.registration import make_policy
 from vlarl_launcher.algorithm.registration import make_algo
 from vlarl_launcher.server.ray_agent_server import RayAgentServer
@@ -44,7 +44,7 @@ def _main(args: RayArgs):
     )   
     logger.info(f"Checkpoint Manager created: \n{checkpoint_manager} at {args.checkpoint_dir}")
 
-    tracker = init_tracker(args, resuming=args.resume, log_code=not args.resume, enabled=args.track.enabled)
+    writer, tracker = init_writer_by_tracker(args, resuming=args.resume, log_code=not args.resume, enabled=args.track.enabled)
     
     policy = make_policy(args.policy_uid, config=dataclasses.replace(args.policy, device=torch.device("cuda", args.infer_gpu) if args.infer_gpu is not None else "cuda"))
     algo = make_algo(args.algo_uid, config=args.algo, policy=policy)
@@ -70,7 +70,7 @@ def _main(args: RayArgs):
         ddp_gpus = list(range(args.num_ddp_gpus))
     learner_ref = LearnerActor.remote(learner_spec, ddp_gpus=ddp_gpus, master_addr=args.master_addr, master_port=args.master_port)
     
-    server = RayAgentServer(algo, checkpoint_manager, tracker, learner_ref, host=args.host, port=args.port)
+    server = RayAgentServer(algo, checkpoint_manager, writer, learner_ref, host=args.host, port=args.port)
     server.serve_forever()
     
 def main():

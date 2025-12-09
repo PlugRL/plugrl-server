@@ -7,8 +7,7 @@ import websockets.asyncio.server as _server
 import websockets.frames
 import uuid
 from loguru import logger
-import swanlab
-import wandb
+from torch.utils.tensorboard import SummaryWriter
 
 from vlarl_client import msgpack_numpy
 from vlarl_client.websocket_worker_agent import MessageType
@@ -26,14 +25,14 @@ class WebSocketAgentServer:
         self,
         algorithm: BaseAlgorithm,
         checkpoint_manager: CheckpointManager,
-        tracker: swanlab.run.SwanLabRun | wandb.Run,
+        writer: SummaryWriter,
         host: str = "0.0.0.0", 
         port: int = 8000,
         metadata: dict | None = None,
     ):
         self._algorithm = algorithm
         self._checkpoint_manager = checkpoint_manager
-        self._tracker = tracker
+        self._writer = writer
         self._host = host
         self._port = port
         self._metadata = metadata or {}
@@ -147,7 +146,8 @@ class WebSocketAgentServer:
                         info=info,
                         prev_node=prev_node
                     )
-                    self._tracker.log(log_dict, step=step)
+                    for key, value in log_dict.items():
+                        self._writer.add_scalar(key, value, step)
                     
                 terminated, truncated = next_terminated, next_truncated
                 
@@ -220,7 +220,8 @@ class WebSocketAgentServer:
             traceback_str = traceback.format_exc()
             logger.error(f"Error during learning processing:\n{traceback_str}")
             return
-        self._tracker.log(log_dict, step=step)
+        for key, value in log_dict.items():
+            self._writer.add_scalar(key, value, step)
             
     def should_stop(self) -> bool:
         return self._algorithm.should_stop()
