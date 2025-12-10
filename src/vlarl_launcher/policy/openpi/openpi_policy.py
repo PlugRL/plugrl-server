@@ -230,15 +230,7 @@ class Pi0Policy(BasePolicyGradientDiffusionPolicy):
         if processed_obs is None:
             processed_obs = self.preprocess_observation(obs)
         _, _, outputs, _ = processed_obs
-        tokenized_prompt_mask = obs['tokenized_prompt_mask'].to(self.device)
-        image_token_mask = torch.ones(
-            b,
-            outputs[0].shape[1] - tokenized_prompt_mask.shape[1],
-            dtype=torch.bool,
-            device=self.device
-        )
-        mask = torch.cat([image_token_mask, tokenized_prompt_mask], dim=1)
-        mean_hidden_state = torch.sum(outputs[0] * mask.unsqueeze(-1), dim=1) / mask.sum(dim=1, keepdim=True)
+        mean_hidden_state = outputs[0].mean(dim=1).to(torch.bfloat16)
         value = self.critic(mean_hidden_state).squeeze(-1)
         return value
     
