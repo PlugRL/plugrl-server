@@ -193,7 +193,7 @@ class RayAgentServer:
             self._writer.add_scalar(key, value, step)
 
     def should_infer(self) -> bool:
-        return self._infer_queue.qsize() == self._total_connections and self._total_connections > 0
+        return self._infer_queue.qsize() >= self._total_connections // 2 and self._total_connections > 0
     
     def should_learn(self) -> bool:
         return self._algorithm.should_learn()

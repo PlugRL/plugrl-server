@@ -113,6 +113,7 @@ def init_writer_by_tracker(args: Args, *, resuming: bool, log_code: bool, enable
     else:
         import swanlab
         tracker_module = swanlab
+        swanlab.sync_tensorboard_torch()
             
     if not enabled:
         tracker = tracker_module.init(mode="disabled", sync_tensorboard=True)
@@ -140,10 +141,6 @@ def init_writer_by_tracker(args: Args, *, resuming: bool, log_code: bool, enable
 
     from torch.utils.tensorboard import SummaryWriter
     writer = SummaryWriter(log_dir=str(args.checkpoint_dir / "tensorboard"))
-    writer.add_text(
-        "hyperparameters",
-        "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
-    )
     return writer, tracker
 
 def _main(args: Args):
