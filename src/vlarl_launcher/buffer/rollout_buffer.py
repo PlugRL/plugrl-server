@@ -228,6 +228,8 @@ class GAEBuffer(RolloutBuffer):
             if next_idx == 0:
                 next_non_terminal = 1.0 - float(self.next_done[step])
                 next_values = self.last_values[step]
+                # check last values not overflow or abs extreme large
+                assert abs(next_values).max() < 1e6, f"last_values overflow: {next_values}"
             else:
                 next_non_terminal = 1.0 - float(self.dones[next_idx])
                 next_values = self.values[next_idx]

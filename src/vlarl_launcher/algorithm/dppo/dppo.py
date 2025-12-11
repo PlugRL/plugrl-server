@@ -191,9 +191,9 @@ class DPPOAlgorithm(BaseAlgorithm):
             last_value=None,
             next_done=next_truncated or next_terminated
         )
+        self.rollout_buffer.add_next_obs_value_request(obs=next_obs, end_node=current_node)
         log_dict = {}
         if next_terminated or next_truncated:
-            self.rollout_buffer.add_done_obs_value_request(obs=next_obs, end_node=current_node)
             if "episode" in info:
                 self._record_episode_stats(info["episode"])
                 self._buffer_pbar.set_description(self._format_buffer_desc(self._current_episode_metrics()))
