@@ -158,7 +158,7 @@ def _main(args: Args):
     writer, tracker = init_writer_by_tracker(args, resuming=args.resume, log_code=not args.resume, enabled=args.track.enabled)
     
     policy = make_policy(args.policy_uid, config=args.policy)
-    logger.info(f"Policy created: \n{policy}")
+    logger.info(f"Policy created...")
     
     algo = make_algo(args.algo_uid, policy=policy, config=args.algo)
     algo.init_optimizers()

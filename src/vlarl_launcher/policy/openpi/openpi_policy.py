@@ -230,7 +230,7 @@ class Pi0Policy(BasePolicyGradientDiffusionPolicy):
         if processed_obs is None:
             processed_obs = self.preprocess_observation(obs)
         _, _, outputs, _ = processed_obs
-        mean_hidden_state = outputs[0].mean(dim=1).to(torch.bfloat16)
+        mean_hidden_state = outputs[0].mean(dim=1)
         value = self.critic(mean_hidden_state).squeeze(-1)
         return value
     
