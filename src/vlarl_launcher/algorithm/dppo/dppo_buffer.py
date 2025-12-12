@@ -53,10 +53,11 @@ class DPPOBuffer(GAEBuffer):
         return (current_idx, self.buffer_signature)
     
     def add_next_obs_value_request(self, *, obs: dict, end_node: tuple[int, uuid.UUID]):
-        self.next_obs_value_requests.append((obs, end_node))
-        assert self.next_indices[end_node[0]] == 0, "Next index for end_node should be unset."
-        while self.next_indices[self.next_obs_value_requests[0][1][0]] != 0:
-            self.next_obs_value_requests.popleft()
+        if end_node[0] != -1:
+            self.next_obs_value_requests.append((obs, end_node))
+            assert self.next_indices[end_node[0]] == 0, "Next index for end_node should be unset."
+            while self.next_indices[self.next_obs_value_requests[0][1][0]] != 0:
+                self.next_obs_value_requests.popleft()
     
     def compute_advantages_and_returns(self, policy: BasePolicy | None = None, batch_size: int = 1):
         # Normalize rewards
@@ -72,7 +73,7 @@ class DPPOBuffer(GAEBuffer):
         next_observations = []
         for obs, node in self.next_obs_value_requests:
             idx, signature = node
-            if signature == self.buffer_signature and self.next_done[idx] == 0:
+            if signature == self.buffer_signature and self.next_indices[idx] == 0:
                 next_ids.append(int(idx))
                 next_observations.append(obs)
         self.next_obs_value_requests.clear()
