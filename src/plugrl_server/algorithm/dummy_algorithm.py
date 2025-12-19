@@ -82,3 +82,6 @@ class DummyAlgorithm(DDPAlgorithm):
 
     def load_server_data(self, global_step: int, meta_info: dict, data: dict) -> None:
         self.global_step = global_step
+        
+    def create_ddp_checkpoint(self) -> Checkpoint:
+        return Checkpoint(step=0)
