@@ -1,4 +1,4 @@
-# 🚀 VLARL-Launcher
+# 🚀 plugrl-server
 
 ## 🛠️ Installation
 
@@ -25,8 +25,8 @@ We use Poetry to manage dependencies and development environments.
 2. **Clone the repository:**
 
     ```bash
-    git clone git@github.com:CTP314/vlarl-launcher.git
-    cd vlarl-launcher
+    git clone git@github.com:CTP314/plugrl-server.git
+    cd plugrl-server
     ```
 
 3. **Install dependencies with Poetry:**
@@ -46,12 +46,12 @@ We use Poetry to manage dependencies and development environments.
     Or run commands directly with `poetry run`:
 
     ```bash
-    poetry run python -m vlarl_launcher.cli --help
+    poetry run python -m plugrl_server.cli --help
     ```
 
 ### 🚀 Usage
 
-`vlarl-launcher` provides command-line utilities to run RL training with different algorithms and policies. The codebase supports both local training with WebSocket-based agent communication and distributed training with Ray.
+`plugrl-server` provides command-line utilities to run RL training with different algorithms and policies. The codebase supports both local training with WebSocket-based agent communication and distributed training with Ray.
 
 #### Available Components
 
@@ -62,7 +62,7 @@ We use Poetry to manage dependencies and development environments.
 
 **Policies:**
 - `dummy-policy` - Dummy policy that outputs random actions (for testing)
-- `dppo-policy` - DPPO policy (requires `vlarl-infra[dppo]` and checkpoint)
+- `dppo-policy` - DPPO policy (requires `plugrl-worker[dppo]` and checkpoint)
 - `pi0-policy` - PI0 policy (OpenPI) (requires checkpoint)
 
 #### Quick Start: Testing with Dummy Components
@@ -71,15 +71,15 @@ To test the agent-server connection with dummy algorithm and policy:
 
 ```bash
 # Terminal 1: Start the server
-python -m vlarl_launcher.cli dummy default dummy-policy default
+python -m plugrl_server.cli dummy default dummy-policy default
 
-# Terminal 2: Start the environment client (from vlarl-infra)
+# Terminal 2: Start the environment client (from plugrl-worker)
 # The server will listen on localhost:8000 by default
 ```
 
 **Expected output from server:**
 ```
-12:34:56|INFO|vlarl_launcher version: X.X.X
+12:34:56|INFO|plugrl_server version: X.X.X
 12:34:56|INFO|Algorithm: dummy, Config: DummyAlgoConfig(...)
 12:34:56|INFO|Policy: dummy-policy, Config: DummyPolicyConfig(...)
 12:34:56|INFO|WebSocket server listening on 0.0.0.0:8000
@@ -89,12 +89,12 @@ python -m vlarl_launcher.cli dummy default dummy-policy default
 
 ```bash
 # Single GPU training with WebSocket server
-python -m vlarl_launcher.cli dppo hopper dppo-policy default \
+python -m plugrl_server.cli dppo hopper dppo-policy default \
   --exp_name my_dppo_exp \
   --track.enabled true
 
 # With custom learning rates and batch size
-python -m vlarl_launcher.cli dppo hopper dppo-policy default \
+python -m plugrl_server.cli dppo hopper dppo-policy default \
   --algo.actor_lr 5e-5 \
   --algo.batch_size 256 \
   --exp_name my_dppo_exp_custom
@@ -114,13 +114,13 @@ python -m vlarl_launcher.cli dppo hopper dppo-policy default \
 
 ```bash
 # Single GPU training with PI0 policy
-python -m vlarl_launcher.cli dppo hopper pi0-policy default \
+python -m plugrl_server.cli dppo hopper pi0-policy default \
   --policy.checkpoint_path /path/to/pi0/checkpoint \
   --exp_name pi0_dppo_exp \
   --track.enabled true
 
 # With custom denoising steps
-python -m vlarl_launcher.cli dppo hopper pi0-policy default \
+python -m plugrl_server.cli dppo hopper pi0-policy default \
   --policy.checkpoint_path /path/to/pi0/checkpoint \
   --policy.denoising_steps 10 \
   --exp_name pi0_dppo_exp_custom
@@ -137,16 +137,16 @@ For multi-GPU distributed training, use the Ray launcher:
 
 ```bash
 # Multi-GPU distributed training
-python -m vlarl_launcher.cli_ray dppo hopper dppo-policy default \
+python -m plugrl_server.cli_ray dppo hopper dppo-policy default \
   --num_ddp_gpus 4 \
   --exp_name dppo_dist_4gpu
 
 # All available GPUs
-python -m vlarl_launcher.cli_ray dppo hopper dppo-policy default \
+python -m plugrl_server.cli_ray dppo hopper dppo-policy default \
   --exp_name dppo_dist_all_gpus
 
 # With specific inference GPU
-python -m vlarl_launcher.cli_ray dppo hopper dppo-policy default \
+python -m plugrl_server.cli_ray dppo hopper dppo-policy default \
   --infer_gpu 0 \
   --num_ddp_gpus 4
 ```
@@ -163,7 +163,7 @@ To resume a previous training run:
 
 ```bash
 # This will restore from the latest checkpoint in the checkpoint directory
-python -m vlarl_launcher.cli dppo hopper dppo-policy default \
+python -m plugrl_server.cli dppo hopper dppo-policy default \
   --exp_name my_dppo_exp \
   --resume true
 ```
@@ -174,7 +174,7 @@ To see all registered configurations:
 
 ```bash
 # This will show the nested menu structure
-python -m vlarl_launcher.cli --help
+python -m plugrl_server.cli --help
 ```
 
 Output will show available combinations of algorithms and policies with their variants.
