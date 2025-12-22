@@ -10,7 +10,7 @@ class BaseAlgoConfig:
     ...
 
 class BaseAlgorithm(abc.ABC):
-    break_action_chunk: bool
+    break_action_chunk: bool = False
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
     def __init__(self, config: BaseAlgoConfig, policy: BasePolicy):
         self.config = config

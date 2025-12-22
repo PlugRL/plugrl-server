@@ -8,8 +8,8 @@ import tqdm
 from loguru import logger
 
 from plugrl_server.common.checkpoint_manager import Checkpoint
-from ..base_algorithm import BaseAlgorithm, BaseAlgoConfig
-from ..registration import register_algo, register_algo_config
+from plugrl_server.algorithm.base_algorithm import BaseAlgorithm, BaseAlgoConfig
+from plugrl_server.algorithm.registration import register_algo, register_algo_config
 from plugrl_server.policy.base_policy import InternalState
 from plugrl_server.common.checkpoint_manager import Checkpoint
 from plugrl_server.policy.base_policy_gradient_diffusion_policy import BasePolicyGradientDiffusionPolicy

@@ -1,11 +1,14 @@
-from loguru import logger
-import torch
-import torch.utils.data
-import tensordict
 import uuid
+from typing import Any
+
+import torch
+import tensordict
+import numpy as np
+from loguru import logger
 
 from plugrl_server.policy.base_policy import InternalState
 from plugrl_server.common.tensor_container import TensorContainer, tensor_container
+from plugrl_server.common.data_utils import _recursively_create_empty_td
 
 @tensor_container
 class ReplayBufferSamples(TensorContainer):
@@ -26,22 +29,19 @@ class ReplayBuffer(torch.utils.data.Dataset):
     
     def __init__(self, buffer_size, example_internal_state: InternalState):
         self.buffer_size = buffer_size
-        self.obs = tensordict.stack([example_internal_state.obs[0]] * buffer_size, dim=0)
-        self.next_obs = tensordict.stack([example_internal_state.obs[0]] * buffer_size, dim=0)
-        self.actions = torch.concatenate([example_internal_state.action] * buffer_size, dim=0)
+
+        sample_obs = example_internal_state.obs[0]
+        if isinstance(sample_obs, tensordict.TensorDict):
+            self.obs = _recursively_create_empty_td(sample_obs, buffer_size)
+            self.next_obs = _recursively_create_empty_td(sample_obs, buffer_size)
+        else:
+            self.obs = torch.empty((buffer_size,) + sample_obs.shape, dtype=sample_obs.dtype, device=sample_obs.device)
+            self.next_obs = torch.empty((buffer_size,) + sample_obs.shape, dtype=sample_obs.dtype, device=sample_obs.device)
+        
+        self.actions = torch.empty((buffer_size,) + example_internal_state.action.shape[1:], dtype=example_internal_state.action.dtype)
         self.rewards = torch.zeros(buffer_size, dtype=torch.float32)
         self.dones = torch.zeros(buffer_size, dtype=torch.bool)
         self.timeouts = torch.zeros(buffer_size, dtype=torch.bool)
-        
-        logger.info(f"""
-            Initialized ReplayBuffer with buffer_size={buffer_size}
-            obs shape: {self.obs.shape}
-            next_obs shape: {self.next_obs.shape}
-            actions shape: {self.actions.shape}
-            rewards shape: {self.rewards.shape}
-            dones shape: {self.dones.shape}
-            timeouts shape: {self.timeouts.shape}
-        """)
         
         self.idx = 0
         self._full = False

@@ -211,7 +211,6 @@ class WebSocketAgentServer:
         return self._algorithm.should_learn()
 
     async def _process_learn(self):
-        logger.info(f"should_learn check: {self._total_connections} active environments")
         try:
             self._algorithm.pre_learn()
             step, log_dict = await asyncio.to_thread(self._algorithm.learn)

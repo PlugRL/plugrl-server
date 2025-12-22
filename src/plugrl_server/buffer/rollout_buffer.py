@@ -1,57 +1,13 @@
-from loguru import logger
-import torch
-import numpy as np
-from typing import Any
-from torch.utils.data import Dataset
-import tensordict
-from ..policy.base_policy import InternalState
 import uuid
-import os
-import psutil
+from typing import Any
+
+import torch
+import tensordict
+import numpy as np
 from loguru import logger
 
-def log_cpu_memory_usage(step, phase="unknown"):
-    """Log detailed CPU memory usage information for the current process."""
-    
-    # 获取当前 Python 进程的 ID
-    pid = os.getpid()
-    
-    # 尝试获取进程对象
-    try:
-        process = psutil.Process(pid)
-    except psutil.NoSuchProcess:
-        logger.warning("Process not found for memory logging.")
-        return
-
-    # 获取进程内存信息 (单位：字节)
-    memory_info = process.memory_info()
-    
-    # 实际使用的物理内存 (Resident Set Size, RSS)
-    memory_rss_gb = memory_info.rss / (1024 ** 3)  
-    # 进程分配的虚拟内存 (Virtual Memory Size, VMS)
-    memory_vms_gb = memory_info.vms / (1024 ** 3)
-    
-    # 获取系统总内存信息 (可选，提供上下文)
-    system_memory = psutil.virtual_memory()
-    system_total_gb = system_memory.total / (1024 ** 3)
-    system_available_gb = system_memory.available / (1024 ** 3)
-
-    logger.info(
-        f"Step {step} ({phase}): CPU memory (Process) - RSS: {memory_rss_gb:.2f}GB, VMS: {memory_vms_gb:.2f}GB | System - Total: {system_total_gb:.2f}GB, Available: {system_available_gb:.2f}GB"
-    )
-    
-def _recursively_create_empty_td(template_td: torch.Tensor, buffer_size):
-    new_data = {}
-    for key, item in template_td.items():
-        if isinstance(item, torch.Tensor): 
-            new_shape = (buffer_size,) + item.shape
-            new_data[key] = torch.empty(new_shape, dtype=item.dtype, device=item.device)
-        elif isinstance(item, tensordict.TensorDict):
-            new_data[key] = _recursively_create_empty_td(item, buffer_size)
-        else:
-             new_data[key] = item
-             
-    return tensordict.TensorDict(new_data, batch_size=[buffer_size] + list(template_td.shape))
+from plugrl_server.policy.base_policy import InternalState
+from plugrl_server.common.data_utils import _recursively_create_empty_td
 
 class RolloutBuffer(torch.utils.data.Dataset):
     obs: torch.Tensor | tensordict.TensorDict

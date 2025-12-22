@@ -1,3 +1,4 @@
+import torch
 import numpy as np
 from typing import List, Dict, Any, Union
 
@@ -73,3 +74,16 @@ def unbatch_aggregate(batched_dict: BatchDict) -> List[Dict[str, Any]]:
                 result[i][key] = value[i]
 
     return result
+
+def _recursively_create_empty_td(template_td: torch.Tensor, buffer_size):
+    new_data = {}
+    for key, item in template_td.items():
+        if isinstance(item, torch.Tensor): 
+            new_shape = (buffer_size,) + item.shape
+            new_data[key] = torch.empty(new_shape, dtype=item.dtype, device=item.device)
+        elif isinstance(item, tensordict.TensorDict):
+            new_data[key] = _recursively_create_empty_td(item, buffer_size)
+        else:
+             new_data[key] = item
+             
+    return tensordict.TensorDict(new_data, batch_size=[buffer_size] + list(template_td.shape))
