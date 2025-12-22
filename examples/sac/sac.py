@@ -30,7 +30,7 @@ class SACAlgoConfig(BaseAlgoConfig):
     tau: float = 0.005
     batch_size: int = 256
     learning_starts: int = 5_000
-    update_every: int = 10
+    update_every: int = 1
     update_to_data_ratio: int = 1
     
     policy_lr: float = 3e-4
