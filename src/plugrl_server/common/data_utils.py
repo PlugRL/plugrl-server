@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import tensordict
 from typing import List, Dict, Any, Union
 
 BatchDict = Dict[str, Union['BatchDict', np.ndarray, List[Any]]]

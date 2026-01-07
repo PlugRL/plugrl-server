@@ -31,9 +31,9 @@ class SchedulerConfig:
 @register_algo_config(UID)
 @dataclasses.dataclass
 class DPPOAlgoConfig(BaseAlgoConfig):
-    gamma: float = 0.999
+    gamma: float = 0.99
     """total timesteps of the experiments"""
-    gamma_denoising: float = 0.99
+    gamma_denoising: float = 1.
     """the discount factor for denoising"""
     
     actor_lr: float = 1e-4
@@ -53,7 +53,7 @@ class DPPOAlgoConfig(BaseAlgoConfig):
     """the total size of the buffer"""
     gae_lambda: float = 0.95
     """the lambda for the general advantage estimation"""
-    update_epochs: int = 10
+    update_epochs: int = 4
     """the K epochs to update the policy"""
     norm_adv: bool = True
     """Toggles advantages normalization"""
@@ -74,19 +74,19 @@ class DPPOAlgoConfig(BaseAlgoConfig):
     target_kl: float | None = 1
     """the target KL divergence threshold"""
     
-    logprob_noise_level: float = 0.1
-    sampling_noise_level: float = 0.1
+    logprob_noise_level: float = 0.01
+    sampling_noise_level: float = 0.01
     clip_advantage_lower_quantile: float = 0
     clip_advantage_upper_quantile: float = 1
-    n_critic_warmup_itrs: int = 2
-    use_normalized_rewards: bool = True
+    n_critic_warmup_itrs: int = 0
+    use_normalized_rewards: bool = False
 
-    batch_size: int = 1024
+    batch_size: int = 256
     critic_batch_size: int | None = None
     train_itrs: int = 200
     save_interval: int = 10
     """number of steps to accumulate gradients over before calling optimizer.step()"""
-    grad_accum_steps: int = 1
+    grad_accum_steps: int = 8
     
     @property
     def total_steps(self) -> int:

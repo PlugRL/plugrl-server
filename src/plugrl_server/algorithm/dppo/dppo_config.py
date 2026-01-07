@@ -36,6 +36,7 @@ class DPPOAlgoConfigHopper(DPPOAlgoConfig):
     n_critic_warmup_itr: int = 0
     logprob_noise_level: float = 0.1
     sampling_noise_level: float = 0.1
+    use_normalized_rewards: bool = True
     
 @register_algo_config(UID, "libero")
 @dataclasses.dataclass
