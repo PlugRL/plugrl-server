@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Mapping, Sequence, Tuple, TypeVar, Union
+from typing import Any, Sequence, TypeVar, Union
 
 from typing_extensions import Annotated
 
@@ -8,11 +8,12 @@ from tyro.conf._markers import Suppress
 from tyro.constructors import ConstructorRegistry
 from typing import Callable
 
-from tyro._typing import TypeForm
 
 T = TypeVar("T")
 
 NestedCallableDict = dict[str, Callable[..., Any] | "NestedCallableDict"]
+
+
 def subcommand_cli_from_nested_dict(
     subcommands: NestedCallableDict,
     *,
@@ -27,6 +28,7 @@ def subcommand_cli_from_nested_dict(
     registry: ConstructorRegistry | None = None,
 ) -> Any:
     import tyro
+
     # Called to specify the subcommand corresponding to each value in the
     # dictionary.
     def _make_constructor(v):

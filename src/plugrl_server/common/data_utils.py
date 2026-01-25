@@ -3,7 +3,8 @@ import numpy as np
 import tensordict
 from typing import List, Dict, Any, Union
 
-BatchDict = Dict[str, Union['BatchDict', np.ndarray, List[Any]]]
+BatchDict = Dict[str, Union["BatchDict", np.ndarray, List[Any]]]
+
 
 def batch_aggregate(list_of_dicts: List[Dict[str, Any]]) -> BatchDict:
     if not list_of_dicts:
@@ -20,7 +21,9 @@ def batch_aggregate(list_of_dicts: List[Dict[str, Any]]) -> BatchDict:
             try:
                 result[key] = np.concatenate(values, axis=0)
             except ValueError as e:
-                print(f"Warning: Incompatible np.ndarray shapes under key '{key}' ({e}), aggregating as list.")
+                print(
+                    f"Warning: Incompatible np.ndarray shapes under key '{key}' ({e}), aggregating as list."
+                )
                 result[key] = values
 
         elif isinstance(first_value, dict):
@@ -33,6 +36,7 @@ def batch_aggregate(list_of_dicts: List[Dict[str, Any]]) -> BatchDict:
             result[key] = values
 
     return result
+
 
 def unbatch_aggregate(batched_dict: BatchDict) -> List[Dict[str, Any]]:
     if not batched_dict:
@@ -76,15 +80,18 @@ def unbatch_aggregate(batched_dict: BatchDict) -> List[Dict[str, Any]]:
 
     return result
 
+
 def _recursively_create_empty_td(template_td: torch.Tensor, buffer_size):
     new_data = {}
     for key, item in template_td.items():
-        if isinstance(item, torch.Tensor): 
+        if isinstance(item, torch.Tensor):
             new_shape = (buffer_size,) + item.shape
             new_data[key] = torch.empty(new_shape, dtype=item.dtype, device=item.device)
         elif isinstance(item, tensordict.TensorDict):
             new_data[key] = _recursively_create_empty_td(item, buffer_size)
         else:
-             new_data[key] = item
-             
-    return tensordict.TensorDict(new_data, batch_size=[buffer_size] + list(template_td.shape))
+            new_data[key] = item
+
+    return tensordict.TensorDict(
+        new_data, batch_size=[buffer_size] + list(template_td.shape)
+    )

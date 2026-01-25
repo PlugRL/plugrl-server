@@ -40,6 +40,10 @@ lerobot = {git = "https://github.com/huggingface/lerobot.git", rev = "ed83cbd"}
 [tool.poetry.group.reinflow.dependencies]
 reinflow = {git = "https://github.com/CTP314/ReinFlow.git"}
 
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^4.5.1"
+
 [tool.poetry]
 packages = [{include = "plugrl_server", from = "src"}]
 
