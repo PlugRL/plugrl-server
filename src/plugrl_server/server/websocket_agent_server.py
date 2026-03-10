@@ -1,7 +1,9 @@
 import asyncio
+import signal
 import traceback
 import time
 from collections import deque
+from typing import Any
 import numpy as np
 import websockets.asyncio.server as _server
 import websockets.frames
@@ -10,7 +12,7 @@ from loguru import logger
 from torch.utils.tensorboard import SummaryWriter
 
 from plugrl_client import msgpack_numpy
-from plugrl_client.websocket_worker_agent import MessageType
+from plugrl_client.websocket_worker_agent import MessageType, SERVER_STOP_REASON, SERVER_RESYNC_REASON
 
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm
 from plugrl_server.common.checkpoint_manager import CheckpointManager
@@ -19,6 +21,7 @@ from plugrl_server.common.data_utils import batch_aggregate
 SCHEDULER_SLEEP_INTERVAL = 0.001  # seconds
 INFER_READY_TIMEOUT = 5.0  # seconds to wait for full infer batch before warning
 FEEDBACK_WAIT_TIMEOUT = 60.0  # seconds to wait for client feedback before closing
+
 
 
 class ServerStoppingError(RuntimeError):
@@ -46,14 +49,50 @@ class WebSocketAgentServer:
         self._response_futures = {}
         self._lock = asyncio.Lock()
         self._model_lock = asyncio.Lock()
-        self._server = None
+        self._server: Any = None
         self._stop_event = asyncio.Event()
 
         self._total_connections = 0
         self._infer_wait_start: float | None = None
+        self._close_reason = ""
+        self._shutdown_reason = "Server is shutting down."
+        self._fatal_reported = False
 
     def serve_forever(self) -> None:
         asyncio.run(self.run())
+
+    def _request_shutdown(self, reason: str, close_reason: str | None = None) -> None:
+        if close_reason is not None:
+            self._close_reason = close_reason
+        if self._stop_event.is_set():
+            return
+        self._shutdown_reason = reason
+        logger.info(reason)
+        self._stop_event.set()
+
+    def _install_signal_handlers(self) -> None:
+        loop = asyncio.get_running_loop()
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            try:
+                loop.add_signal_handler(
+                    sig,
+                    lambda sig=sig: self._request_shutdown(
+                        f"Received {signal.Signals(sig).name}. Closing connections and allowing workers to reconnect."
+                    ),
+                )
+            except (NotImplementedError, RuntimeError):
+                continue
+
+    async def _handle_fatal(self, context: str, exc: BaseException) -> None:
+        if not self._fatal_reported:
+            traceback_str = "".join(
+                traceback.format_exception(type(exc), exc, exc.__traceback__)
+            )
+            logger.error(f"Fatal error in {context}:\n{traceback_str}")
+            self._fatal_reported = True
+        self._close_reason = ""
+        self._shutdown_reason = f"Fatal error in {context}."
+        self._stop_event.set()
 
     async def _abort_pending_infer_requests(self, reason: str) -> None:
         async with self._lock:
@@ -80,27 +119,51 @@ class WebSocketAgentServer:
                 f"pending_futures={pending_futures}, drained_requests={drained_requests}"
             )
 
+    async def _shutdown(self, scheduler_task: asyncio.Task, reason: str) -> None:
+        self._stop_event.set()
+        await self._abort_pending_infer_requests(reason)
+
+        if self._server is not None:
+            if self._close_reason:
+                await asyncio.gather(
+                    *(
+                        connection.close(
+                            websockets.frames.CloseCode.GOING_AWAY,
+                            self._close_reason,
+                        )
+                        for connection in self._server.connections
+                    ),
+                    return_exceptions=True,
+                )
+            self._server.close()
+            await self._server.wait_closed()
+            self._server = None
+            logger.info("WebSocket server closed.")
+
+        scheduler_task.cancel()
+        await asyncio.gather(scheduler_task, return_exceptions=True)
+        logger.info("Scheduler task cancelled and cleaned up.")
+
     async def run(self):
         scheduler_task = asyncio.create_task(self._main_scheduler_loop())
+        self._install_signal_handlers()
         try:
-            async with _server.serve(
+            self._server = await _server.serve(
                 self._handler, self._host, self._port, compression=None, max_size=None
-            ) as server:
-                logger.info(f"Agent Server is listening on {self._host}:{self._port}")
-                self._server = server
-                await self._stop_event.wait()
-                await self._abort_pending_infer_requests(
-                    "Server is shutting down."
-                )
+            )
+            logger.info(f"Agent Server is listening on {self._host}:{self._port}")
+            await self._stop_event.wait()
+        except asyncio.CancelledError:
+            self._shutdown_reason = "Server run task was cancelled."
+            logger.info(
+                "Server cancellation received. Closing connections and allowing workers to reconnect."
+            )
+            raise
+        except Exception as exc:
+            await self._handle_fatal("agent server runtime", exc)
+            raise
         finally:
-            if self._server is not None:
-                self._server.close()
-                await self._server.wait_closed()
-                logger.info("WebSocket server closed.")
-
-            scheduler_task.cancel()
-            await asyncio.gather(scheduler_task, return_exceptions=True)
-            logger.info("Scheduler task cancelled and cleaned up.")
+            await asyncio.shield(self._shutdown(scheduler_task, self._shutdown_reason))
 
     async def _handler(self, websocket: _server.ServerConnection):
         logger.info(
@@ -108,6 +171,7 @@ class WebSocketAgentServer:
         )
         packer = msgpack_numpy.Packer()
         session_id = str(websocket.remote_address)
+        connection_counted = False
 
         try:
             metadata_message = dict(
@@ -115,12 +179,23 @@ class WebSocketAgentServer:
             )
             await websocket.send(packer.pack(metadata_message))
             self._total_connections += 1
+            connection_counted = True
             prev_node: tuple = (-1, "")
             terminated, truncated = False, False
             action_buffer = deque()
             while True:
                 packed_infer_msg = await websocket.recv()
                 infer_msg = msgpack_numpy.unpackb(packed_infer_msg)
+                if infer_msg.get("message_type") != str(MessageType.INFER):
+                    logger.warning(
+                        "Expected an INFER message but received "
+                        f"{infer_msg.get('message_type')}. Requesting worker resync."
+                    )
+                    await websocket.close(
+                        code=websockets.frames.CloseCode.GOING_AWAY,
+                        reason=SERVER_RESYNC_REASON,
+                    )
+                    break
 
                 obs, internal_state = infer_msg.get("data"), None
 
@@ -137,6 +212,14 @@ class WebSocketAgentServer:
                     except ServerStoppingError:
                         async with self._lock:
                             self._response_futures.pop(req_id, None)
+                        if self._close_reason:
+                            try:
+                                await websocket.close(
+                                    code=websockets.frames.CloseCode.GOING_AWAY,
+                                    reason=self._close_reason,
+                                )
+                            except Exception:
+                                pass
                         logger.info(
                             "Shutdown interrupted an in-flight inference request "
                             f"from {websocket.remote_address}."
@@ -172,15 +255,19 @@ class WebSocketAgentServer:
                         code=websockets.frames.CloseCode.GOING_AWAY,
                         reason="Feedback timeout",
                     )
-                    self._total_connections = max(0, self._total_connections - 1)
                     break
                 feedback_msg = msgpack_numpy.unpackb(packed_feedback_msg)
 
                 if feedback_msg.get("message_type") != str(MessageType.FEEDBACK):
                     logger.warning(
-                        f"Expected a FEEDBACK message but received: {feedback_msg.get('message_type')}"
+                        "Expected a FEEDBACK message but received: "
+                        f"{feedback_msg.get('message_type')}. Requesting worker resync."
                     )
-                    continue
+                    await websocket.close(
+                        code=websockets.frames.CloseCode.GOING_AWAY,
+                        reason=SERVER_RESYNC_REASON,
+                    )
+                    break
 
                 feedback_data = feedback_msg.get("data")
 
@@ -206,18 +293,22 @@ class WebSocketAgentServer:
                 terminated, truncated = next_terminated, next_truncated
 
         except websockets.ConnectionClosed:
-            self._total_connections -= 1
-            logger.info(
-                f"Connection from {websocket.remote_address} closed. Total connections: {self._total_connections}"
-            )
-        except Exception:
-            traceback_str = traceback.format_exc()
-            logger.error(f"Internal server error:\n{traceback_str}")
-            self._total_connections -= 1
-            await websocket.close(
-                code=websockets.frames.CloseCode.INTERNAL_ERROR,
-                reason="Internal server error.",
-            )
+            pass
+        except Exception as exc:
+            try:
+                await websocket.close(
+                    code=websockets.frames.CloseCode.INTERNAL_ERROR,
+                    reason="Internal server error.",
+                )
+            except Exception:
+                pass
+            await self._handle_fatal("connection handler", exc)
+        finally:
+            if connection_counted:
+                self._total_connections = max(0, self._total_connections - 1)
+                logger.info(
+                    f"Connection from {websocket.remote_address} closed. Total connections: {self._total_connections}"
+                )
 
     def should_infer(self) -> bool:
         current_qsize = self._infer_queue.qsize()
@@ -255,26 +346,22 @@ class WebSocketAgentServer:
                 if future and not future.done():
                     future.set_result((action[i : i + 1], internal_state[i : i + 1]))
                 self._infer_queue.task_done()
-        except Exception:
-            traceback_str = traceback.format_exc()
-            logger.error(f"Error during inference processing:\n{traceback_str}")
+        except Exception as exc:
             for req in batch:
                 future = self._response_futures.get(req["id"])
                 if future and not future.done():
-                    future.set_exception(Exception("Inference processing error."))
+                    future.set_exception(
+                        RuntimeError(f"Inference processing error: {exc}")
+                    )
+            raise
 
     def should_learn(self) -> bool:
         return self._algorithm.should_learn()
 
     async def _process_learn(self):
-        try:
-            self._algorithm.pre_learn()
-            step, log_dict = await asyncio.to_thread(self._algorithm.learn)
-            self._algorithm.post_learn()
-        except Exception:
-            traceback_str = traceback.format_exc()
-            logger.error(f"Error during learning processing:\n{traceback_str}")
-            return
+        self._algorithm.pre_learn()
+        step, log_dict = await asyncio.to_thread(self._algorithm.learn)
+        self._algorithm.post_learn()
         for key, value in log_dict.items():
             self._writer.add_scalar(key, value, step)
 
@@ -285,16 +372,12 @@ class WebSocketAgentServer:
         return self._algorithm.should_save()
 
     async def _process_save(self):
-        try:
-            checkpoint = self._algorithm.create_checkpoint()
-            self._checkpoint_manager.save_checkpoint(checkpoint)
-        except Exception:
-            traceback_str = traceback.format_exc()
-            logger.error(f"Error during saving checkpoint:\n{traceback_str}")
+        checkpoint = self._algorithm.create_checkpoint()
+        self._checkpoint_manager.save_checkpoint(checkpoint)
 
     async def _main_scheduler_loop(self):
         try:
-            while True:
+            while not self._stop_event.is_set():
                 if self.should_infer():
                     await self._process_infer()
 
@@ -307,11 +390,13 @@ class WebSocketAgentServer:
                         await self._process_save()
 
                 if self.should_stop():
-                    self._stop_event.set()
-                    logger.info("Stopping server as the algorithm signaled to stop.")
+                    self._request_shutdown(
+                        "Stopping server as the algorithm signaled to stop.",
+                        close_reason=SERVER_STOP_REASON,
+                    )
                     break
 
                 await asyncio.sleep(SCHEDULER_SLEEP_INTERVAL)
-        except Exception:
-            traceback_str = traceback.format_exc()
-            logger.error(f"Error in main scheduler loop:\n{traceback_str}")
+        except Exception as exc:
+            await self._handle_fatal("main scheduler loop", exc)
+            raise
