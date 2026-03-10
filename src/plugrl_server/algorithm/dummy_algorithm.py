@@ -18,6 +18,7 @@ class DummyAlgoConfig(BaseAlgoConfig):
     fake_inference_duration_sec: float = 0.1
     fake_learn_duration_sec: float = 10.0
     fake_learn_freq: int = 100
+    fake_total_steps: int = 300
 
     break_action_chunk: bool = False
 
@@ -29,6 +30,7 @@ class DummyAlgorithm(DDPAlgorithm):
     def __init__(self, config: DummyAlgoConfig, policy: BasePolicy):
         super().__init__(config, policy)
         self.counter = 0
+        self.global_step = 0
         self.break_action_chunk = config.break_action_chunk
 
     def infer(self, obs: dict) -> tuple[np.ndarray, InternalState]:
@@ -52,27 +54,29 @@ class DummyAlgorithm(DDPAlgorithm):
         prev_node: tuple,
     ) -> tuple:
         self.counter += 1
-        return (-1, ""), 0, {}
+        self.global_step += 1
+        return (-1, ""), self.global_step, {}
 
     def learn(self) -> tuple[int, dict]:
         time.sleep(self.config.fake_learn_duration_sec)
         self.counter = 0
-        return 0, {}
+        return self.global_step, {}
 
     def should_learn(self) -> bool:
         return self.counter >= self.config.fake_learn_freq
 
     def should_stop(self) -> bool:
-        return False
+        return self.global_step >= self.config.fake_total_steps
 
     def should_save(self) -> bool:
         return False
 
     def create_checkpoint(self) -> Checkpoint:
-        return Checkpoint(step=0)
+        return Checkpoint(step=self.global_step)
 
     def load_checkpoint(self, checkpoint: Checkpoint):
-        pass
+        self.global_step = checkpoint.step
+        self.counter = 0
 
     def activate_ddp(self, ddp_policy) -> None: ...
 
@@ -86,7 +90,8 @@ class DummyAlgorithm(DDPAlgorithm):
     def get_active_policy(self) -> BasePolicy:
         return self.policy
 
-    def load_learner_state(self, checkpoint: Checkpoint) -> None: ...
+    def load_learner_state(self, checkpoint: Checkpoint) -> None:
+        self.load_checkpoint(checkpoint)
 
     def get_server_data(self) -> tuple[int, dict, dict]:
         return self.global_step, {}, {}
@@ -95,4 +100,4 @@ class DummyAlgorithm(DDPAlgorithm):
         self.global_step = global_step
 
     def create_ddp_checkpoint(self) -> Checkpoint:
-        return Checkpoint(step=0)
+        return Checkpoint(step=self.global_step)
