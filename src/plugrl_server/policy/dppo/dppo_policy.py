@@ -40,6 +40,24 @@ class DPPOPolicyConfig(BasePolicyGradientDiffusionPolicyConfig):
     critic: DPPOCriticObsConfig = dataclasses.field(default_factory=DPPOCriticObsConfig)
 
 
+@register_policy_config(UID, "hopper")
+@dataclasses.dataclass
+class DPPOPolicyConfigHopper(DPPOPolicyConfig):
+    env_name: str = "hopper-medium-v2"
+
+
+@register_policy_config(UID, "walker")
+@dataclasses.dataclass
+class DPPOPolicyConfigWalker(DPPOPolicyConfig):
+    env_name: str = "walker2d-medium-v2"
+
+
+@register_policy_config(UID, "cheetah")
+@dataclasses.dataclass
+class DPPOPolicyConfigCheetah(DPPOPolicyConfig):
+    env_name: str = "halfcheetah-medium-v2"
+
+
 @register_policy(UID)
 class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
     config: DPPOPolicyConfig

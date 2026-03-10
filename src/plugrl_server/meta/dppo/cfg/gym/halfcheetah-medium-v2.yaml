@@ -1,0 +1,31 @@
+obs_dim: 17
+low_dim_keys: ['obs']
+action_dim: 6
+transition_dim: ${action_dim}
+denoising_steps: 20
+horizon_steps: 4
+cond_steps: 1
+
+model:
+  _target_: dppo.model.diffusion.diffusion.DiffusionModel
+  predict_epsilon: true
+  denoised_clip_value: 1.0
+  network:
+    _target_: dppo.model.diffusion.mlp_diffusion.DiffusionMLP
+    time_dim: 16
+    mlp_dims:
+    - 512
+    - 512
+    - 512
+    activation_type: ReLU
+    residual_style: true
+    out_activation_type: Identity
+    use_layernorm: False
+    cond_dim: ${obs_dim}
+    horizon_steps: ${horizon_steps}
+    action_dim: ${action_dim}
+  horizon_steps: ${horizon_steps}
+  obs_dim: ${obs_dim}
+  action_dim: ${action_dim}
+  denoising_steps: ${denoising_steps}
+  cond_steps: ${cond_steps}

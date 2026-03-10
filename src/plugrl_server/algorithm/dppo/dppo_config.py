@@ -40,6 +40,18 @@ class DPPOAlgoConfigHopper(DPPOAlgoConfig):
     use_normalized_rewards: bool = True
 
 
+@register_algo_config(UID, "walker")
+@dataclasses.dataclass
+class DPPOAlgoConfigWalker(DPPOAlgoConfigHopper):
+    pass
+
+
+@register_algo_config(UID, "cheetah")
+@dataclasses.dataclass
+class DPPOAlgoConfigCheetah(DPPOAlgoConfigHopper):
+    pass
+
+
 @register_algo_config(UID, "libero")
 @dataclasses.dataclass
 class DPPOAlgoConfigLibero(DPPOAlgoConfig):

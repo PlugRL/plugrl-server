@@ -40,6 +40,18 @@ class DPPOAlgoDistributedConfiHopper(_dppo_dist.DPPOAlgoDistributedConfig):
     sampling_noise_level: float = 0.1
 
 
+@register_algo_config(_dppo_dist.UID, "walker")
+@dataclasses.dataclass
+class DPPOAlgoDistributedConfiWalker(DPPOAlgoDistributedConfiHopper):
+    pass
+
+
+@register_algo_config(_dppo_dist.UID, "cheetah")
+@dataclasses.dataclass
+class DPPOAlgoDistributedConfiCheetah(DPPOAlgoDistributedConfiHopper):
+    pass
+
+
 @register_algo_config(_dppo_dist.UID, "libero")
 @dataclasses.dataclass
 class DPPOAlgoConfigLibero(_dppo_dist.DPPOAlgoDistributedConfig):
