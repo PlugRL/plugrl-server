@@ -71,7 +71,7 @@ To test the agent-server connection with dummy algorithm and policy:
 
 ```bash
 # Terminal 1: Start the server
-python -m plugrl_server.cli dummy default dummy-policy default
+python -m plugrl_server.cli dummy-policy default dummy default
 
 # Terminal 2: Start the environment client (from plugrl-worker)
 # The server will listen on localhost:8000 by default
@@ -89,12 +89,12 @@ python -m plugrl_server.cli dummy default dummy-policy default
 
 ```bash
 # Single GPU training with WebSocket server
-python -m plugrl_server.cli dppo hopper dppo-policy default \
+python -m plugrl_server.cli dppo-policy default dppo hopper \
   --exp_name my_dppo_exp \
   --track.enabled true
 
 # With custom learning rates and batch size
-python -m plugrl_server.cli dppo hopper dppo-policy default \
+python -m plugrl_server.cli dppo-policy default dppo hopper \
   --algo.actor_lr 5e-5 \
   --algo.batch_size 256 \
   --exp_name my_dppo_exp_custom
@@ -114,13 +114,13 @@ python -m plugrl_server.cli dppo hopper dppo-policy default \
 
 ```bash
 # Single GPU training with PI0 policy
-python -m plugrl_server.cli dppo hopper pi0-policy default \
+python -m plugrl_server.cli pi0-policy default dppo hopper \
   --policy.checkpoint_path /path/to/pi0/checkpoint \
   --exp_name pi0_dppo_exp \
   --track.enabled true
 
 # With custom denoising steps
-python -m plugrl_server.cli dppo hopper pi0-policy default \
+python -m plugrl_server.cli pi0-policy default dppo hopper \
   --policy.checkpoint_path /path/to/pi0/checkpoint \
   --policy.denoising_steps 10 \
   --exp_name pi0_dppo_exp_custom
@@ -137,16 +137,16 @@ For multi-GPU distributed training, use the Ray launcher:
 
 ```bash
 # Multi-GPU distributed training
-python -m plugrl_server.cli_ray dppo hopper dppo-policy default \
+python -m plugrl_server.cli_ray dppo-policy default dppo hopper \
   --num_ddp_gpus 4 \
   --exp_name dppo_dist_4gpu
 
 # All available GPUs
-python -m plugrl_server.cli_ray dppo hopper dppo-policy default \
+python -m plugrl_server.cli_ray dppo-policy default dppo hopper \
   --exp_name dppo_dist_all_gpus
 
 # With specific inference GPU
-python -m plugrl_server.cli_ray dppo hopper dppo-policy default \
+python -m plugrl_server.cli_ray dppo-policy default dppo hopper \
   --infer_gpu 0 \
   --num_ddp_gpus 4
 ```
@@ -163,7 +163,7 @@ To resume a previous training run:
 
 ```bash
 # This will restore from the latest checkpoint in the checkpoint directory
-python -m plugrl_server.cli dppo hopper dppo-policy default \
+python -m plugrl_server.cli dppo-policy default dppo hopper \
   --exp_name my_dppo_exp \
   --resume true
 ```
