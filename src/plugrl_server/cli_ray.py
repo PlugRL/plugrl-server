@@ -12,6 +12,7 @@ import plugrl_server
 from plugrl_server.cli import (
     Args as BaseArgs,
     build_cli_from_registry,
+    close_writer_and_tracker,
     init_writer_by_tracker,
 )
 from plugrl_server.policy.registration import make_policy
@@ -102,7 +103,10 @@ def _main(args: RayArgs):
     server = RayAgentServer(
         algo, checkpoint_manager, writer, learner_ref, host=args.host, port=args.port
     )
-    server.serve_forever()
+    try:
+        server.serve_forever()
+    finally:
+        close_writer_and_tracker(writer, tracker)
 
 
 def main():

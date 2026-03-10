@@ -22,6 +22,10 @@ from plugrl_server.server.ray_learner import LearnerActor
 SCHEDULER_SLEEP_INTERVAL = 0.001  # seconds
 
 
+class ServerStoppingError(RuntimeError):
+    pass
+
+
 class RayAgentServer:
     def __init__(
         self,
@@ -64,6 +68,9 @@ class RayAgentServer:
                 self._server = server
                 logger.info(f"Agent Server is listening on {self._host}:{self._port}")
                 await self._stop_event.wait()
+                await self._abort_pending_infer_requests(
+                    "Server is shutting down."
+                )
             await scheduler_task
             logger.info("Scheduler task completed.")
         except Exception as exc:
@@ -105,6 +112,31 @@ class RayAgentServer:
             wrapped_exc = RuntimeError(f"Inference processing error: {exc}")
             self._resolve_infer_future(req, exc=wrapped_exc)
 
+    async def _abort_pending_infer_requests(self, reason: str) -> None:
+        async with self._lock:
+            pending_futures = 0
+            for future in self._response_futures.values():
+                if not future.done():
+                    future.set_exception(ServerStoppingError(reason))
+                    pending_futures += 1
+            self._response_futures.clear()
+
+        drained_requests = 0
+        while True:
+            try:
+                self._infer_queue.get_nowait()
+            except asyncio.QueueEmpty:
+                break
+            else:
+                self._infer_queue.task_done()
+                drained_requests += 1
+
+        if pending_futures > 0 or drained_requests > 0:
+            logger.info(
+                "Shutdown cleanup finished: "
+                f"pending_futures={pending_futures}, drained_requests={drained_requests}"
+            )
+
     async def _handler(self, websocket: _server.ServerConnection):
         logger.info(f"Connection from {websocket.remote_address} opened")
         packer = msgpack_numpy.Packer()
@@ -136,10 +168,19 @@ class RayAgentServer:
                     infer_request = dict(id=req_id, obs=obs)
                     await self._infer_queue.put(infer_request)
 
-                    action, internal_state = await response_future
-
-                    async with self._lock:
-                        self._response_futures.pop(req_id, None)
+                    try:
+                        action, internal_state = await response_future
+                    except ServerStoppingError:
+                        async with self._lock:
+                            self._response_futures.pop(req_id, None)
+                        logger.info(
+                            "Shutdown interrupted an in-flight inference request "
+                            f"from {websocket.remote_address}."
+                        )
+                        break
+                    else:
+                        async with self._lock:
+                            self._response_futures.pop(req_id, None)
 
                     action_buffer.extend(action.swapaxes(1, 0))
 

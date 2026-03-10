@@ -116,19 +116,19 @@ def build_cli_from_registry(args_cls: type[ArgsT]) -> ArgsT:
 def init_writer_by_tracker(
     args: Args, *, resuming: bool, log_code: bool, enabled: bool = True
 ):
-    if args.track.tracker == "wandb":
-        import wandb
-
-        tracker_module = wandb
-    else:
-        import swanlab
-
-        tracker_module = swanlab
-        swanlab.sync_tensorboard_torch()
-
     if not enabled:
-        tracker = tracker_module.init(mode="disabled", sync_tensorboard=True)
+        tracker = None
     else:
+        if args.track.tracker == "wandb":
+            import wandb
+
+            tracker_module = wandb
+        else:
+            import swanlab
+
+            tracker_module = swanlab
+            swanlab.sync_tensorboard_torch()
+
         ckpt_dir = args.checkpoint_dir
         if not ckpt_dir.exists():
             raise FileNotFoundError(f"Checkpoint directory {ckpt_dir} does not exist.")
@@ -160,6 +160,24 @@ def init_writer_by_tracker(
 
     writer = SummaryWriter(log_dir=str(args.checkpoint_dir / "tensorboard"))
     return writer, tracker
+
+
+def close_writer_and_tracker(writer, tracker) -> None:
+    try:
+        writer.flush()
+    except Exception as exc:
+        logger.warning(f"Failed to flush writer during shutdown: {exc}")
+
+    try:
+        writer.close()
+    except Exception as exc:
+        logger.warning(f"Failed to close writer during shutdown: {exc}")
+
+    if tracker is not None:
+        try:
+            tracker.finish()
+        except Exception as exc:
+            logger.warning(f"Failed to finish tracker during shutdown: {exc}")
 
 
 def _main(args: Args):
@@ -210,7 +228,10 @@ def _main(args: Args):
     server = WebSocketAgentServer(
         algo, checkpoint_manager, writer, host=args.host, port=args.port
     )
-    server.serve_forever()
+    try:
+        server.serve_forever()
+    finally:
+        close_writer_and_tracker(writer, tracker)
 
 
 def main():

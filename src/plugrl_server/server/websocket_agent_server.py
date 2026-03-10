@@ -21,6 +21,10 @@ INFER_READY_TIMEOUT = 5.0  # seconds to wait for full infer batch before warning
 FEEDBACK_WAIT_TIMEOUT = 60.0  # seconds to wait for client feedback before closing
 
 
+class ServerStoppingError(RuntimeError):
+    pass
+
+
 class WebSocketAgentServer:
     def __init__(
         self,
@@ -51,6 +55,31 @@ class WebSocketAgentServer:
     def serve_forever(self) -> None:
         asyncio.run(self.run())
 
+    async def _abort_pending_infer_requests(self, reason: str) -> None:
+        async with self._lock:
+            pending_futures = 0
+            for future in self._response_futures.values():
+                if not future.done():
+                    future.set_exception(ServerStoppingError(reason))
+                    pending_futures += 1
+            self._response_futures.clear()
+
+        drained_requests = 0
+        while True:
+            try:
+                self._infer_queue.get_nowait()
+            except asyncio.QueueEmpty:
+                break
+            else:
+                self._infer_queue.task_done()
+                drained_requests += 1
+
+        if pending_futures > 0 or drained_requests > 0:
+            logger.info(
+                "Shutdown cleanup finished: "
+                f"pending_futures={pending_futures}, drained_requests={drained_requests}"
+            )
+
     async def run(self):
         scheduler_task = asyncio.create_task(self._main_scheduler_loop())
         try:
@@ -60,6 +89,9 @@ class WebSocketAgentServer:
                 logger.info(f"Agent Server is listening on {self._host}:{self._port}")
                 self._server = server
                 await self._stop_event.wait()
+                await self._abort_pending_infer_requests(
+                    "Server is shutting down."
+                )
         finally:
             if self._server is not None:
                 self._server.close()
@@ -100,10 +132,19 @@ class WebSocketAgentServer:
                     infer_request = dict(id=req_id, obs=obs)
                     await self._infer_queue.put(infer_request)
 
-                    action, internal_state = await response_future
-
-                    async with self._lock:
-                        self._response_futures.pop(req_id, None)
+                    try:
+                        action, internal_state = await response_future
+                    except ServerStoppingError:
+                        async with self._lock:
+                            self._response_futures.pop(req_id, None)
+                        logger.info(
+                            "Shutdown interrupted an in-flight inference request "
+                            f"from {websocket.remote_address}."
+                        )
+                        break
+                    else:
+                        async with self._lock:
+                            self._response_futures.pop(req_id, None)
 
                     action_buffer.extend(action.swapaxes(1, 0))
 
