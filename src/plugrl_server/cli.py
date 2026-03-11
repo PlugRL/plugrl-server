@@ -44,6 +44,8 @@ class Args:
     prefix: str | None = None
     suffix: str | None = None
     exp_name: str | None = None
+    exp_id: int = 0
+    seed: int = 0
     overwrite: bool = False
     resume: bool = False
 
@@ -54,7 +56,7 @@ class Args:
             if self.prefix is None:
                 self.prefix = str(uuid.uuid4().fields[-1])[:5]
 
-            self.exp_name = create_exp_name(self.prefix)
+            self.exp_name = create_exp_name(self.prefix, self.exp_id, self.seed)
             if self.suffix is not None:
                 self.exp_name = f"{self.exp_name}_{self.suffix}"
 
