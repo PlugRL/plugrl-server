@@ -11,8 +11,12 @@ import uuid
 from loguru import logger
 from torch.utils.tensorboard import SummaryWriter
 
-from plugrl_client import msgpack_numpy
-from plugrl_client.websocket_worker_agent import MessageType, SERVER_STOP_REASON, SERVER_RESYNC_REASON
+from plugrl_protocol import msgpack_numpy
+from plugrl_protocol.websocket_protocol import (
+    MessageType,
+    SERVER_RESYNC_REASON,
+    SERVER_STOP_REASON,
+)
 
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm
 from plugrl_server.common.checkpoint_manager import CheckpointManager

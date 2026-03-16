@@ -12,15 +12,15 @@ pip install -e .
 
 ### For Developers
 
-We use Poetry to manage dependencies and development environments.
+We use `uv` to manage dependencies and development environments.
 
-1. **Install Poetry** (if not already installed):
+1. **Install uv** (if not already installed):
 
     ```bash
-    curl -sSL https://install.python-poetry.org | python3 -
+  curl -LsSf https://astral.sh/uv/install.sh | sh
     ```
 
-    Or use your package manager (e.g., `brew install poetry` on macOS).
+  Or use your package manager (e.g., `brew install uv` on macOS).
 
 2. **Clone the repository:**
 
@@ -29,24 +29,18 @@ We use Poetry to manage dependencies and development environments.
     cd plugrl-server
     ```
 
-3. **Install dependencies with Poetry:**
+3. **Install dependencies with uv:**
 
     ```bash
-    poetry install
+  uv sync
     ```
 
-    This will create a virtual environment and install all dependencies specified in `pyproject.toml`.
+  This will create a virtual environment at `.venv/` and install all dependencies specified in `pyproject.toml`.
 
-4. **Activate the Poetry environment:**
-
-    ```bash
-    poetry shell
-    ```
-
-    Or run commands directly with `poetry run`:
+4. **Run commands via uv:**
 
     ```bash
-    poetry run python -m plugrl_server.cli --help
+  uv run python -m plugrl_server.cli --help
     ```
 
 ### 🚀 Usage
@@ -62,7 +56,7 @@ We use Poetry to manage dependencies and development environments.
 
 **Policies:**
 - `dummy-policy` - Dummy policy that outputs random actions (for testing)
-- `dppo-policy` - DPPO policy (requires `plugrl-worker[dppo]` and checkpoint)
+- `dppo-policy` - DPPO policy (requires `plugrl-server[dppo]` and checkpoint)
 - `pi0-policy` - PI0 policy (OpenPI) (requires checkpoint)
 
 #### Quick Start: Testing with Dummy Components
@@ -73,7 +67,7 @@ To test the agent-server connection with dummy algorithm and policy:
 # Terminal 1: Start the server
 python -m plugrl_server.cli dummy-policy default dummy default
 
-# Terminal 2: Start the environment client (from plugrl-worker)
+# Terminal 2: Start the environment client (from plugrl-env-client)
 # The server will listen on localhost:8000 by default
 ```
 

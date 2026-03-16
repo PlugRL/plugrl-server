@@ -2,7 +2,7 @@ try:
     import dppo
 except ImportError:
     raise ImportError(
-        'dppo is not installed. Please install it with pip install "plugrl-worker[dppo]".'
+        'dppo is not installed. Please install it with pip install "plugrl-server[dppo]".'
     )
 
 from loguru import logger

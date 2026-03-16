@@ -12,8 +12,12 @@ from torch.utils.tensorboard import SummaryWriter
 
 from loguru import logger
 
-from plugrl_client import msgpack_numpy
-from plugrl_client.websocket_worker_agent import MessageType, SERVER_STOP_REASON, SERVER_RESYNC_REASON
+from plugrl_protocol import msgpack_numpy
+from plugrl_protocol.websocket_protocol import (
+    MessageType,
+    SERVER_RESYNC_REASON,
+    SERVER_STOP_REASON,
+)
 
 from plugrl_server.algorithm.base_algorithm import DDPAlgorithm
 from plugrl_server.common.checkpoint_manager import CheckpointManager, Checkpoint
@@ -22,10 +26,6 @@ from plugrl_server.server.ray_learner import LearnerActor
 
 
 SCHEDULER_SLEEP_INTERVAL = 0.001  # seconds
-SERVER_STOP_REASON = "plugrl-server-stop"
-SERVER_RESYNC_REASON = "plugrl-server-resync"
-
-
 class ServerStoppingError(RuntimeError):
     pass
 

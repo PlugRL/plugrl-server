@@ -21,7 +21,7 @@ try:
     import dppo.util.scheduler as _dppo_scheduler
 except ImportError:
     raise ImportError(
-        'dppo is not installed. Please install it with pip install "plugrl-worker[dppo]".'
+        'dppo is not installed. Please install it with pip install "plugrl-server[dppo]".'
     )
 
 UID = "dppo"

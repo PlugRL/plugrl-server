@@ -6,9 +6,9 @@ cd third_party/openpi
 cd packages/openpi_client
 pip install -e .
 cd ../..
-pip install e .
+pip install -e .
 cd ../..
-poetry install
+uv sync --extra openpi
 ```
 
 Replace transformers by
