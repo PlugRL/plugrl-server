@@ -9,6 +9,7 @@ from .registration import register_algo, register_algo_config
 
 from plugrl_server.policy.base_policy import InternalState, BasePolicy
 from plugrl_server.common.checkpoint_manager import Checkpoint
+from plugrl_server.common.data_utils import unbatch_aggregate
 
 UID = "dummy"
 
@@ -53,20 +54,13 @@ class DummyAlgorithm(DDPAlgorithm):
             logger.info(f"[DummyAlgorithm] {message}")
 
     def _should_log_progress(self, step: int) -> bool:
-        return self.verbose and (step <= 1 or step % self.verbose_feedback_interval == 0)
-
-    @staticmethod
-    def _infer_batch_size(obs: dict) -> int:
-        for value in obs.values():
-            try:
-                return len(value)
-            except TypeError:
-                continue
-        return 1
+        return self.verbose and (
+            step <= 1 or step % self.verbose_feedback_interval == 0
+        )
 
     def infer(self, obs: dict) -> tuple[np.ndarray, InternalState]:
         next_step = self.global_step + 1
-        batch_size = self._infer_batch_size(obs)
+        batch_size = len(unbatch_aggregate(obs, aggregate_method="concat"))
         should_log = self._should_log_progress(next_step)
         start_time = time.perf_counter()
         if should_log:

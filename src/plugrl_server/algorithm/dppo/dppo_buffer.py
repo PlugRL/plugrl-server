@@ -47,14 +47,14 @@ class DPPOBuffer(GAEBuffer):
         current_idx = self.idx
         if prev_idx != -1:
             self.next_indices[prev_idx] = current_idx
-            self.rets[current_idx] = self.rets[prev_idx] * self.gamma + reward
+            self.rets[current_idx] = self.rets[prev_idx] * self.gamma + float(reward)
         else:
-            self.rets[current_idx] = reward
+            self.rets[current_idx] = float(reward)
         self.obs[current_idx] = internal_state.obs[0]
         self.actions[current_idx] = internal_state.action
         self.logprobs[current_idx] = internal_state.logprob
         self.values[current_idx] = internal_state.value
-        self.rewards[current_idx] = reward
+        self.rewards[current_idx] = float(reward)
         self.dones[current_idx] = bool(done)
         if last_value is not None:
             self.last_values[current_idx] = last_value
@@ -98,7 +98,9 @@ class DPPOBuffer(GAEBuffer):
                 "Policy must be provided to compute values for done observations."
             )
             for i in range(0, len(next_observations), batch_size):
-                batch_obs = batch_aggregate(next_observations[i : i + batch_size])
+                batch_obs = batch_aggregate(
+                    next_observations[i : i + batch_size], aggregate_method="concat"
+                )
                 with torch.inference_mode():
                     batch_values = policy.get_value(batch_obs).cpu().float()
                 self.last_values[next_ids[i : i + batch_size]] = batch_values

@@ -124,7 +124,6 @@ class Pi0Policy(BasePolicyGradientDiffusionPolicy):
         for single_obs in unbatch_obs:
             inputs = jax.tree.map(lambda x: x, single_obs)
             inputs = self.input_transform(inputs)
-            inputs = jax.tree.map(lambda x: x[np.newaxis, ...], inputs)
             obs_list.append(inputs)
 
         batch_obs = batch_aggregate(obs_list)

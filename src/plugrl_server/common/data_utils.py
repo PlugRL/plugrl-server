@@ -1,12 +1,15 @@
 import torch
 import numpy as np
 import tensordict
-from typing import List, Dict, Any, Union
+from typing import List, Dict, Any, Union, Literal
 
 BatchDict = Dict[str, Union["BatchDict", np.ndarray, List[Any]]]
 
 
-def batch_aggregate(list_of_dicts: List[Dict[str, Any]]) -> BatchDict:
+def batch_aggregate(
+    list_of_dicts: List[Dict[str, Any]],
+    aggregate_method: Literal["stack", "concat"] = "stack",
+) -> BatchDict:
     if not list_of_dicts:
         return {}
 
@@ -19,7 +22,14 @@ def batch_aggregate(list_of_dicts: List[Dict[str, Any]]) -> BatchDict:
 
         if isinstance(first_value, np.ndarray):
             try:
-                result[key] = np.concatenate(values, axis=0)
+                if aggregate_method == "stack":
+                    result[key] = np.stack(values, axis=0)
+                elif aggregate_method == "concat":
+                    result[key] = np.concatenate(values, axis=0)
+                else:
+                    raise ValueError(
+                        f"Unsupported aggregate_method: {aggregate_method}"
+                    )
             except ValueError as e:
                 print(
                     f"Warning: Incompatible np.ndarray shapes under key '{key}' ({e}), aggregating as list."
@@ -38,7 +48,9 @@ def batch_aggregate(list_of_dicts: List[Dict[str, Any]]) -> BatchDict:
     return result
 
 
-def unbatch_aggregate(batched_dict: BatchDict) -> List[Dict[str, Any]]:
+def unbatch_aggregate(
+    batched_dict: BatchDict, aggregate_method: Literal["stack", "concat"] = "stack"
+) -> List[Dict[str, Any]]:
     if not batched_dict:
         return []
 
@@ -69,11 +81,18 @@ def unbatch_aggregate(batched_dict: BatchDict) -> List[Dict[str, Any]]:
 
         if isinstance(value, np.ndarray):
             for i in range(batch_size):
-                result[i][key] = value[i]
+                if aggregate_method == "stack":
+                    result[i][key] = value[i]
+                elif aggregate_method == "concat":
+                    result[i][key] = value[i : i + 1]
+                else:
+                    raise ValueError(
+                        f"Unsupported aggregate_method: {aggregate_method}"
+                    )
         elif isinstance(value, dict):
-            nested_unbatched = unbatch_aggregate(value)
-            for i in range(batch_size):
-                result[i][key] = nested_unbatched[i]
+            nested_unbatched = unbatch_aggregate(value, aggregate_method)
+            for i, nested_dict in enumerate(nested_unbatched):
+                result[i][key] = nested_dict
         else:
             for i in range(batch_size):
                 result[i][key] = value[i]

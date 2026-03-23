@@ -2,7 +2,6 @@ import asyncio
 import signal
 import traceback
 import time
-from collections import deque
 from typing import Any
 import numpy as np
 import websockets.asyncio.server as _server
@@ -20,12 +19,11 @@ from plugrl_protocol.websocket_protocol import (
 
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm
 from plugrl_server.common.checkpoint_manager import CheckpointManager
-from plugrl_server.common.data_utils import batch_aggregate
+from plugrl_server.common.data_utils import batch_aggregate, unbatch_aggregate
 
 SCHEDULER_SLEEP_INTERVAL = 0.001  # seconds
 INFER_READY_TIMEOUT = 5.0  # seconds to wait for full infer batch before warning
 FEEDBACK_WAIT_TIMEOUT = 60.0  # seconds to wait for client feedback before closing
-
 
 
 class ServerStoppingError(RuntimeError):
@@ -38,6 +36,7 @@ class WebSocketAgentServer:
         algorithm: BaseAlgorithm,
         checkpoint_manager: CheckpointManager,
         writer: SummaryWriter,
+        mini_infer_batch_size: int | None = None,
         host: str = "0.0.0.0",
         port: int = 8000,
         metadata: dict | None = None,
@@ -51,6 +50,9 @@ class WebSocketAgentServer:
 
         self._infer_queue = asyncio.Queue()
         self._response_futures = {}
+        # Accumulate partial inference outputs per req_id; only fulfill the
+        # corresponding future once all sub-indices for that req_id arrive.
+        self._pending_infer_results: dict[str, dict[str, Any]] = {}
         self._lock = asyncio.Lock()
         self._model_lock = asyncio.Lock()
         self._server: Any = None
@@ -61,6 +63,8 @@ class WebSocketAgentServer:
         self._close_reason = ""
         self._shutdown_reason = "Server is shutting down."
         self._fatal_reported = False
+
+        self._mini_infer_batch_size = mini_infer_batch_size
 
     def serve_forever(self) -> None:
         asyncio.run(self.run())
@@ -106,6 +110,9 @@ class WebSocketAgentServer:
                     future.set_exception(ServerStoppingError(reason))
                     pending_futures += 1
             self._response_futures.clear()
+
+        # pending accumulators are only used to group results; drop them on shutdown
+        self._pending_infer_results.clear()
 
         drained_requests = 0
         while True:
@@ -184,9 +191,11 @@ class WebSocketAgentServer:
             await websocket.send(packer.pack(metadata_message))
             self._total_connections += 1
             connection_counted = True
-            prev_node: tuple = (-1, "")
-            terminated, truncated = False, False
-            action_buffer = deque()
+            prev_node_map: dict = {}
+            internal_state_map: dict = {}
+            terminated_map: dict = {}
+            truncated_map: dict = {}
+            last_obs_map: dict = {}
             while True:
                 packed_infer_msg = await websocket.recv()
                 infer_msg = msgpack_numpy.unpackb(packed_infer_msg)
@@ -201,49 +210,68 @@ class WebSocketAgentServer:
                     )
                     break
 
-                obs, internal_state = infer_msg.get("data"), None
+                obs, env_ids, internal_state = (
+                    infer_msg.get("data"),
+                    infer_msg.get("env_indices"),
+                    None,
+                )
+                obs_list = unbatch_aggregate(obs, aggregate_method="concat")
 
-                if not action_buffer:
-                    req_id = f"{session_id}-{uuid.uuid4()}"
-                    response_future = asyncio.Future()
-                    async with self._lock:
-                        self._response_futures[req_id] = response_future
-                    infer_request = dict(id=req_id, obs=obs)
+                req_id = f"{session_id}-{uuid.uuid4()}"
+                response_future = asyncio.Future()
+                async with self._lock:
+                    self._response_futures[req_id] = response_future
+
+                # put one queue entry per env; include expected_count to support
+                # partial batching without completing the request early
+                expected_count = len(env_ids)
+                for i, (obs, eid) in enumerate(zip(obs_list, env_ids)):
+                    infer_request = dict(
+                        id=req_id,
+                        obs=obs,
+                        sub_index=i,
+                        env_id=eid,
+                        expected_count=expected_count,
+                    )
                     await self._infer_queue.put(infer_request)
 
-                    try:
-                        action, internal_state = await response_future
-                    except ServerStoppingError:
-                        async with self._lock:
-                            self._response_futures.pop(req_id, None)
-                        if self._close_reason:
-                            try:
-                                await websocket.close(
-                                    code=websockets.frames.CloseCode.GOING_AWAY,
-                                    reason=self._close_reason,
-                                )
-                            except Exception:
-                                pass
-                        logger.info(
-                            "Shutdown interrupted an in-flight inference request "
-                            f"from {websocket.remote_address}."
-                        )
-                        break
-                    else:
-                        async with self._lock:
-                            self._response_futures.pop(req_id, None)
-
-                    action_buffer.extend(action.swapaxes(1, 0))
-
-                if self._algorithm.break_action_chunk:
-                    action = action_buffer.popleft()
-                else:
-                    action = np.array(
-                        [action_buffer.popleft() for _ in range(len(action_buffer))]
+                try:
+                    # response now may include env_ids and obs_list for per-env mapping
+                    # response is expected to be a tuple: (action_arr, internal_state_arr, resp_env_ids, resp_obs_list)
+                    response = await response_future
+                    action_arr, internal_state_arr, resp_env_ids, resp_obs_list = (
+                        response
                     )
+                    assert np.array_equal(
+                        np.asarray(resp_env_ids), np.asarray(env_ids)
+                    ), "Response env_ids do not match request env_ids"
+                except ServerStoppingError:
+                    async with self._lock:
+                        self._response_futures.pop(req_id, None)
+                    if self._close_reason:
+                        try:
+                            await websocket.close(
+                                code=websockets.frames.CloseCode.GOING_AWAY,
+                                reason=self._close_reason,
+                            )
+                        except Exception:
+                            pass
+                    logger.info(
+                        "Shutdown interrupted an in-flight inference request "
+                        f"from {websocket.remote_address}."
+                    )
+                    break
+                else:
+                    async with self._lock:
+                        self._response_futures.pop(req_id, None)
+                # register per-env internal states and last observations
+                for i, eid in enumerate(resp_env_ids):
+                    internal_state_map[eid] = internal_state_arr[i]
+                    last_obs_map[eid] = resp_obs_list[i]
 
                 action_response = dict(
-                    message_type=str(MessageType.ACTION), data=dict(action=action)
+                    message_type=str(MessageType.ACTION),
+                    data=dict(env_ids=resp_env_ids, action=action_arr.swapaxes(0, 1)),
                 )
                 await websocket.send(packer.pack(action_response))
 
@@ -275,26 +303,56 @@ class WebSocketAgentServer:
 
                 feedback_data = feedback_msg.get("data")
 
-                next_obs, reward, next_terminated, next_truncated, info = (
-                    feedback_data.values()
+                fb_env_ids, _ = (
+                    feedback_msg.get("env_indices"),
+                    feedback_msg.get("step_ids"),
                 )
+                # assume feedback_data contains parallel lists/arrays with an 'env_ids' field
+                (
+                    next_obs_batch,
+                    reward_list,
+                    next_terminated_list,
+                    next_truncated_list,
+                    info_batch,
+                ) = feedback_data.values()
+                next_obs_list = unbatch_aggregate(
+                    next_obs_batch, aggregate_method="concat"
+                )
+                info_list = unbatch_aggregate(info_batch, aggregate_method="stack")
+                assert len(info_list) == len(next_obs_list) or len(info_list) == 0
+                # process each env's feedback individually
                 async with self._model_lock:
-                    prev_node, step, log_dict = self._algorithm.feedback(
-                        obs=obs,
-                        internal_state=internal_state,
-                        terminated=terminated,
-                        truncated=truncated,
-                        next_obs=next_obs,
-                        reward=reward,
-                        next_terminated=next_terminated,
-                        next_truncated=next_truncated,
-                        info=info,
-                        prev_node=prev_node,
-                    )
-                    for key, value in log_dict.items():
-                        self._writer.add_scalar(key, value, step)
+                    for idx, eid in enumerate(fb_env_ids):
+                        n_obs = next_obs_list[idx]
+                        rew = reward_list[idx]
+                        n_term = next_terminated_list[idx]
+                        n_trunc = next_truncated_list[idx]
+                        inf = info_list[idx] if len(info_list) > 0 else {}
 
-                terminated, truncated = next_terminated, next_truncated
+                        prev_node = prev_node_map.get(eid, (-1, ""))
+                        internal_state = internal_state_map.get(eid, None)
+                        terminated = terminated_map.get(eid, False)
+                        truncated = truncated_map.get(eid, False)
+                        last_obs = last_obs_map.get(eid, {})
+                        prev_node_res, step, log_dict = self._algorithm.feedback(
+                            obs=last_obs,
+                            internal_state=internal_state,
+                            terminated=terminated,
+                            truncated=truncated,
+                            next_obs=n_obs,
+                            reward=rew,
+                            next_terminated=n_term,
+                            next_truncated=n_trunc,
+                            info=inf,
+                            prev_node=prev_node,
+                        )
+
+                        prev_node_map[eid] = prev_node_res
+                        terminated_map[eid] = bool(n_term)
+                        truncated_map[eid] = bool(n_trunc)
+
+                        for key, value in log_dict.items():
+                            self._writer.add_scalar(key, value, step)
 
         except websockets.ConnectionClosed:
             pass
@@ -318,7 +376,12 @@ class WebSocketAgentServer:
         current_qsize = self._infer_queue.qsize()
         now = time.monotonic()
 
-        if current_qsize == self._total_connections and self._total_connections > 0:
+        # allow queue size to be >= total connections to support per-connection
+        # multi-env requests that expand into multiple queue entries
+
+        infer_thereshold = self._mini_infer_batch_size or self._total_connections
+
+        if (current_qsize >= infer_thereshold) and self._total_connections > 0:
             self._infer_wait_start = None
             return True
 
@@ -340,15 +403,63 @@ class WebSocketAgentServer:
         for _ in range(self._infer_queue.qsize()):
             batch.append(await self._infer_queue.get())
         try:
-            obs = batch_aggregate([req["obs"] for req in batch])
+            obs = batch_aggregate(
+                [req["obs"] for req in batch], aggregate_method="concat"
+            )
             logger.debug(f"Processing inference for batch size {len(batch)}")
             async with self._model_lock:
                 action, internal_state = self._algorithm.infer(obs)
             logger.debug(f"Inference done for batch size {len(batch)}")
-            for i, req in enumerate(batch):
-                future = self._response_futures.get(req["id"])
-                if future and not future.done():
-                    future.set_result((action[i : i + 1], internal_state[i : i + 1]))
+            # action/internal_state correspond to rows matching batch order
+            # group indices by original request id so we can set a single
+            # future.result per original request (which may have contained
+            # multiple envs)
+            indices_by_req = {}
+            for idx, req in enumerate(batch):
+                indices_by_req.setdefault(req["id"], []).append(idx)
+
+            for req_id, indices in indices_by_req.items():
+                first_req = batch[indices[0]]
+                expected_count = int(first_req.get("expected_count", len(indices)))
+
+                pending = self._pending_infer_results.get(req_id)
+                if pending is None:
+                    pending = {"expected_count": expected_count, "items": {}}
+                    self._pending_infer_results[req_id] = pending
+                elif int(pending["expected_count"]) != expected_count:
+                    logger.warning(
+                        f"Mismatched expected_count for req_id={req_id}: "
+                        f"pending={pending['expected_count']}, incoming={expected_count}"
+                    )
+
+                # stash partial results keyed by sub_index
+                for i in indices:
+                    req = batch[i]
+                    sub_index = int(req.get("sub_index"))
+                    pending["items"][sub_index] = (
+                        action[i],
+                        internal_state[i : i + 1],
+                        req.get("env_id"),
+                        req["obs"],
+                    )
+
+                exp = int(pending["expected_count"])
+                if all(k in pending["items"] for k in range(exp)):
+                    ordered = [pending["items"][k] for k in range(exp)]
+                    act_result = np.stack([item[0] for item in ordered])
+                    int_result = [item[1] for item in ordered]
+                    # make this a numpy array so existing `(resp_env_ids == env_ids).all()` works reliably
+                    env_id_list = np.asarray([item[2] for item in ordered])
+                    obs_list = [item[3] for item in ordered]
+
+                    future = self._response_futures.get(req_id)
+                    if future and not future.done():
+                        future.set_result(
+                            (act_result, int_result, env_id_list, obs_list)
+                        )
+                    self._pending_infer_results.pop(req_id, None)
+
+            for _ in batch:
                 self._infer_queue.task_done()
         except Exception as exc:
             for req in batch:

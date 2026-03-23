@@ -22,10 +22,11 @@ from plugrl_protocol.websocket_protocol import (
 from plugrl_server.algorithm.base_algorithm import DDPAlgorithm
 from plugrl_server.common.checkpoint_manager import CheckpointManager, Checkpoint
 from plugrl_server.common.data_utils import batch_aggregate
-from plugrl_server.server.ray_learner import LearnerActor
 
 
 SCHEDULER_SLEEP_INTERVAL = 0.001  # seconds
+
+
 class ServerStoppingError(RuntimeError):
     pass
 

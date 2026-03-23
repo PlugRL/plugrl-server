@@ -49,6 +49,8 @@ class Args:
     overwrite: bool = False
     resume: bool = False
 
+    mini_infer_batch_size: int | None = None
+
     checkpoint_base_dir: str = "./checkpoints"
 
     def __post_init__(self):
@@ -228,7 +230,12 @@ def _main(args: Args):
         algo.load_checkpoint(checkpoint)
 
     server = WebSocketAgentServer(
-        algo, checkpoint_manager, writer, host=args.host, port=args.port
+        algo,
+        checkpoint_manager,
+        writer,
+        host=args.host,
+        port=args.port,
+        mini_infer_batch_size=args.mini_infer_batch_size,
     )
     try:
         server.serve_forever()
