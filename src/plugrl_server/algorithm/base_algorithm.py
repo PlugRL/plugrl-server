@@ -2,7 +2,7 @@ import abc
 import dataclasses
 import numpy as np
 
-from plugrl_server.policy.base_policy import BasePolicy, PolicyTensorState
+from plugrl_server.policy.base_policy import BasePolicy
 from plugrl_server.policy.state import PolicyRuntimeState, PolicyStepState, PolicyTrainState
 from plugrl_server.common.checkpoint_manager import Checkpoint
 
@@ -24,25 +24,23 @@ class BaseAlgorithm(abc.ABC):
     def active_policy(self) -> BasePolicy:
         return self.policy
 
-    def export_policy_step_state(
+    def derive_train_state(self, runtime_state: PolicyRuntimeState) -> PolicyTrainState:
+        return None
+
+    def example_train_state(self, batch_size: int) -> PolicyTrainState:
+        return None
+
+    def build_step_state_from_runtime_state(
         self,
-        policy_tensor_state: PolicyTensorState,
+        runtime_state: PolicyRuntimeState,
         *,
         include_train_state: bool = True,
     ) -> PolicyStepState:
-        return self.active_policy.build_policy_step_state(
-            policy_tensor_state,
-            include_train_state=include_train_state,
-        )
-
-    def infer_step(self, obs: dict, *, include_train_state: bool = False) -> tuple[np.ndarray, PolicyStepState]:
-        action, runtime_state = self.infer(obs)
-        assert isinstance(runtime_state, PolicyTensorState), (
-            "Default infer_step requires infer() to return PolicyTensorState-compatible runtime state."
-        )
-        return action, self.export_policy_step_state(
-            runtime_state,
-            include_train_state=include_train_state,
+        return PolicyStepState(
+            runtime_state=runtime_state,
+            train_state=(
+                self.derive_train_state(runtime_state) if include_train_state else None
+            ),
         )
 
     @abc.abstractmethod

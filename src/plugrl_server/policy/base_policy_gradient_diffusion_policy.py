@@ -3,7 +3,6 @@ import torch
 import tensordict
 from typing import Any
 from .base_policy import BasePolicy, BasePolicyConfig, PolicyTensorState
-from .state import PolicyRuntimeState, PolicyTrainState, to_numpy_state
 
 
 class BasePolicyGradientDiffusionPolicyConfig(BasePolicyConfig): ...
@@ -123,14 +122,3 @@ class BasePolicyGradientDiffusionPolicy(BasePolicy):
         return PolicyTensorState(
             obs=obs, action=action, logprob=logprob, entropy=entropy, value=value
         )
-
-    def export_runtime_state(self, policy_state: PolicyTensorState) -> PolicyRuntimeState:
-        return policy_state
-
-    def export_train_state(self, policy_state: PolicyTensorState) -> PolicyTrainState:
-        numpy_state = to_numpy_state(policy_state)
-        if numpy_state is None:
-            return None
-        if not isinstance(numpy_state, dict):
-            raise TypeError("Diffusion train state export must be mapping-like.")
-        return numpy_state

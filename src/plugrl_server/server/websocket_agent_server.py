@@ -355,8 +355,9 @@ class WebSocketAgentServer:
             )
             logger.debug(f"Processing inference for batch size {len(batch)}")
             async with self._model_lock:
-                action, step_state = self._algorithm.infer_step(
-                    obs,
+                action, runtime_state = self._algorithm.infer(obs)
+                step_state = self._algorithm.build_step_state_from_runtime_state(
+                    runtime_state,
                     include_train_state=True,
                 )
             logger.debug(f"Inference done for batch size {len(batch)}")

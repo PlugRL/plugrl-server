@@ -10,7 +10,8 @@ from loguru import logger
 from plugrl_server.common.checkpoint_manager import Checkpoint
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm, BaseAlgoConfig
 from plugrl_server.algorithm.registration import register_algo, register_algo_config
-from plugrl_server.policy.state import PolicyRuntimeState, PolicyTrainState
+from plugrl_server.policy.base_policy import PolicyTensorState
+from plugrl_server.policy.state import PolicyRuntimeState, PolicyTrainState, to_numpy_state
 from plugrl_server.policy.base_policy_gradient_diffusion_policy import (
     BasePolicyGradientDiffusionPolicy,
 )
@@ -115,7 +116,7 @@ class DPPOAlgorithm(BaseAlgorithm):
     ):
         super().__init__(config, policy)
         logger.info("Initializing DPPO Buffer...")
-        example_train_state = policy.example_train_state(batch_size=1)
+        example_train_state = self.example_train_state(batch_size=1)
         if example_train_state is None:
             raise ValueError("DPPO requires non-empty train_state for rollout storage.")
         self.rollout_buffer = DPPOBuffer(
@@ -189,6 +190,19 @@ class DPPOAlgorithm(BaseAlgorithm):
             )
         return action, runtime_state
 
+    def derive_train_state(self, runtime_state: PolicyRuntimeState) -> PolicyTrainState:
+        if not isinstance(runtime_state, PolicyTensorState):
+            raise TypeError(
+                "DPPO requires runtime_state to be PolicyTensorState-compatible."
+            )
+        numpy_state = to_numpy_state(runtime_state)
+        if numpy_state is None or not isinstance(numpy_state, dict):
+            raise TypeError("DPPO requires mapping-like train_state export.")
+        return numpy_state
+
+    def example_train_state(self, batch_size: int) -> PolicyTrainState:
+        return self.derive_train_state(self.active_policy.fake_policy_state(batch_size))
+
     def feedback(
         self,
         *,
@@ -208,7 +222,7 @@ class DPPOAlgorithm(BaseAlgorithm):
             assert runtime_state is not None, (
                 "Runtime state must be provided when train_state is missing."
             )
-            train_state = self.active_policy.derive_train_state(runtime_state)
+            train_state = self.derive_train_state(runtime_state)
         assert train_state is not None, "DPPO requires train_state for rollout storage."
         current_node = self.rollout_buffer.add_frame(
             prev_node=prev_node,

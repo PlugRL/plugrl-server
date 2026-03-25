@@ -3,7 +3,6 @@ import torch
 import dataclasses
 from .registration import register_policy_config, register_policy
 from .base_policy import BasePolicyConfig, BasePolicy, PolicyTensorState
-from .state import PolicyTrainState
 
 
 @register_policy_config("dummy-policy")
@@ -48,9 +47,6 @@ class DummyPolicy(BasePolicy):
             value=torch.zeros((batch_size,)),
             entropy=torch.zeros((batch_size,)),
         )
-
-    def export_train_state(self, policy_state: PolicyTensorState) -> PolicyTrainState:
-        return None
 
     def _get_value(self, obs: torch.Tensor | dict) -> torch.Tensor:
         # Return a zero value per batch element. Accept raw dict or tensor input.
