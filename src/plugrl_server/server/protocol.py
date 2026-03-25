@@ -4,6 +4,10 @@ from typing import Any
 from plugrl_protocol.websocket_protocol import MessageType
 
 
+class ProtocolValidationError(ValueError):
+    pass
+
+
 @dataclass(frozen=True)
 class MetadataMessage:
     data: dict[str, Any]
@@ -77,6 +81,6 @@ def parse_feedback_request(payload: dict[str, Any]) -> FeedbackRequestMessage:
 def _expect_message_type(payload: dict[str, Any], expected: MessageType) -> None:
     actual = payload.get("message_type")
     if actual != str(expected):
-        raise ValueError(
+        raise ProtocolValidationError(
             f"Expected message_type={str(expected)!r}, received {actual!r}"
         )

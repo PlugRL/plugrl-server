@@ -25,6 +25,7 @@ from plugrl_server.server.lifecycle import ServerLifecycle
 from plugrl_server.server.protocol import (
     ActionMessage,
     MetadataMessage,
+    ProtocolValidationError,
     parse_feedback_request,
     parse_infer_request,
 )
@@ -138,6 +139,15 @@ class RayAgentServer:
                 self._shutdown(scheduler_task, self._lifecycle.shutdown_reason)
             )
 
+    async def _close_for_protocol_error(
+        self, websocket: _server.ServerConnection, exc: Exception
+    ) -> None:
+        logger.warning(f"{exc}. Requesting worker resync.")
+        await websocket.close(
+            code=websockets.frames.CloseCode.GOING_AWAY,
+            reason=SERVER_RESYNC_REASON,
+        )
+
     async def _handler(self, websocket: _server.ServerConnection):
         logger.info(f"Connection from {websocket.remote_address} opened")
         packer = msgpack_numpy.Packer()
@@ -157,18 +167,12 @@ class RayAgentServer:
             while True:
                 packed_infer_msg = await websocket.recv()
                 infer_payload = msgpack_numpy.unpackb(packed_infer_msg)
-                if infer_payload.get("message_type") != str(MessageType.INFER):
-                    logger.warning(
-                        "Expected an INFER message but received "
-                        f"{infer_payload.get('message_type')}. Requesting worker resync."
-                    )
-                    await websocket.close(
-                        code=websockets.frames.CloseCode.GOING_AWAY,
-                        reason=SERVER_RESYNC_REASON,
-                    )
+                try:
+                    infer_msg = parse_infer_request(infer_payload)
+                except (KeyError, ProtocolValidationError) as exc:
+                    await self._close_for_protocol_error(websocket, exc)
                     break
 
-                infer_msg = parse_infer_request(infer_payload)
                 obs, internal_state = infer_msg.data, None
 
                 if not action_buffer:
@@ -214,19 +218,12 @@ class RayAgentServer:
 
                 packed_feedback_msg = await websocket.recv()
                 feedback_payload = msgpack_numpy.unpackb(packed_feedback_msg)
-
-                if feedback_payload.get("message_type") != str(MessageType.FEEDBACK):
-                    logger.warning(
-                        "Expected a FEEDBACK message but received: "
-                        f"{feedback_payload.get('message_type')}. Requesting worker resync."
-                    )
-                    await websocket.close(
-                        code=websockets.frames.CloseCode.GOING_AWAY,
-                        reason=SERVER_RESYNC_REASON,
-                    )
+                try:
+                    feedback_msg = parse_feedback_request(feedback_payload)
+                except (KeyError, ProtocolValidationError) as exc:
+                    await self._close_for_protocol_error(websocket, exc)
                     break
 
-                feedback_msg = parse_feedback_request(feedback_payload)
                 next_obs = feedback_msg.data.obs
                 reward = feedback_msg.data.rewards
                 next_terminated = feedback_msg.data.terminated
