@@ -1,6 +1,4 @@
 import asyncio
-import signal
-import traceback
 from collections import deque
 from typing import Any
 import numpy as np
@@ -20,8 +18,18 @@ from plugrl_protocol.websocket_protocol import (
 )
 
 from plugrl_server.algorithm.base_algorithm import DDPAlgorithm
-from plugrl_server.common.checkpoint_manager import CheckpointManager, Checkpoint
+from plugrl_server.common.checkpoint_manager import CheckpointManager
 from plugrl_server.common.data_utils import batch_aggregate
+from plugrl_server.server.inference_coordinator import InferenceCoordinator
+from plugrl_server.server.lifecycle import ServerLifecycle
+from plugrl_server.server.protocol import (
+    ActionMessage,
+    MetadataMessage,
+    parse_feedback_request,
+    parse_infer_request,
+)
+from plugrl_server.server.runtime_scheduler import RuntimeScheduler
+from plugrl_server.server.training_backend import RayTrainingBackend
 
 
 SCHEDULER_SLEEP_INTERVAL = 0.001  # seconds
@@ -51,93 +59,45 @@ class RayAgentServer:
         self._port = port
         self._metadata = metadata or {}
 
-        self._infer_queue = asyncio.Queue()
-        self._response_futures = {}
-        self._lock = asyncio.Lock()
+        self._inference = InferenceCoordinator(
+            stopping_error_factory=ServerStoppingError,
+        )
         self._model_lock = asyncio.Lock()
-        self._stop_event = asyncio.Event()
         self._server: Any = None
+        self._lifecycle = ServerLifecycle()
+        self._scheduler = RuntimeScheduler(
+            stop_event=self._lifecycle.stop_event,
+            sleep_interval=SCHEDULER_SLEEP_INTERVAL,
+        )
+        self._training = RayTrainingBackend(
+            algorithm=self._algorithm,
+            checkpoint_manager=self._checkpoint_manager,
+            writer=self._writer,
+            learner_actor_ref=self._learner_actor,
+        )
 
         self._total_connections = 0
-        self._fatal_reported = False
-        self._close_reason = ""
-        self._shutdown_reason = "Server is shutting down."
 
     def serve_forever(self) -> None:
         asyncio.run(self.run())
 
     def _request_shutdown(self, reason: str, close_reason: str | None = None) -> None:
-        if close_reason is not None:
-            self._close_reason = close_reason
-        if self._stop_event.is_set():
-            return
-        self._shutdown_reason = reason
-        logger.info(reason)
-        self._stop_event.set()
+        self._lifecycle.request_shutdown(reason, close_reason)
 
     def _install_signal_handlers(self) -> None:
-        loop = asyncio.get_running_loop()
-        for sig in (signal.SIGINT, signal.SIGTERM):
-            try:
-                loop.add_signal_handler(
-                    sig,
-                    lambda sig=sig: self._request_shutdown(
-                        f"Received {signal.Signals(sig).name}. Closing connections and allowing workers to reconnect."
-                    ),
-                )
-            except (NotImplementedError, RuntimeError):
-                continue
+        self._lifecycle.install_signal_handlers()
 
     async def _handle_fatal(self, context: str, exc: BaseException) -> None:
-        if not self._fatal_reported:
-            traceback_str = "".join(
-                traceback.format_exception(type(exc), exc, exc.__traceback__)
-            )
-            logger.error(f"Fatal error in {context}:\n{traceback_str}")
-            self._fatal_reported = True
-        self._close_reason = ""
-        self._shutdown_reason = f"Fatal error in {context}."
-        self._stop_event.set()
-        await self._shutdown_ray()
-
-    async def _shutdown_ray(self) -> None:
-        if ray.is_initialized():
-            await asyncio.to_thread(ray.shutdown)
-
-    def _resolve_infer_future(
-        self, request: dict, *, result=None, exc: BaseException | None = None
-    ) -> None:
-        future = self._response_futures.get(request["id"])
-        if future and not future.done():
-            if exc is not None:
-                future.set_exception(exc)
-            else:
-                future.set_result(result)
-        self._infer_queue.task_done()
-
-    def _fail_infer_batch(self, batch: list[dict], exc: Exception) -> None:
-        for req in batch:
-            wrapped_exc = RuntimeError(f"Inference processing error: {exc}")
-            self._resolve_infer_future(req, exc=wrapped_exc)
+        await self._lifecycle.handle_fatal(
+            context,
+            exc,
+            extra_cleanup=self._training.shutdown,
+        )
 
     async def _abort_pending_infer_requests(self, reason: str) -> None:
-        async with self._lock:
-            pending_futures = 0
-            for future in self._response_futures.values():
-                if not future.done():
-                    future.set_exception(ServerStoppingError(reason))
-                    pending_futures += 1
-            self._response_futures.clear()
-
-        drained_requests = 0
-        while True:
-            try:
-                self._infer_queue.get_nowait()
-            except asyncio.QueueEmpty:
-                break
-            else:
-                self._infer_queue.task_done()
-                drained_requests += 1
+        pending_futures, drained_requests = (
+            await self._inference.abort_pending_requests(reason)
+        )
 
         if pending_futures > 0 or drained_requests > 0:
             logger.info(
@@ -146,41 +106,26 @@ class RayAgentServer:
             )
 
     async def _shutdown(self, scheduler_task: asyncio.Task, reason: str) -> None:
-        self._stop_event.set()
-        await self._abort_pending_infer_requests(reason)
-
-        if self._server is not None:
-            if self._close_reason:
-                await asyncio.gather(
-                    *(
-                        connection.close(
-                            websockets.frames.CloseCode.GOING_AWAY,
-                            self._close_reason,
-                        )
-                        for connection in self._server.connections
-                    ),
-                    return_exceptions=True,
-                )
-            self._server.close()
-            await self._server.wait_closed()
-            self._server = None
-            logger.info("WebSocket server closed.")
-
-        scheduler_task.cancel()
-        await asyncio.gather(scheduler_task, return_exceptions=True)
-        logger.info("Scheduler task cancelled and cleaned up.")
+        self._lifecycle.shutdown_reason = reason
+        await self._lifecycle.shutdown(
+            scheduler_task=scheduler_task,
+            server=self._server,
+            abort_pending_infer_requests=self._abort_pending_infer_requests,
+            extra_cleanup=self._training.shutdown,
+        )
+        self._server = None
 
     async def run(self):
-        scheduler_task = asyncio.create_task(self._main_scheduler_loop())
+        scheduler_task = asyncio.create_task(self._scheduler_loop())
         self._install_signal_handlers()
         try:
             self._server = await _server.serve(
                 self._handler, self._host, self._port, compression=None, max_size=None
             )
             logger.info(f"Agent Server is listening on {self._host}:{self._port}")
-            await self._stop_event.wait()
+            await self._lifecycle.stop_event.wait()
         except asyncio.CancelledError:
-            self._shutdown_reason = "Server run task was cancelled."
+            self._lifecycle.shutdown_reason = "Server run task was cancelled."
             logger.info(
                 "Server cancellation received. Closing connections and allowing workers to reconnect."
             )
@@ -189,7 +134,9 @@ class RayAgentServer:
             await self._handle_fatal("agent server runtime", exc)
             raise
         finally:
-            await asyncio.shield(self._shutdown(scheduler_task, self._shutdown_reason))
+            await asyncio.shield(
+                self._shutdown(scheduler_task, self._lifecycle.shutdown_reason)
+            )
 
     async def _handler(self, websocket: _server.ServerConnection):
         logger.info(f"Connection from {websocket.remote_address} opened")
@@ -198,10 +145,9 @@ class RayAgentServer:
         connection_counted = False
 
         try:
-            metadata_message = dict(
-                message_type=str(MessageType.METADATA), data=self._metadata
+            await websocket.send(
+                packer.pack(MetadataMessage(data=self._metadata).to_payload())
             )
-            await websocket.send(packer.pack(metadata_message))
             logger.info("Sent initial metadata to client.")
             self._total_connections += 1
             connection_counted = True
@@ -210,11 +156,11 @@ class RayAgentServer:
             action_buffer = deque()
             while True:
                 packed_infer_msg = await websocket.recv()
-                infer_msg = msgpack_numpy.unpackb(packed_infer_msg)
-                if infer_msg.get("message_type") != str(MessageType.INFER):
+                infer_payload = msgpack_numpy.unpackb(packed_infer_msg)
+                if infer_payload.get("message_type") != str(MessageType.INFER):
                     logger.warning(
                         "Expected an INFER message but received "
-                        f"{infer_msg.get('message_type')}. Requesting worker resync."
+                        f"{infer_payload.get('message_type')}. Requesting worker resync."
                     )
                     await websocket.close(
                         code=websockets.frames.CloseCode.GOING_AWAY,
@@ -222,28 +168,25 @@ class RayAgentServer:
                     )
                     break
 
-                obs, internal_state = infer_msg.get("data"), None
+                infer_msg = parse_infer_request(infer_payload)
+                obs, internal_state = infer_msg.data, None
 
                 if not action_buffer:
                     req_id = f"{session_id}-{uuid.uuid4()}"
-                    response_future = asyncio.Future()
-
-                    async with self._lock:
-                        self._response_futures[req_id] = response_future
+                    response_future = await self._inference.register_request(req_id)
 
                     infer_request = dict(id=req_id, obs=obs)
-                    await self._infer_queue.put(infer_request)
+                    await self._inference.queue.put(infer_request)
 
                     try:
                         action, internal_state = await response_future
                     except ServerStoppingError:
-                        async with self._lock:
-                            self._response_futures.pop(req_id, None)
-                        if self._close_reason:
+                        await self._inference.pop_request(req_id)
+                        if self._lifecycle.close_reason:
                             try:
                                 await websocket.close(
                                     code=websockets.frames.CloseCode.GOING_AWAY,
-                                    reason=self._close_reason,
+                                    reason=self._lifecycle.close_reason,
                                 )
                             except Exception:
                                 pass
@@ -253,8 +196,7 @@ class RayAgentServer:
                         )
                         break
                     else:
-                        async with self._lock:
-                            self._response_futures.pop(req_id, None)
+                        await self._inference.pop_request(req_id)
 
                     action_buffer.extend(action.swapaxes(1, 0))
 
@@ -265,18 +207,18 @@ class RayAgentServer:
                         [action_buffer.popleft() for _ in range(len(action_buffer))]
                     )
 
-                action_response = dict(
-                    message_type=str(MessageType.ACTION), data=dict(action=action)
+                action_response = ActionMessage(
+                    data=dict(action=action)
                 )
-                await websocket.send(packer.pack(action_response))
+                await websocket.send(packer.pack(action_response.to_payload()))
 
                 packed_feedback_msg = await websocket.recv()
-                feedback_msg = msgpack_numpy.unpackb(packed_feedback_msg)
+                feedback_payload = msgpack_numpy.unpackb(packed_feedback_msg)
 
-                if feedback_msg.get("message_type") != str(MessageType.FEEDBACK):
+                if feedback_payload.get("message_type") != str(MessageType.FEEDBACK):
                     logger.warning(
                         "Expected a FEEDBACK message but received: "
-                        f"{feedback_msg.get('message_type')}. Requesting worker resync."
+                        f"{feedback_payload.get('message_type')}. Requesting worker resync."
                     )
                     await websocket.close(
                         code=websockets.frames.CloseCode.GOING_AWAY,
@@ -284,11 +226,12 @@ class RayAgentServer:
                     )
                     break
 
-                feedback_data = feedback_msg.get("data")
-
-                next_obs, reward, next_terminated, next_truncated, info = (
-                    feedback_data.values()
-                )
+                feedback_msg = parse_feedback_request(feedback_payload)
+                next_obs = feedback_msg.data.obs
+                reward = feedback_msg.data.rewards
+                next_terminated = feedback_msg.data.terminated
+                next_truncated = feedback_msg.data.truncated
+                info = feedback_msg.data.info
 
                 async with self._model_lock:
                     prev_node, step, log_dict = self._algorithm.feedback(
@@ -303,7 +246,7 @@ class RayAgentServer:
                         info=info,
                         prev_node=prev_node,
                     )
-                    await asyncio.to_thread(self.log, log_dict, step=step)
+                    await asyncio.to_thread(self._training.log, log_dict, step=step)
 
                 terminated, truncated = next_terminated, next_truncated
 
@@ -325,33 +268,14 @@ class RayAgentServer:
                     f"Connection from {websocket.remote_address} closed. Total connections: {self._total_connections}"
                 )
 
-    def log(self, log_dict: dict, step: int):
-        for key, value in log_dict.items():
-            self._writer.add_scalar(key, value, step)
-
     def should_infer(self) -> bool:
         return (
-            self._infer_queue.qsize() >= self._total_connections // 2
+            self._inference.queue.qsize() >= self._total_connections // 2
             and self._total_connections > 0
         )
 
-    def should_learn(self) -> bool:
-        return self._algorithm.should_learn()
-
-    def should_stop(self) -> bool:
-        return self._algorithm.should_stop()
-
-    def should_save(self) -> bool:
-        return self._algorithm.should_save()
-
-    async def _update_inference_policy(self, checkpoint: Checkpoint):
-        self._algorithm.load_learner_state(checkpoint)
-        logger.info("Local inference policy successfully updated.")
-
     async def _process_infer(self):
-        batch = [
-            await self._infer_queue.get() for _ in range(self._infer_queue.qsize())
-        ]
+        batch = await self._inference.drain_batch()
         if not batch:
             return
         try:
@@ -361,62 +285,35 @@ class RayAgentServer:
                 action, internal_state = self._algorithm.infer(obs)
             logger.debug(f"Inference done for batch size {len(batch)}")
             for i, req in enumerate(batch):
-                self._resolve_infer_future(
+                self._inference.resolve_request(
                     req, result=(action[i : i + 1], internal_state[i : i + 1])
                 )
         except Exception as exc:
-            self._fail_infer_batch(batch, exc)
+            self._inference.fail_batch(batch, exc)
             raise
 
-    async def _process_learn(self):
-        logger.info("Scheduler initiating distributed training via LearnerActor.")
-        self._algorithm.pre_learn()
-        global_step, meta_info, serializable_buffer_data = (
-            self._algorithm.get_server_data()
-        )
-        buffer_data_ref = await asyncio.to_thread(ray.put, serializable_buffer_data)
+    async def _run_control_cycle(self) -> None:
+        async with self._model_lock:
+            if self._training.should_learn():
+                await self._training.process_learn()
 
-        learn_ref = self._learner_actor.learn.remote(
-            global_step, meta_info, buffer_data_ref
-        )
-        checkpoint, global_step, train_info = await asyncio.to_thread(
-            ray.get, learn_ref
-        )
+            stop_requested = self._training.should_stop()
+            if self._training.should_save() or stop_requested:
+                await self._training.process_save()
 
-        await self._update_inference_policy(checkpoint)
+            if stop_requested:
+                self._request_shutdown(
+                    "Stopping server as the algorithm signaled to stop.",
+                    close_reason=SERVER_STOP_REASON,
+                )
 
-        await asyncio.to_thread(self.log, train_info, step=global_step)
-        logger.info(f"Logged training info for step {global_step}.")
-        self._algorithm.post_learn()
-
-    async def _process_save(self):
-        checkpoint = await asyncio.to_thread(self._algorithm.create_ddp_checkpoint)
-        await asyncio.to_thread(self._checkpoint_manager.save_checkpoint, checkpoint)
-        logger.info(f"Checkpoint saved locally at step {checkpoint.step}.")
-
-    async def _main_scheduler_loop(self):
+    async def _scheduler_loop(self):
         try:
-            while not self._stop_event.is_set():
-                if self.should_infer():
-                    await self._process_infer()
-
-                async with self._model_lock:
-                    if self.should_learn():
-                        await self._process_learn()
-
-                    stop_requested = self.should_stop()
-                    if self.should_save() or stop_requested:
-                        await self._process_save()
-
-                    if stop_requested:
-                        self._request_shutdown(
-                            "Stopping server as the algorithm signaled to stop.",
-                            close_reason=SERVER_STOP_REASON,
-                        )
-                        await self._shutdown_ray()
-                        break
-
-                await asyncio.sleep(SCHEDULER_SLEEP_INTERVAL)
+            await self._scheduler.run(
+                should_infer=self.should_infer,
+                process_infer=self._process_infer,
+                run_control_cycle=self._run_control_cycle,
+            )
         except Exception as exc:
             await self._handle_fatal("scheduler loop", exc)
             raise

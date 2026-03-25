@@ -1,6 +1,4 @@
 import asyncio
-import signal
-import traceback
 import time
 from typing import Any
 import numpy as np
@@ -20,6 +18,16 @@ from plugrl_protocol.websocket_protocol import (
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm
 from plugrl_server.common.checkpoint_manager import CheckpointManager
 from plugrl_server.common.data_utils import batch_aggregate, unbatch_aggregate
+from plugrl_server.server.inference_coordinator import InferenceCoordinator
+from plugrl_server.server.lifecycle import ServerLifecycle
+from plugrl_server.server.protocol import (
+    ActionMessage,
+    MetadataMessage,
+    parse_feedback_request,
+    parse_infer_request,
+)
+from plugrl_server.server.runtime_scheduler import RuntimeScheduler
+from plugrl_server.server.training_backend import LocalTrainingBackend
 
 SCHEDULER_SLEEP_INTERVAL = 0.001  # seconds
 INFER_READY_TIMEOUT = 5.0  # seconds to wait for full infer batch before warning
@@ -48,21 +56,27 @@ class WebSocketAgentServer:
         self._port = port
         self._metadata = metadata or {}
 
-        self._infer_queue = asyncio.Queue()
-        self._response_futures = {}
+        self._inference = InferenceCoordinator(
+            stopping_error_factory=ServerStoppingError,
+        )
         # Accumulate partial inference outputs per req_id; only fulfill the
         # corresponding future once all sub-indices for that req_id arrive.
         self._pending_infer_results: dict[str, dict[str, Any]] = {}
-        self._lock = asyncio.Lock()
         self._model_lock = asyncio.Lock()
         self._server: Any = None
-        self._stop_event = asyncio.Event()
+        self._lifecycle = ServerLifecycle()
+        self._scheduler = RuntimeScheduler(
+            stop_event=self._lifecycle.stop_event,
+            sleep_interval=SCHEDULER_SLEEP_INTERVAL,
+        )
+        self._training = LocalTrainingBackend(
+            algorithm=self._algorithm,
+            checkpoint_manager=self._checkpoint_manager,
+            writer=self._writer,
+        )
 
         self._total_connections = 0
         self._infer_wait_start: float | None = None
-        self._close_reason = ""
-        self._shutdown_reason = "Server is shutting down."
-        self._fatal_reported = False
 
         self._mini_infer_batch_size = mini_infer_batch_size
 
@@ -70,59 +84,20 @@ class WebSocketAgentServer:
         asyncio.run(self.run())
 
     def _request_shutdown(self, reason: str, close_reason: str | None = None) -> None:
-        if close_reason is not None:
-            self._close_reason = close_reason
-        if self._stop_event.is_set():
-            return
-        self._shutdown_reason = reason
-        logger.info(reason)
-        self._stop_event.set()
+        self._lifecycle.request_shutdown(reason, close_reason)
 
     def _install_signal_handlers(self) -> None:
-        loop = asyncio.get_running_loop()
-        for sig in (signal.SIGINT, signal.SIGTERM):
-            try:
-                loop.add_signal_handler(
-                    sig,
-                    lambda sig=sig: self._request_shutdown(
-                        f"Received {signal.Signals(sig).name}. Closing connections and allowing workers to reconnect."
-                    ),
-                )
-            except (NotImplementedError, RuntimeError):
-                continue
+        self._lifecycle.install_signal_handlers()
 
     async def _handle_fatal(self, context: str, exc: BaseException) -> None:
-        if not self._fatal_reported:
-            traceback_str = "".join(
-                traceback.format_exception(type(exc), exc, exc.__traceback__)
-            )
-            logger.error(f"Fatal error in {context}:\n{traceback_str}")
-            self._fatal_reported = True
-        self._close_reason = ""
-        self._shutdown_reason = f"Fatal error in {context}."
-        self._stop_event.set()
+        await self._lifecycle.handle_fatal(context, exc)
 
     async def _abort_pending_infer_requests(self, reason: str) -> None:
-        async with self._lock:
-            pending_futures = 0
-            for future in self._response_futures.values():
-                if not future.done():
-                    future.set_exception(ServerStoppingError(reason))
-                    pending_futures += 1
-            self._response_futures.clear()
-
         # pending accumulators are only used to group results; drop them on shutdown
         self._pending_infer_results.clear()
-
-        drained_requests = 0
-        while True:
-            try:
-                self._infer_queue.get_nowait()
-            except asyncio.QueueEmpty:
-                break
-            else:
-                self._infer_queue.task_done()
-                drained_requests += 1
+        pending_futures, drained_requests = (
+            await self._inference.abort_pending_requests(reason)
+        )
 
         if pending_futures > 0 or drained_requests > 0:
             logger.info(
@@ -131,41 +106,25 @@ class WebSocketAgentServer:
             )
 
     async def _shutdown(self, scheduler_task: asyncio.Task, reason: str) -> None:
-        self._stop_event.set()
-        await self._abort_pending_infer_requests(reason)
-
-        if self._server is not None:
-            if self._close_reason:
-                await asyncio.gather(
-                    *(
-                        connection.close(
-                            websockets.frames.CloseCode.GOING_AWAY,
-                            self._close_reason,
-                        )
-                        for connection in self._server.connections
-                    ),
-                    return_exceptions=True,
-                )
-            self._server.close()
-            await self._server.wait_closed()
-            self._server = None
-            logger.info("WebSocket server closed.")
-
-        scheduler_task.cancel()
-        await asyncio.gather(scheduler_task, return_exceptions=True)
-        logger.info("Scheduler task cancelled and cleaned up.")
+        self._lifecycle.shutdown_reason = reason
+        await self._lifecycle.shutdown(
+            scheduler_task=scheduler_task,
+            server=self._server,
+            abort_pending_infer_requests=self._abort_pending_infer_requests,
+        )
+        self._server = None
 
     async def run(self):
-        scheduler_task = asyncio.create_task(self._main_scheduler_loop())
+        scheduler_task = asyncio.create_task(self._scheduler_loop())
         self._install_signal_handlers()
         try:
             self._server = await _server.serve(
                 self._handler, self._host, self._port, compression=None, max_size=None
             )
             logger.info(f"Agent Server is listening on {self._host}:{self._port}")
-            await self._stop_event.wait()
+            await self._lifecycle.stop_event.wait()
         except asyncio.CancelledError:
-            self._shutdown_reason = "Server run task was cancelled."
+            self._lifecycle.shutdown_reason = "Server run task was cancelled."
             logger.info(
                 "Server cancellation received. Closing connections and allowing workers to reconnect."
             )
@@ -174,7 +133,9 @@ class WebSocketAgentServer:
             await self._handle_fatal("agent server runtime", exc)
             raise
         finally:
-            await asyncio.shield(self._shutdown(scheduler_task, self._shutdown_reason))
+            await asyncio.shield(
+                self._shutdown(scheduler_task, self._lifecycle.shutdown_reason)
+            )
 
     async def _handler(self, websocket: _server.ServerConnection):
         logger.info(
@@ -185,10 +146,9 @@ class WebSocketAgentServer:
         connection_counted = False
 
         try:
-            metadata_message = dict(
-                message_type=str(MessageType.METADATA), data=self._metadata
+            await websocket.send(
+                packer.pack(MetadataMessage(data=self._metadata).to_payload())
             )
-            await websocket.send(packer.pack(metadata_message))
             self._total_connections += 1
             connection_counted = True
             prev_node_map: dict = {}
@@ -198,11 +158,11 @@ class WebSocketAgentServer:
             last_obs_map: dict = {}
             while True:
                 packed_infer_msg = await websocket.recv()
-                infer_msg = msgpack_numpy.unpackb(packed_infer_msg)
-                if infer_msg.get("message_type") != str(MessageType.INFER):
+                infer_payload = msgpack_numpy.unpackb(packed_infer_msg)
+                if infer_payload.get("message_type") != str(MessageType.INFER):
                     logger.warning(
                         "Expected an INFER message but received "
-                        f"{infer_msg.get('message_type')}. Requesting worker resync."
+                        f"{infer_payload.get('message_type')}. Requesting worker resync."
                     )
                     await websocket.close(
                         code=websockets.frames.CloseCode.GOING_AWAY,
@@ -210,17 +170,12 @@ class WebSocketAgentServer:
                     )
                     break
 
-                obs, env_ids, internal_state = (
-                    infer_msg.get("data"),
-                    infer_msg.get("env_indices"),
-                    None,
-                )
+                infer_msg = parse_infer_request(infer_payload)
+                obs, env_ids, internal_state = infer_msg.data, infer_msg.env_indices, None
                 obs_list = unbatch_aggregate(obs, aggregate_method="concat")
 
                 req_id = f"{session_id}-{uuid.uuid4()}"
-                response_future = asyncio.Future()
-                async with self._lock:
-                    self._response_futures[req_id] = response_future
+                response_future = await self._inference.register_request(req_id)
 
                 # put one queue entry per env; include expected_count to support
                 # partial batching without completing the request early
@@ -233,7 +188,7 @@ class WebSocketAgentServer:
                         env_id=eid,
                         expected_count=expected_count,
                     )
-                    await self._infer_queue.put(infer_request)
+                    await self._inference.queue.put(infer_request)
 
                 try:
                     # response now may include env_ids and obs_list for per-env mapping
@@ -246,13 +201,12 @@ class WebSocketAgentServer:
                         np.asarray(resp_env_ids), np.asarray(env_ids)
                     ), "Response env_ids do not match request env_ids"
                 except ServerStoppingError:
-                    async with self._lock:
-                        self._response_futures.pop(req_id, None)
-                    if self._close_reason:
+                    await self._inference.pop_request(req_id)
+                    if self._lifecycle.close_reason:
                         try:
                             await websocket.close(
                                 code=websockets.frames.CloseCode.GOING_AWAY,
-                                reason=self._close_reason,
+                                reason=self._lifecycle.close_reason,
                             )
                         except Exception:
                             pass
@@ -262,18 +216,16 @@ class WebSocketAgentServer:
                     )
                     break
                 else:
-                    async with self._lock:
-                        self._response_futures.pop(req_id, None)
+                    await self._inference.pop_request(req_id)
                 # register per-env internal states and last observations
                 for i, eid in enumerate(resp_env_ids):
                     internal_state_map[eid] = internal_state_arr[i]
                     last_obs_map[eid] = resp_obs_list[i]
 
-                action_response = dict(
-                    message_type=str(MessageType.ACTION),
+                action_response = ActionMessage(
                     data=dict(env_ids=resp_env_ids, action=action_arr.swapaxes(0, 1)),
                 )
-                await websocket.send(packer.pack(action_response))
+                await websocket.send(packer.pack(action_response.to_payload()))
 
                 try:
                     packed_feedback_msg = await asyncio.wait_for(
@@ -288,12 +240,12 @@ class WebSocketAgentServer:
                         reason="Feedback timeout",
                     )
                     break
-                feedback_msg = msgpack_numpy.unpackb(packed_feedback_msg)
+                feedback_payload = msgpack_numpy.unpackb(packed_feedback_msg)
 
-                if feedback_msg.get("message_type") != str(MessageType.FEEDBACK):
+                if feedback_payload.get("message_type") != str(MessageType.FEEDBACK):
                     logger.warning(
                         "Expected a FEEDBACK message but received: "
-                        f"{feedback_msg.get('message_type')}. Requesting worker resync."
+                        f"{feedback_payload.get('message_type')}. Requesting worker resync."
                     )
                     await websocket.close(
                         code=websockets.frames.CloseCode.GOING_AWAY,
@@ -301,20 +253,13 @@ class WebSocketAgentServer:
                     )
                     break
 
-                feedback_data = feedback_msg.get("data")
-
-                fb_env_ids, _ = (
-                    feedback_msg.get("env_indices"),
-                    feedback_msg.get("step_ids"),
-                )
-                # assume feedback_data contains parallel lists/arrays with an 'env_ids' field
-                (
-                    next_obs_batch,
-                    reward_list,
-                    next_terminated_list,
-                    next_truncated_list,
-                    info_batch,
-                ) = feedback_data.values()
+                feedback_msg = parse_feedback_request(feedback_payload)
+                fb_env_ids = feedback_msg.env_indices
+                next_obs_batch = feedback_msg.data.obs
+                reward_list = feedback_msg.data.rewards
+                next_terminated_list = feedback_msg.data.terminated
+                next_truncated_list = feedback_msg.data.truncated
+                info_batch = feedback_msg.data.info
                 next_obs_list = unbatch_aggregate(
                     next_obs_batch, aggregate_method="concat"
                 )
@@ -373,7 +318,7 @@ class WebSocketAgentServer:
                 )
 
     def should_infer(self) -> bool:
-        current_qsize = self._infer_queue.qsize()
+        current_qsize = self._inference.queue.qsize()
         now = time.monotonic()
 
         # allow queue size to be >= total connections to support per-connection
@@ -399,9 +344,7 @@ class WebSocketAgentServer:
         return False
 
     async def _process_infer(self):
-        batch = []
-        for _ in range(self._infer_queue.qsize()):
-            batch.append(await self._infer_queue.get())
+        batch = await self._inference.drain_batch()
         try:
             obs = batch_aggregate(
                 [req["obs"] for req in batch], aggregate_method="concat"
@@ -452,7 +395,7 @@ class WebSocketAgentServer:
                     env_id_list = np.asarray([item[2] for item in ordered])
                     obs_list = [item[3] for item in ordered]
 
-                    future = self._response_futures.get(req_id)
+                    future = self._inference.get_future(req_id)
                     if future and not future.done():
                         future.set_result(
                             (act_result, int_result, env_id_list, obs_list)
@@ -460,58 +403,39 @@ class WebSocketAgentServer:
                     self._pending_infer_results.pop(req_id, None)
 
             for _ in batch:
-                self._infer_queue.task_done()
+                self._inference.queue.task_done()
         except Exception as exc:
             for req in batch:
-                future = self._response_futures.get(req["id"])
+                future = self._inference.get_future(req["id"])
                 if future and not future.done():
                     future.set_exception(
                         RuntimeError(f"Inference processing error: {exc}")
                     )
             raise
 
-    def should_learn(self) -> bool:
-        return self._algorithm.should_learn()
+    async def _run_control_cycle(self) -> None:
+        async with self._model_lock:
+            if self._training.should_learn():
+                await self._training.process_learn()
 
-    async def _process_learn(self):
-        self._algorithm.pre_learn()
-        step, log_dict = await asyncio.to_thread(self._algorithm.learn)
-        self._algorithm.post_learn()
-        for key, value in log_dict.items():
-            self._writer.add_scalar(key, value, step)
+        async with self._model_lock:
+            stop_requested = self._training.should_stop()
+            if self._training.should_save() or stop_requested:
+                await self._training.process_save()
 
-    def should_stop(self) -> bool:
-        return self._algorithm.should_stop()
+        if stop_requested:
+            self._request_shutdown(
+                "Stopping server as the algorithm signaled to stop.",
+                close_reason=SERVER_STOP_REASON,
+            )
 
-    def should_save(self) -> bool:
-        return self._algorithm.should_save()
-
-    async def _process_save(self):
-        checkpoint = self._algorithm.create_checkpoint()
-        self._checkpoint_manager.save_checkpoint(checkpoint)
-
-    async def _main_scheduler_loop(self):
+    async def _scheduler_loop(self):
         try:
-            while not self._stop_event.is_set():
-                if self.should_infer():
-                    await self._process_infer()
-
-                async with self._model_lock:
-                    if self.should_learn():
-                        await self._process_learn()
-
-                async with self._model_lock:
-                    if self.should_save() or self.should_stop():
-                        await self._process_save()
-
-                if self.should_stop():
-                    self._request_shutdown(
-                        "Stopping server as the algorithm signaled to stop.",
-                        close_reason=SERVER_STOP_REASON,
-                    )
-                    break
-
-                await asyncio.sleep(SCHEDULER_SLEEP_INTERVAL)
+            await self._scheduler.run(
+                should_infer=self.should_infer,
+                process_infer=self._process_infer,
+                run_control_cycle=self._run_control_cycle,
+            )
         except Exception as exc:
             await self._handle_fatal("main scheduler loop", exc)
             raise
