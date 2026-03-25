@@ -40,12 +40,6 @@ class BasePolicy(abc.ABC, nn.Module):
 
     def _get_value(self, obs: Any) -> torch.Tensor: ...
 
-    def _get_action_and_runtime_state(
-        self,
-        obs: Any,
-        action: torch.Tensor | None = None,
-    ) -> tuple[Any, PolicyRuntimeState]: ...
-
 __all__ = [
     "BasePolicy",
     "BasePolicyConfig",
