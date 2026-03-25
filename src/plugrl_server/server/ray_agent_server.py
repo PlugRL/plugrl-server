@@ -20,7 +20,7 @@ from plugrl_protocol.websocket_protocol import (
 from plugrl_server.algorithm.base_algorithm import DDPAlgorithm
 from plugrl_server.common.checkpoint_manager import CheckpointManager
 from plugrl_server.common.data_utils import batch_aggregate
-from plugrl_server.policy.state import slice_batched_state
+from plugrl_server.policy.state import PolicyStepState, slice_policy_step_state
 from plugrl_server.server.inference_coordinator import InferenceCoordinator
 from plugrl_server.server.lifecycle import ServerLifecycle
 from plugrl_server.server.protocol import (
@@ -174,7 +174,7 @@ class RayAgentServer:
                     await self._close_for_protocol_error(websocket, exc)
                     break
 
-                obs, internal_state = infer_msg.data, None
+                obs, step_state = infer_msg.data, None
 
                 if not action_buffer:
                     req_id = f"{session_id}-{uuid.uuid4()}"
@@ -184,7 +184,7 @@ class RayAgentServer:
                     await self._inference.queue.put(infer_request)
 
                     try:
-                        action, internal_state = await response_future
+                        action, step_state = await response_future
                     except ServerStoppingError:
                         await self._inference.pop_request(req_id)
                         if self._lifecycle.close_reason:
@@ -204,6 +204,8 @@ class RayAgentServer:
                         await self._inference.pop_request(req_id)
 
                     action_buffer.extend(action.swapaxes(1, 0))
+                runtime_state = step_state.runtime_state if step_state is not None else None
+                train_state = step_state.train_state if step_state is not None else None
 
                 if self._algorithm.break_action_chunk:
                     action = action_buffer.popleft()
@@ -234,7 +236,8 @@ class RayAgentServer:
                 async with self._model_lock:
                     prev_node, step, log_dict = self._algorithm.feedback(
                         obs=obs,
-                        internal_state=internal_state,
+                        internal_state=runtime_state,
+                        train_state=train_state,
                         terminated=terminated,
                         truncated=truncated,
                         next_obs=next_obs,
@@ -282,16 +285,15 @@ class RayAgentServer:
             async with self._model_lock:
                 action, step_state = self._algorithm.infer_step(
                     obs,
-                    include_train_state=False,
+                    include_train_state=True,
                 )
-                internal_state = step_state.runtime_state
             logger.debug(f"Inference done for batch size {len(batch)}")
             for i, req in enumerate(batch):
                 self._inference.resolve_request(
                     req,
                     result=(
                         action[i : i + 1],
-                        slice_batched_state(internal_state, slice(i, i + 1)),
+                        slice_policy_step_state(step_state, slice(i, i + 1)),
                     ),
                 )
         except Exception as exc:

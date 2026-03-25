@@ -8,7 +8,7 @@ from .base_algorithm import DDPAlgorithm, BaseAlgoConfig
 from .registration import register_algo, register_algo_config
 
 from plugrl_server.policy.base_policy import InternalState, BasePolicy
-from plugrl_server.policy.state import PolicyRuntimeState
+from plugrl_server.policy.state import PolicyRuntimeState, PolicyTrainState
 from plugrl_server.common.checkpoint_manager import Checkpoint
 from plugrl_server.common.data_utils import unbatch_aggregate
 
@@ -90,6 +90,7 @@ class DummyAlgorithm(DDPAlgorithm):
         *,
         obs: dict,
         internal_state: PolicyRuntimeState,
+        train_state: PolicyTrainState = None,
         terminated: bool,
         truncated: bool,
         next_obs: dict,

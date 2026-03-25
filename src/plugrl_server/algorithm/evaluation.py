@@ -10,7 +10,7 @@ from .base_algorithm import BaseAlgorithm, BaseAlgoConfig
 from .registration import register_algo, register_algo_config
 
 from plugrl_server.policy.base_policy import InternalState, BasePolicy
-from plugrl_server.policy.state import PolicyRuntimeState
+from plugrl_server.policy.state import PolicyRuntimeState, PolicyTrainState
 from plugrl_server.common.checkpoint_manager import (
     Checkpoint,
     load_checkpoint_from_path,
@@ -61,6 +61,7 @@ class Evaluation(BaseAlgorithm):
         *,
         obs: dict,
         internal_state: PolicyRuntimeState,
+        train_state: PolicyTrainState = None,
         terminated: bool,
         truncated: bool,
         next_obs: dict,

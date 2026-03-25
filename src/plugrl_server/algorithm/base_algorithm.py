@@ -3,7 +3,7 @@ import dataclasses
 import numpy as np
 
 from plugrl_server.policy.base_policy import BasePolicy, InternalState
-from plugrl_server.policy.state import PolicyRuntimeState, PolicyStepState
+from plugrl_server.policy.state import PolicyRuntimeState, PolicyStepState, PolicyTrainState
 from plugrl_server.common.checkpoint_manager import Checkpoint
 
 
@@ -51,6 +51,7 @@ class BaseAlgorithm(abc.ABC):
         *,
         obs: dict,
         internal_state: PolicyRuntimeState,
+        train_state: PolicyTrainState = None,
         terminated: bool,
         truncated: bool,
         next_obs: dict,

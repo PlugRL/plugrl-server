@@ -7,6 +7,8 @@ import numpy as np
 from loguru import logger
 
 from plugrl_server.policy.base_policy import InternalState
+from plugrl_server.policy.state import PolicyTrainState
+from plugrl_server.policy.state_adapter import train_state_to_tensors
 from plugrl_server.common.data_utils import _recursively_create_empty_td
 
 
@@ -27,8 +29,13 @@ class RolloutBuffer(torch.utils.data.Dataset):
     buffer_size: int
     episode_info_buffer: list[dict[str, Any]]
 
-    def __init__(self, buffer_size, example_internal_state: InternalState):
-        sample_obs = example_internal_state.obs[0]
+    def __init__(
+        self,
+        buffer_size,
+        example_train_state: PolicyTrainState | InternalState,
+    ):
+        example_tensors = train_state_to_tensors(example_train_state)
+        sample_obs = example_tensors.obs[0]
 
         self.buffer_size = buffer_size
 
@@ -41,28 +48,28 @@ class RolloutBuffer(torch.utils.data.Dataset):
                 device=sample_obs.device,
             )
 
-        action_shape = example_internal_state.action.shape[1:]
-        value_shape = example_internal_state.value.shape[1:]
-        logprob_shape = example_internal_state.logprob.shape[1:]
+        action_shape = example_tensors.action.shape[1:]
+        value_shape = example_tensors.value.shape[1:]
+        logprob_shape = example_tensors.logprob.shape[1:]
 
         self.actions = torch.empty(
-            (buffer_size,) + action_shape, dtype=example_internal_state.action.dtype
+            (buffer_size,) + action_shape, dtype=example_tensors.action.dtype
         )
         self.logprobs = torch.empty(
-            (buffer_size,) + logprob_shape, dtype=example_internal_state.logprob.dtype
+            (buffer_size,) + logprob_shape, dtype=example_tensors.logprob.dtype
         )
 
         self.values = torch.empty(
-            (buffer_size,) + value_shape, dtype=example_internal_state.value.dtype
+            (buffer_size,) + value_shape, dtype=example_tensors.value.dtype
         )
         self.last_values = torch.empty(
-            (buffer_size,) + value_shape, dtype=example_internal_state.value.dtype
+            (buffer_size,) + value_shape, dtype=example_tensors.value.dtype
         )
         self.advantages = torch.empty(
-            (buffer_size,) + value_shape, dtype=example_internal_state.value.dtype
+            (buffer_size,) + value_shape, dtype=example_tensors.value.dtype
         )
         self.returns = torch.empty(
-            (buffer_size,) + value_shape, dtype=example_internal_state.value.dtype
+            (buffer_size,) + value_shape, dtype=example_tensors.value.dtype
         )
 
         self.rewards = torch.zeros(buffer_size, dtype=torch.float32)
@@ -88,12 +95,13 @@ class RolloutBuffer(torch.utils.data.Dataset):
         self,
         *,
         prev_node: tuple[int, uuid.UUID],
-        internal_state: InternalState,
+        train_state: PolicyTrainState | InternalState,
         reward: float,
         done: bool,
         last_value: torch.Tensor | None,
         next_done: bool,
     ) -> tuple[int, uuid.UUID]:
+        state_tensors = train_state_to_tensors(train_state)
         if self.idx >= self.buffer_size:
             return (-1, self.buffer_signature)
         prev_idx, prev_signature = prev_node
@@ -102,10 +110,10 @@ class RolloutBuffer(torch.utils.data.Dataset):
         current_idx = self.idx
         if prev_idx != -1:
             self.next_indices[prev_idx] = current_idx
-        self.obs[current_idx] = internal_state.obs[0]
-        self.actions[current_idx] = internal_state.action
-        self.logprobs[current_idx] = internal_state.logprob
-        self.values[current_idx] = internal_state.value
+        self.obs[current_idx] = state_tensors.obs[0]
+        self.actions[current_idx] = state_tensors.action
+        self.logprobs[current_idx] = state_tensors.logprob
+        self.values[current_idx] = state_tensors.value
         self.rewards[current_idx] = reward
         self.dones[current_idx] = done
         if last_value is not None:
@@ -204,11 +212,11 @@ class GAEBuffer(RolloutBuffer):
     def __init__(
         self,
         buffer_size,
-        example_internal_state: InternalState,
+        example_train_state: PolicyTrainState | InternalState,
         gamma: float = 0.99,
         gae_lambda: float = 0.95,
     ):
-        super().__init__(buffer_size, example_internal_state)
+        super().__init__(buffer_size, example_train_state)
         self.gamma = gamma
         self.gae_lambda = gae_lambda
 

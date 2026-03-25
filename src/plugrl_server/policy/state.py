@@ -22,6 +22,13 @@ class PolicyStepState:
     train_state: PolicyTrainState = None
 
 
+def slice_policy_step_state(step_state: PolicyStepState, index: Any) -> PolicyStepState:
+    return PolicyStepState(
+        runtime_state=slice_batched_state(step_state.runtime_state, index),
+        train_state=slice_batched_state(step_state.train_state, index),
+    )
+
+
 def slice_batched_state(state: PolicyRuntimeState, index: Any) -> PolicyRuntimeState:
     if state is None:
         return None

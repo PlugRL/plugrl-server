@@ -18,7 +18,7 @@ from plugrl_protocol.websocket_protocol import (
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm
 from plugrl_server.common.checkpoint_manager import CheckpointManager
 from plugrl_server.common.data_utils import batch_aggregate, unbatch_aggregate
-from plugrl_server.policy.state import slice_batched_state
+from plugrl_server.policy.state import PolicyStepState, slice_policy_step_state
 from plugrl_server.server.inference_coordinator import InferenceCoordinator
 from plugrl_server.server.lifecycle import ServerLifecycle
 from plugrl_server.server.protocol import (
@@ -163,7 +163,7 @@ class WebSocketAgentServer:
             self._total_connections += 1
             connection_counted = True
             prev_node_map: dict = {}
-            internal_state_map: dict = {}
+            step_state_map: dict = {}
             terminated_map: dict = {}
             truncated_map: dict = {}
             last_obs_map: dict = {}
@@ -201,11 +201,10 @@ class WebSocketAgentServer:
 
                 try:
                     # response now may include env_ids and obs_list for per-env mapping
-                    # response is expected to be a tuple: (action_arr, internal_state_arr, resp_env_ids, resp_obs_list)
+                    # response is expected to be a tuple:
+                    # (action_arr, step_state_arr, resp_env_ids, resp_obs_list)
                     response = await response_future
-                    action_arr, internal_state_arr, resp_env_ids, resp_obs_list = (
-                        response
-                    )
+                    action_arr, step_state_arr, resp_env_ids, resp_obs_list = response
                     assert np.array_equal(
                         np.asarray(resp_env_ids), np.asarray(env_ids)
                     ), "Response env_ids do not match request env_ids"
@@ -226,9 +225,9 @@ class WebSocketAgentServer:
                     break
                 else:
                     await self._inference.pop_request(req_id)
-                # register per-env internal states and last observations
+                # register per-env step states and last observations
                 for i, eid in enumerate(resp_env_ids):
-                    internal_state_map[eid] = internal_state_arr[i]
+                    step_state_map[eid] = step_state_arr[i]
                     last_obs_map[eid] = resp_obs_list[i]
 
                 action_response = ActionMessage(
@@ -277,13 +276,20 @@ class WebSocketAgentServer:
                         inf = info_list[idx] if len(info_list) > 0 else {}
 
                         prev_node = prev_node_map.get(eid, (-1, ""))
-                        internal_state = internal_state_map.get(eid, None)
+                        step_state = step_state_map.get(eid, None)
+                        runtime_state = (
+                            step_state.runtime_state if step_state is not None else None
+                        )
+                        train_state = (
+                            step_state.train_state if step_state is not None else None
+                        )
                         terminated = terminated_map.get(eid, False)
                         truncated = truncated_map.get(eid, False)
                         last_obs = last_obs_map.get(eid, {})
                         prev_node_res, step, log_dict = self._algorithm.feedback(
                             obs=last_obs,
-                            internal_state=internal_state,
+                            internal_state=runtime_state,
+                            train_state=train_state,
                             terminated=terminated,
                             truncated=truncated,
                             next_obs=n_obs,
@@ -355,9 +361,8 @@ class WebSocketAgentServer:
             async with self._model_lock:
                 action, step_state = self._algorithm.infer_step(
                     obs,
-                    include_train_state=False,
+                    include_train_state=True,
                 )
-                internal_state = step_state.runtime_state
             logger.debug(f"Inference done for batch size {len(batch)}")
             # action/internal_state correspond to rows matching batch order
             # group indices by original request id so we can set a single
@@ -387,7 +392,7 @@ class WebSocketAgentServer:
                     sub_index = int(req.get("sub_index"))
                     pending["items"][sub_index] = (
                         action[i],
-                        slice_batched_state(internal_state, slice(i, i + 1)),
+                        slice_policy_step_state(step_state, slice(i, i + 1)),
                         req.get("env_id"),
                         req["obs"],
                     )
@@ -396,7 +401,7 @@ class WebSocketAgentServer:
                 if all(k in pending["items"] for k in range(exp)):
                     ordered = [pending["items"][k] for k in range(exp)]
                     act_result = np.stack([item[0] for item in ordered])
-                    int_result = [item[1] for item in ordered]
+                    step_state_result = [item[1] for item in ordered]
                     # make this a numpy array so existing `(resp_env_ids == env_ids).all()` works reliably
                     env_id_list = np.asarray([item[2] for item in ordered])
                     obs_list = [item[3] for item in ordered]
@@ -404,7 +409,7 @@ class WebSocketAgentServer:
                     future = self._inference.get_future(req_id)
                     if future and not future.done():
                         future.set_result(
-                            (act_result, int_result, env_id_list, obs_list)
+                            (act_result, step_state_result, env_id_list, obs_list)
                         )
                     self._pending_infer_results.pop(req_id, None)
 
