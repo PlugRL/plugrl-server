@@ -1,19 +1,10 @@
+import dataclasses
 import numpy as np
 import torch
-import dataclasses
+
 from .registration import register_policy_config, register_policy
-from plugrl_server.common.tensor_container import TensorContainer, tensor_container
 from .base_policy import BasePolicyConfig, BasePolicy
 from .state import PolicyRuntimeState
-
-
-@tensor_container
-class _DummyRuntimeState(TensorContainer):
-    obs: torch.Tensor
-    action: torch.Tensor
-    logprob: torch.Tensor
-    entropy: torch.Tensor
-    value: torch.Tensor
 
 
 @register_policy_config("dummy-policy")
@@ -39,7 +30,7 @@ class DummyPolicy(BasePolicy):
     def get_action_and_runtime_state(
         self, obs: dict, **kwargs
     ) -> tuple[np.ndarray, PolicyRuntimeState]:
-        batch_size = len(obs["text"])
+        batch_size = self._infer_batch_size(obs)
         if self.discrete:
             action = np.random.randint(
                 0, self.action_dim, size=(batch_size, self.action_horizon)
@@ -51,13 +42,19 @@ class DummyPolicy(BasePolicy):
         return action, self.fake_runtime_state(batch_size)
 
     def fake_runtime_state(self, batch_size: int) -> PolicyRuntimeState:
-        return _DummyRuntimeState(
-            obs=torch.zeros((batch_size,)),
-            action=torch.zeros((batch_size,)),
-            logprob=torch.zeros((batch_size,)),
-            value=torch.zeros((batch_size,)),
-            entropy=torch.zeros((batch_size,)),
+        return dict(
+            obs=np.zeros((batch_size,), dtype=np.float32),
+            action=np.zeros((batch_size,), dtype=np.float32),
+            logprob=np.zeros((batch_size,), dtype=np.float32),
+            value=np.zeros((batch_size,), dtype=np.float32),
+            entropy=np.zeros((batch_size,), dtype=np.float32),
         )
+
+    def _infer_batch_size(self, obs: dict) -> int:
+        if not obs:
+            return 1
+        first_value = next(iter(obs.values()))
+        return len(first_value)
 
     def _get_value(self, obs: torch.Tensor | dict) -> torch.Tensor:
         # Return a zero value per batch element. Accept raw dict or tensor input.
