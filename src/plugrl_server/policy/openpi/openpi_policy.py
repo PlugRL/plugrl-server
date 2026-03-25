@@ -117,9 +117,8 @@ class Pi0Policy(BasePolicyGradientDiffusionPolicy):
         )
         return x
 
-    def prepare_observation(self, _obs: dict) -> torch.Tensor | TensorDict:
+    def prepare_observation(self, _obs: dict) -> dict[str, Any]:
         unbatch_obs = unbatch_aggregate(_obs)
-        batch_size = len(unbatch_obs)
         obs_list = []
         for single_obs in unbatch_obs:
             inputs = jax.tree.map(lambda x: x, single_obs)
@@ -127,8 +126,7 @@ class Pi0Policy(BasePolicyGradientDiffusionPolicy):
             obs_list.append(inputs)
 
         batch_obs = batch_aggregate(obs_list)
-        batch_obs = jax.tree.map(lambda x: torch.from_numpy(np.array(x)), batch_obs)
-        return TensorDict(batch_obs, batch_size=[batch_size])
+        return jax.tree.map(lambda x: np.array(x), batch_obs)
 
     def preprocess_observation(self, obs: TensorDict) -> Any:
         obs_dict = obs.to(self.device).to_dict()

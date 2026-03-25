@@ -126,20 +126,16 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         )
         return x
 
-    def prepare_observation(self, _obs: dict) -> torch.Tensor | tensordict.TensorDict:
+    def prepare_observation(self, _obs: dict) -> dict[str, np.ndarray]:
         state = _obs["states"]
         state_numpy = np.concatenate([state[key] for key in self.low_dim_keys], axis=-1)
-        batch_size = state_numpy.shape[0]
-        normalized_state_tensor = (
+        normalized_state = (
             2
             * (state_numpy - self.normalization["obs_min"])
             / (self.normalization["obs_max"] - self.normalization["obs_min"])
             - 1
         )
-        return tensordict.TensorDict(
-            {"state": torch.tensor(normalized_state_tensor, dtype=torch.float32)},
-            batch_size=[batch_size],
-        )
+        return dict(state=normalized_state.astype(np.float32))
 
     def fake_diffusion_cond(self, batch_size: int) -> tensordict.TensorDict:
         return tensordict.TensorDict(

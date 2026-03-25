@@ -4,9 +4,8 @@ import tyro
 from typing import Any, Literal
 import torch
 import torch.nn as nn
-import tensordict
 
-from plugrl_server.policy.state import PolicyRuntimeState
+from plugrl_server.policy.state import NumpyState, PolicyRuntimeState
 
 
 @dataclasses.dataclass
@@ -27,7 +26,7 @@ class BasePolicy(abc.ABC, nn.Module):
 
     def prepare_observation(
         self, _obs: dict
-    ) -> torch.Tensor | tensordict.TensorDict: ...
+    ) -> NumpyState: ...
 
     @abc.abstractmethod
     def get_action_and_runtime_state(
@@ -39,11 +38,11 @@ class BasePolicy(abc.ABC, nn.Module):
 
     def get_value(self, _obs: dict) -> torch.Tensor: ...
 
-    def _get_value(self, obs: torch.Tensor | tensordict.TensorDict) -> torch.Tensor: ...
+    def _get_value(self, obs: Any) -> torch.Tensor: ...
 
     def _get_action_and_runtime_state(
         self,
-        obs: torch.Tensor | tensordict.TensorDict,
+        obs: Any,
         action: torch.Tensor | None = None,
     ) -> tuple[Any, PolicyRuntimeState]: ...
 

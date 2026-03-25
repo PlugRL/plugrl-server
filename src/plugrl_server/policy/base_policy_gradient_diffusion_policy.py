@@ -1,10 +1,12 @@
 import abc
+from collections.abc import Mapping
+import numpy as np
 import torch
 import tensordict
 from typing import Any
 from plugrl_server.common.tensor_container import TensorContainer, tensor_container
 from .base_policy import BasePolicy, BasePolicyConfig
-from .state import PolicyRuntimeState
+from .state import NumpyState, PolicyRuntimeState
 
 
 @tensor_container
@@ -61,21 +63,27 @@ class BasePolicyGradientDiffusionPolicy(BasePolicy):
         self, obs: tensordict.TensorDict | torch.Tensor
     ) -> Any: ...
 
+    def build_model_observation(
+        self, obs: NumpyState
+    ) -> torch.Tensor | tensordict.TensorDict:
+        return _to_model_observation(obs)
+
     def get_action_and_runtime_state(
         self, _obs: dict, sampling_noise_level: float | None = None
     ) -> tuple[Any, PolicyRuntimeState]:
-        obs = self.prepare_observation(_obs)
-        processed_obs = self.preprocess_observation(obs)
+        prepared_obs = self.prepare_observation(_obs)
+        model_obs = self.build_model_observation(prepared_obs)
+        processed_obs = self.preprocess_observation(model_obs)
         timesteps = self._get_timesteps()
-        b = obs.shape[0]
-        x = self._initialize_x(obs)
+        b = model_obs.shape[0]
+        x = self._initialize_x(model_obs)
 
         runtime_state = self.fake_runtime_state(b)
         for i, t in enumerate(timesteps):
             x_next, logprob, entropy = self._denoising_step(
                 x,
                 t.repeat(b),
-                obs,
+                model_obs,
                 processed_cond=processed_obs,
                 sampling_noise_level=sampling_noise_level,
             )
@@ -86,16 +94,17 @@ class BasePolicyGradientDiffusionPolicy(BasePolicy):
             runtime_state.entropy[:, i] = entropy
             x = self._iterative_process_action(x_next)
 
-        x = self._postprocess_action(x, obs)
-        value = self._get_value(obs, processed_obs)
-        runtime_state.obs["cond"] = obs
+        x = self._postprocess_action(x, model_obs)
+        value = self._get_value(model_obs, processed_obs)
+        runtime_state.obs["cond"] = model_obs
         runtime_state.value[:] = value
         return x, runtime_state
 
     def get_value(self, _obs: dict) -> torch.Tensor:
-        obs = self.prepare_observation(_obs)
-        processed_obs = self.preprocess_observation(obs)
-        return self._get_value(obs, processed_obs).cpu()
+        prepared_obs = self.prepare_observation(_obs)
+        model_obs = self.build_model_observation(prepared_obs)
+        processed_obs = self.preprocess_observation(model_obs)
+        return self._get_value(model_obs, processed_obs).cpu()
 
     def _get_value(
         self, obs: torch.Tensor | tensordict.TensorDict, processed_obs: Any = None
@@ -133,3 +142,26 @@ class BasePolicyGradientDiffusionPolicy(BasePolicy):
         return _DiffusionRuntimeState(
             obs=obs, action=action, logprob=logprob, entropy=entropy, value=value
         )
+
+
+def _to_model_observation(value: NumpyState) -> torch.Tensor | tensordict.TensorDict:
+    if isinstance(value, np.ndarray):
+        return torch.from_numpy(value)
+    if isinstance(value, Mapping):
+        converted = dict(
+            (key, _to_model_observation(item)) for key, item in value.items()
+        )
+        batch_size = _infer_batch_size(converted)
+        if batch_size is None:
+            raise TypeError("Mapping observation must expose a batch dimension.")
+        return tensordict.TensorDict(converted, batch_size=batch_size)
+    raise TypeError(f"Unsupported observation type: {type(value)!r}")
+
+
+def _infer_batch_size(value: dict[str, Any]) -> list[int] | None:
+    for item in value.values():
+        if isinstance(item, torch.Tensor):
+            return list(item.shape[:1])
+        if isinstance(item, tensordict.TensorDict):
+            return list(item.batch_size)
+    return None
