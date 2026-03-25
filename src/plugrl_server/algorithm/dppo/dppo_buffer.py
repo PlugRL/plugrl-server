@@ -4,9 +4,8 @@ from collections import deque
 from dppo.util.reward_scaling import RunningMeanStd
 
 from plugrl_server.buffer.rollout_buffer import GAEBuffer
-from plugrl_server.policy.base_policy import InternalState, BasePolicy
-from plugrl_server.policy.state import PolicyTrainState
-from plugrl_server.policy.state_adapter import train_state_to_tensors
+from plugrl_server.policy.base_policy import BasePolicy
+from plugrl_server.policy.state_adapter import TrainStateLike, train_state_to_tensors
 from plugrl_server.common.data_utils import batch_aggregate
 
 
@@ -14,7 +13,7 @@ class DPPOBuffer(GAEBuffer):
     def __init__(
         self,
         buffer_size,
-        example_train_state: PolicyTrainState | InternalState,
+        example_train_state: TrainStateLike,
         gamma: float = 0.99,
         gae_lambda: float = 0.95,
         cliprew: float = 10.0,
@@ -35,13 +34,13 @@ class DPPOBuffer(GAEBuffer):
         self,
         *,
         prev_node: tuple[int, uuid.UUID],
-        train_state: PolicyTrainState | InternalState,
+        train_state: TrainStateLike,
         reward: float,
         done: bool,
         last_value: torch.Tensor | None,
         next_done: bool,
     ) -> tuple[int, uuid.UUID]:
-        state_tensors = train_state_to_tensors(train_state)
+        train_state_tensors = train_state_to_tensors(train_state)
         if self.idx >= self.buffer_size:
             return (-1, self.buffer_signature)
         prev_idx, prev_signature = prev_node
@@ -53,10 +52,10 @@ class DPPOBuffer(GAEBuffer):
             self.rets[current_idx] = self.rets[prev_idx] * self.gamma + float(reward)
         else:
             self.rets[current_idx] = float(reward)
-        self.obs[current_idx] = state_tensors.obs[0]
-        self.actions[current_idx] = state_tensors.action
-        self.logprobs[current_idx] = state_tensors.logprob
-        self.values[current_idx] = state_tensors.value
+        self.obs[current_idx] = train_state_tensors.obs[0]
+        self.actions[current_idx] = train_state_tensors.action
+        self.logprobs[current_idx] = train_state_tensors.logprob
+        self.values[current_idx] = train_state_tensors.value
         self.rewards[current_idx] = float(reward)
         self.dones[current_idx] = bool(done)
         if last_value is not None:

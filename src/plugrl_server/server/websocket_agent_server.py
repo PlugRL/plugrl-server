@@ -176,11 +176,7 @@ class WebSocketAgentServer:
                     await self._close_for_protocol_error(websocket, exc)
                     break
 
-                obs, env_ids, internal_state = (
-                    infer_msg.data,
-                    infer_msg.env_indices,
-                    None,
-                )
+                obs, env_ids = infer_msg.data, infer_msg.env_indices
                 obs_list = unbatch_aggregate(obs, aggregate_method="concat")
 
                 req_id = f"{session_id}-{uuid.uuid4()}"
@@ -288,7 +284,7 @@ class WebSocketAgentServer:
                         last_obs = last_obs_map.get(eid, {})
                         prev_node_res, step, log_dict = self._algorithm.feedback(
                             obs=last_obs,
-                            internal_state=runtime_state,
+                            runtime_state=runtime_state,
                             train_state=train_state,
                             terminated=terminated,
                             truncated=truncated,
@@ -364,7 +360,7 @@ class WebSocketAgentServer:
                     include_train_state=True,
                 )
             logger.debug(f"Inference done for batch size {len(batch)}")
-            # action/internal_state correspond to rows matching batch order
+            # action/runtime_state correspond to rows matching batch order
             # group indices by original request id so we can set a single
             # future.result per original request (which may have contained
             # multiple envs)

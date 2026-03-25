@@ -3,9 +3,9 @@ import uuid
 import torch
 import tensordict
 
-from plugrl_server.policy.base_policy import InternalState
 from plugrl_server.common.tensor_container import TensorContainer, tensor_container
 from plugrl_server.common.data_utils import _recursively_create_empty_td
+from plugrl_server.policy.state_adapter import TrainStateLike, train_state_to_tensors
 
 
 @tensor_container
@@ -26,10 +26,11 @@ class ReplayBuffer(torch.utils.data.Dataset):
     dones: torch.Tensor
     timeouts: torch.Tensor
 
-    def __init__(self, buffer_size, example_internal_state: InternalState):
+    def __init__(self, buffer_size, example_train_state: TrainStateLike):
         self.buffer_size = buffer_size
+        example_train_tensors = train_state_to_tensors(example_train_state)
 
-        sample_obs = example_internal_state.obs[0]
+        sample_obs = example_train_tensors.obs[0]
         if isinstance(sample_obs, tensordict.TensorDict):
             self.obs = _recursively_create_empty_td(sample_obs, buffer_size)
             self.next_obs = _recursively_create_empty_td(sample_obs, buffer_size)
@@ -46,8 +47,8 @@ class ReplayBuffer(torch.utils.data.Dataset):
             )
 
         self.actions = torch.empty(
-            (buffer_size,) + example_internal_state.action.shape[1:],
-            dtype=example_internal_state.action.dtype,
+            (buffer_size,) + example_train_tensors.action.shape[1:],
+            dtype=example_train_tensors.action.dtype,
         )
         self.rewards = torch.zeros(buffer_size, dtype=torch.float32)
         self.dones = torch.zeros(buffer_size, dtype=torch.bool)

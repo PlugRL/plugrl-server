@@ -7,7 +7,7 @@ from loguru import logger
 from .base_algorithm import DDPAlgorithm, BaseAlgoConfig
 from .registration import register_algo, register_algo_config
 
-from plugrl_server.policy.base_policy import InternalState, BasePolicy
+from plugrl_server.policy.base_policy import BasePolicy
 from plugrl_server.policy.state import PolicyRuntimeState, PolicyTrainState
 from plugrl_server.common.checkpoint_manager import Checkpoint
 from plugrl_server.common.data_utils import unbatch_aggregate
@@ -74,7 +74,7 @@ class DummyAlgorithm(DDPAlgorithm):
                 f" | sleep={self.config.fake_inference_duration_sec:.3f}s"
             )
         with torch.inference_mode():
-            action, internal_state = self.policy.get_action_and_internal_state(obs)
+            action, runtime_state = self.policy.get_action_and_policy_state(obs)
         time.sleep(self.config.fake_inference_duration_sec)
         if should_log:
             self._verbose_log(
@@ -83,13 +83,13 @@ class DummyAlgorithm(DDPAlgorithm):
                 f" | action_shape={tuple(action.shape)}"
                 f" | elapsed={time.perf_counter() - start_time:.3f}s"
             )
-        return action, internal_state
+        return action, runtime_state
 
     def feedback(
         self,
         *,
         obs: dict,
-        internal_state: PolicyRuntimeState,
+        runtime_state: PolicyRuntimeState,
         train_state: PolicyTrainState = None,
         terminated: bool,
         truncated: bool,

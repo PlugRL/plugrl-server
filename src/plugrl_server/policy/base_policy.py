@@ -22,7 +22,7 @@ class BasePolicyConfig:
 
 
 @tensor_container
-class InternalState(TensorContainer):
+class PolicyTensorState(TensorContainer):
     obs: torch.Tensor | tensordict.TensorDict
     action: torch.Tensor
     logprob: torch.Tensor
@@ -45,34 +45,44 @@ class BasePolicy(abc.ABC, nn.Module):
     ) -> torch.Tensor | tensordict.TensorDict: ...
 
     @abc.abstractmethod
-    def get_action_and_internal_state(
+    def get_action_and_policy_state(
         self, _obs: dict
-    ) -> tuple[Any, InternalState]: ...
+    ) -> tuple[Any, PolicyTensorState]: ...
 
     @abc.abstractmethod
-    def fake_internal_state(self, batch_size: int) -> InternalState: ...
+    def fake_policy_state(self, batch_size: int) -> PolicyTensorState: ...
 
-    def export_runtime_state(self, internal_state: InternalState) -> PolicyRuntimeState:
-        return internal_state
+    def export_runtime_state(self, policy_state: PolicyTensorState) -> PolicyRuntimeState:
+        return policy_state
 
-    def export_train_state(self, internal_state: InternalState) -> PolicyTrainState:
-        numpy_state = to_numpy_state(internal_state)
+    def export_train_state(self, policy_state: PolicyTensorState) -> PolicyTrainState:
+        numpy_state = to_numpy_state(policy_state)
         if numpy_state is None:
             return None
         if not isinstance(numpy_state, dict):
             raise TypeError("Train state export must be mapping-like.")
         return numpy_state
 
+    def derive_train_state(self, runtime_state: PolicyRuntimeState) -> PolicyTrainState:
+        if isinstance(runtime_state, PolicyTensorState):
+            return self.export_train_state(runtime_state)
+        raise TypeError(
+            "This policy cannot derive train_state from the provided runtime_state."
+        )
+
+    def example_train_state(self, batch_size: int) -> PolicyTrainState:
+        return self.export_train_state(self.fake_policy_state(batch_size))
+
     def build_policy_step_state(
         self,
-        internal_state: InternalState,
+        policy_state: PolicyTensorState,
         *,
         include_train_state: bool = True,
     ) -> PolicyStepState:
         return PolicyStepState(
-            runtime_state=self.export_runtime_state(internal_state),
+            runtime_state=self.export_runtime_state(policy_state),
             train_state=(
-                self.export_train_state(internal_state) if include_train_state else None
+                self.export_train_state(policy_state) if include_train_state else None
             ),
         )
 
@@ -80,20 +90,16 @@ class BasePolicy(abc.ABC, nn.Module):
 
     def _get_value(self, obs: torch.Tensor | tensordict.TensorDict) -> torch.Tensor: ...
 
-    def _get_action_and_internal_state(
+    def _get_action_and_policy_state(
         self,
         obs: torch.Tensor | tensordict.TensorDict,
         action: torch.Tensor | None = None,
-    ) -> tuple[Any, InternalState]: ...
-
-
-LegacyInternalState = InternalState
+    ) -> tuple[Any, PolicyTensorState]: ...
 
 __all__ = [
     "BasePolicy",
     "BasePolicyConfig",
-    "InternalState",
-    "LegacyInternalState",
+    "PolicyTensorState",
     "PolicyRuntimeState",
     "PolicyStepState",
     "PolicyTrainState",

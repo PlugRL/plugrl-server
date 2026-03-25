@@ -2,8 +2,8 @@ import numpy as np
 import torch
 import dataclasses
 from .registration import register_policy_config, register_policy
-from .base_policy import BasePolicyConfig, BasePolicy, InternalState
-from .state import PolicyRuntimeState, PolicyTrainState
+from .base_policy import BasePolicyConfig, BasePolicy, PolicyTensorState
+from .state import PolicyTrainState
 
 
 @register_policy_config("dummy-policy")
@@ -26,9 +26,9 @@ class DummyPolicy(BasePolicy):
         self.action_dim = config.action_dim
         self.action_horizon = config.action_horizon
 
-    def get_action_and_internal_state(
+    def get_action_and_policy_state(
         self, obs: dict, **kwargs
-    ) -> tuple[np.ndarray, InternalState]:
+    ) -> tuple[np.ndarray, PolicyTensorState]:
         batch_size = len(obs["text"])
         if self.discrete:
             action = np.random.randint(
@@ -38,11 +38,10 @@ class DummyPolicy(BasePolicy):
             action = np.random.uniform(
                 -1, 1, size=(batch_size, self.action_horizon, self.action_dim)
             ).astype(np.float32)
-        self.fake_internal_state(batch_size)
-        return action, self.fake_internal_state(batch_size)
+        return action, self.fake_policy_state(batch_size)
 
-    def fake_internal_state(self, batch_size: int) -> InternalState:
-        return InternalState(
+    def fake_policy_state(self, batch_size: int) -> PolicyTensorState:
+        return PolicyTensorState(
             obs=torch.zeros((batch_size,)),
             action=torch.zeros((batch_size,)),
             logprob=torch.zeros((batch_size,)),
@@ -50,10 +49,7 @@ class DummyPolicy(BasePolicy):
             entropy=torch.zeros((batch_size,)),
         )
 
-    def export_runtime_state(self, internal_state: InternalState) -> PolicyRuntimeState:
-        return internal_state
-
-    def export_train_state(self, internal_state: InternalState) -> PolicyTrainState:
+    def export_train_state(self, policy_state: PolicyTensorState) -> PolicyTrainState:
         return None
 
     def _get_value(self, obs: torch.Tensor | dict) -> torch.Tensor:

@@ -10,7 +10,6 @@ from loguru import logger
 from plugrl_server.common.checkpoint_manager import Checkpoint
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm, BaseAlgoConfig
 from plugrl_server.algorithm.registration import register_algo, register_algo_config
-from plugrl_server.policy.base_policy import InternalState
 from plugrl_server.policy.state import PolicyRuntimeState, PolicyTrainState
 from plugrl_server.policy.base_policy_gradient_diffusion_policy import (
     BasePolicyGradientDiffusionPolicy,
@@ -116,9 +115,7 @@ class DPPOAlgorithm(BaseAlgorithm):
     ):
         super().__init__(config, policy)
         logger.info("Initializing DPPO Buffer...")
-        example_train_state = policy.export_train_state(
-            policy.fake_internal_state(batch_size=1)
-        )
+        example_train_state = policy.example_train_state(batch_size=1)
         if example_train_state is None:
             raise ValueError("DPPO requires non-empty train_state for rollout storage.")
         self.rollout_buffer = DPPOBuffer(
@@ -187,16 +184,16 @@ class DPPOAlgorithm(BaseAlgorithm):
 
     def infer(self, obs: dict) -> tuple[np.ndarray, PolicyRuntimeState]:
         with torch.inference_mode():
-            action, internal_state = self.active_policy.get_action_and_internal_state(
+            action, runtime_state = self.active_policy.get_action_and_policy_state(
                 obs, sampling_noise_level=self.config.sampling_noise_level
             )
-        return action, internal_state
+        return action, runtime_state
 
     def feedback(
         self,
         *,
         obs: dict,
-        internal_state: PolicyRuntimeState,
+        runtime_state: PolicyRuntimeState,
         train_state: PolicyTrainState = None,
         terminated: bool,
         truncated: bool,
@@ -208,13 +205,10 @@ class DPPOAlgorithm(BaseAlgorithm):
         prev_node: tuple,
     ) -> tuple[tuple, int, dict]:
         if train_state is None:
-            assert internal_state is not None, (
-                "Internal state must be provided for feedback."
+            assert runtime_state is not None, (
+                "Runtime state must be provided when train_state is missing."
             )
-            assert isinstance(internal_state, InternalState), (
-                "DPPO feedback currently requires InternalState-compatible runtime state."
-            )
-            train_state = self.active_policy.export_train_state(internal_state)
+            train_state = self.active_policy.derive_train_state(runtime_state)
         assert train_state is not None, "DPPO requires train_state for rollout storage."
         current_node = self.rollout_buffer.add_frame(
             prev_node=prev_node,

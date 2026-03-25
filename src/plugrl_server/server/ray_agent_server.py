@@ -236,7 +236,7 @@ class RayAgentServer:
                 async with self._model_lock:
                     prev_node, step, log_dict = self._algorithm.feedback(
                         obs=obs,
-                        internal_state=runtime_state,
+                        runtime_state=runtime_state,
                         train_state=train_state,
                         terminated=terminated,
                         truncated=truncated,
