@@ -53,7 +53,7 @@ class Evaluation(BaseAlgorithm):
 
     def infer(self, obs: dict) -> tuple[np.ndarray, PolicyRuntimeState]:
         with torch.inference_mode():
-            action, runtime_state = self.policy.get_action_and_policy_state(obs)
+            action, runtime_state = self.policy.get_action_and_runtime_state(obs)
         return action, runtime_state
 
     def feedback(

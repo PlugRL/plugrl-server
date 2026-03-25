@@ -8,9 +8,9 @@ import tqdm
 from loguru import logger
 
 from plugrl_server.common.checkpoint_manager import Checkpoint
+from plugrl_server.common.tensor_container import TensorContainer
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm, BaseAlgoConfig
 from plugrl_server.algorithm.registration import register_algo, register_algo_config
-from plugrl_server.policy.base_policy import PolicyTensorState
 from plugrl_server.policy.state import PolicyRuntimeState, PolicyTrainState, to_numpy_state
 from plugrl_server.policy.base_policy_gradient_diffusion_policy import (
     BasePolicyGradientDiffusionPolicy,
@@ -185,15 +185,15 @@ class DPPOAlgorithm(BaseAlgorithm):
 
     def infer(self, obs: dict) -> tuple[np.ndarray, PolicyRuntimeState]:
         with torch.inference_mode():
-            action, runtime_state = self.active_policy.get_action_and_policy_state(
+            action, runtime_state = self.active_policy.get_action_and_runtime_state(
                 obs, sampling_noise_level=self.config.sampling_noise_level
             )
         return action, runtime_state
 
     def derive_train_state(self, runtime_state: PolicyRuntimeState) -> PolicyTrainState:
-        if not isinstance(runtime_state, PolicyTensorState):
+        if not isinstance(runtime_state, TensorContainer):
             raise TypeError(
-                "DPPO requires runtime_state to be PolicyTensorState-compatible."
+                "DPPO requires runtime_state to be TensorContainer-compatible."
             )
         numpy_state = to_numpy_state(runtime_state)
         if numpy_state is None or not isinstance(numpy_state, dict):
@@ -201,7 +201,7 @@ class DPPOAlgorithm(BaseAlgorithm):
         return numpy_state
 
     def example_train_state(self, batch_size: int) -> PolicyTrainState:
-        return self.derive_train_state(self.active_policy.fake_policy_state(batch_size))
+        return self.derive_train_state(self.active_policy.fake_runtime_state(batch_size))
 
     def feedback(
         self,

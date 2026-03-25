@@ -2,7 +2,18 @@ import abc
 import torch
 import tensordict
 from typing import Any
-from .base_policy import BasePolicy, BasePolicyConfig, PolicyTensorState
+from plugrl_server.common.tensor_container import TensorContainer, tensor_container
+from .base_policy import BasePolicy, BasePolicyConfig
+from .state import PolicyRuntimeState
+
+
+@tensor_container
+class _DiffusionRuntimeState(TensorContainer):
+    obs: torch.Tensor | tensordict.TensorDict
+    action: torch.Tensor
+    logprob: torch.Tensor
+    entropy: torch.Tensor
+    value: torch.Tensor
 
 
 class BasePolicyGradientDiffusionPolicyConfig(BasePolicyConfig): ...
@@ -50,16 +61,16 @@ class BasePolicyGradientDiffusionPolicy(BasePolicy):
         self, obs: tensordict.TensorDict | torch.Tensor
     ) -> Any: ...
 
-    def get_action_and_policy_state(
+    def get_action_and_runtime_state(
         self, _obs: dict, sampling_noise_level: float | None = None
-    ) -> tuple[Any, PolicyTensorState]:
+    ) -> tuple[Any, PolicyRuntimeState]:
         obs = self.prepare_observation(_obs)
         processed_obs = self.preprocess_observation(obs)
         timesteps = self._get_timesteps()
         b = obs.shape[0]
         x = self._initialize_x(obs)
 
-        policy_state = self.fake_policy_state(b)
+        runtime_state = self.fake_runtime_state(b)
         for i, t in enumerate(timesteps):
             x_next, logprob, entropy = self._denoising_step(
                 x,
@@ -68,18 +79,18 @@ class BasePolicyGradientDiffusionPolicy(BasePolicy):
                 processed_cond=processed_obs,
                 sampling_noise_level=sampling_noise_level,
             )
-            policy_state.obs["x"][:, i] = x
-            policy_state.obs["t"][:, i] = t.repeat(b)
-            policy_state.action[:, i] = x_next
-            policy_state.logprob[:, i] = logprob
-            policy_state.entropy[:, i] = entropy
+            runtime_state.obs["x"][:, i] = x
+            runtime_state.obs["t"][:, i] = t.repeat(b)
+            runtime_state.action[:, i] = x_next
+            runtime_state.logprob[:, i] = logprob
+            runtime_state.entropy[:, i] = entropy
             x = self._iterative_process_action(x_next)
 
         x = self._postprocess_action(x, obs)
         value = self._get_value(obs, processed_obs)
-        policy_state.obs["cond"] = obs
-        policy_state.value[:] = value
-        return x, policy_state
+        runtime_state.obs["cond"] = obs
+        runtime_state.value[:] = value
+        return x, runtime_state
 
     def get_value(self, _obs: dict) -> torch.Tensor:
         obs = self.prepare_observation(_obs)
@@ -93,7 +104,7 @@ class BasePolicyGradientDiffusionPolicy(BasePolicy):
     @abc.abstractmethod
     def fake_diffusion_cond(self, batch_size: int) -> tensordict.TensorDict: ...
 
-    def fake_policy_state(self, batch_size: int) -> PolicyTensorState:
+    def fake_runtime_state(self, batch_size: int) -> PolicyRuntimeState:
         action = torch.zeros(
             (batch_size, self.num_denoising_steps, self.action_horizon, self.action_dim)
         )
@@ -119,6 +130,6 @@ class BasePolicyGradientDiffusionPolicy(BasePolicy):
             (batch_size, self.num_denoising_steps, self.action_horizon, self.action_dim)
         )
         value = torch.zeros((batch_size,))
-        return PolicyTensorState(
+        return _DiffusionRuntimeState(
             obs=obs, action=action, logprob=logprob, entropy=entropy, value=value
         )

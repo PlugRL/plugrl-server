@@ -6,25 +6,13 @@ import torch
 import torch.nn as nn
 import tensordict
 
-from plugrl_server.common.tensor_container import tensor_container, TensorContainer
-from plugrl_server.policy.state import (
-    PolicyRuntimeState,
-)
+from plugrl_server.policy.state import PolicyRuntimeState
 
 
 @dataclasses.dataclass
 class BasePolicyConfig:
     algo: tyro.conf._markers.Suppress[str] = "unknown"
     device: torch.device | Literal["cpu", "cuda"] = "cuda"
-
-
-@tensor_container
-class PolicyTensorState(TensorContainer):
-    obs: torch.Tensor | tensordict.TensorDict
-    action: torch.Tensor
-    logprob: torch.Tensor
-    entropy: torch.Tensor
-    value: torch.Tensor
 
 
 class BasePolicy(abc.ABC, nn.Module):
@@ -42,26 +30,25 @@ class BasePolicy(abc.ABC, nn.Module):
     ) -> torch.Tensor | tensordict.TensorDict: ...
 
     @abc.abstractmethod
-    def get_action_and_policy_state(
+    def get_action_and_runtime_state(
         self, _obs: dict
-    ) -> tuple[Any, PolicyTensorState]: ...
+    ) -> tuple[Any, PolicyRuntimeState]: ...
 
     @abc.abstractmethod
-    def fake_policy_state(self, batch_size: int) -> PolicyTensorState: ...
+    def fake_runtime_state(self, batch_size: int) -> PolicyRuntimeState: ...
 
     def get_value(self, _obs: dict) -> torch.Tensor: ...
 
     def _get_value(self, obs: torch.Tensor | tensordict.TensorDict) -> torch.Tensor: ...
 
-    def _get_action_and_policy_state(
+    def _get_action_and_runtime_state(
         self,
         obs: torch.Tensor | tensordict.TensorDict,
         action: torch.Tensor | None = None,
-    ) -> tuple[Any, PolicyTensorState]: ...
+    ) -> tuple[Any, PolicyRuntimeState]: ...
 
 __all__ = [
     "BasePolicy",
     "BasePolicyConfig",
-    "PolicyTensorState",
     "PolicyRuntimeState",
 ]

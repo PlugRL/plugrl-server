@@ -6,10 +6,10 @@ from typing import Any
 import tensordict
 import torch
 
-from plugrl_server.policy.base_policy import PolicyTensorState
+from plugrl_server.common.tensor_container import TensorContainer
 from plugrl_server.policy.state import PolicyTrainState
 
-TrainStateLike = PolicyTrainState | PolicyTensorState
+TrainStateLike = PolicyTrainState | TensorContainer
 
 
 @dataclasses.dataclass(frozen=True)
@@ -24,7 +24,7 @@ class TrainStateTensors:
 def train_state_to_tensors(
     train_state: TrainStateLike,
 ) -> TrainStateTensors:
-    if isinstance(train_state, PolicyTensorState):
+    if isinstance(train_state, TensorContainer):
         return TrainStateTensors(
             obs=train_state.obs,
             action=train_state.action,

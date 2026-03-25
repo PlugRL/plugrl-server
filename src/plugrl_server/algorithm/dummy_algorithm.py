@@ -74,7 +74,7 @@ class DummyAlgorithm(DDPAlgorithm):
                 f" | sleep={self.config.fake_inference_duration_sec:.3f}s"
             )
         with torch.inference_mode():
-            action, runtime_state = self.policy.get_action_and_policy_state(obs)
+            action, runtime_state = self.policy.get_action_and_runtime_state(obs)
         time.sleep(self.config.fake_inference_duration_sec)
         if should_log:
             self._verbose_log(

@@ -2,7 +2,18 @@ import numpy as np
 import torch
 import dataclasses
 from .registration import register_policy_config, register_policy
-from .base_policy import BasePolicyConfig, BasePolicy, PolicyTensorState
+from plugrl_server.common.tensor_container import TensorContainer, tensor_container
+from .base_policy import BasePolicyConfig, BasePolicy
+from .state import PolicyRuntimeState
+
+
+@tensor_container
+class _DummyRuntimeState(TensorContainer):
+    obs: torch.Tensor
+    action: torch.Tensor
+    logprob: torch.Tensor
+    entropy: torch.Tensor
+    value: torch.Tensor
 
 
 @register_policy_config("dummy-policy")
@@ -25,9 +36,9 @@ class DummyPolicy(BasePolicy):
         self.action_dim = config.action_dim
         self.action_horizon = config.action_horizon
 
-    def get_action_and_policy_state(
+    def get_action_and_runtime_state(
         self, obs: dict, **kwargs
-    ) -> tuple[np.ndarray, PolicyTensorState]:
+    ) -> tuple[np.ndarray, PolicyRuntimeState]:
         batch_size = len(obs["text"])
         if self.discrete:
             action = np.random.randint(
@@ -37,10 +48,10 @@ class DummyPolicy(BasePolicy):
             action = np.random.uniform(
                 -1, 1, size=(batch_size, self.action_horizon, self.action_dim)
             ).astype(np.float32)
-        return action, self.fake_policy_state(batch_size)
+        return action, self.fake_runtime_state(batch_size)
 
-    def fake_policy_state(self, batch_size: int) -> PolicyTensorState:
-        return PolicyTensorState(
+    def fake_runtime_state(self, batch_size: int) -> PolicyRuntimeState:
+        return _DummyRuntimeState(
             obs=torch.zeros((batch_size,)),
             action=torch.zeros((batch_size,)),
             logprob=torch.zeros((batch_size,)),
