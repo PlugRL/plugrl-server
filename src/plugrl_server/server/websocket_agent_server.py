@@ -18,6 +18,7 @@ from plugrl_protocol.websocket_protocol import (
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm
 from plugrl_server.common.checkpoint_manager import CheckpointManager
 from plugrl_server.common.data_utils import batch_aggregate, unbatch_aggregate
+from plugrl_server.policy.state import slice_batched_state
 from plugrl_server.server.inference_coordinator import InferenceCoordinator
 from plugrl_server.server.lifecycle import ServerLifecycle
 from plugrl_server.server.protocol import (
@@ -352,7 +353,11 @@ class WebSocketAgentServer:
             )
             logger.debug(f"Processing inference for batch size {len(batch)}")
             async with self._model_lock:
-                action, internal_state = self._algorithm.infer(obs)
+                action, step_state = self._algorithm.infer_step(
+                    obs,
+                    include_train_state=False,
+                )
+                internal_state = step_state.runtime_state
             logger.debug(f"Inference done for batch size {len(batch)}")
             # action/internal_state correspond to rows matching batch order
             # group indices by original request id so we can set a single
@@ -382,7 +387,7 @@ class WebSocketAgentServer:
                     sub_index = int(req.get("sub_index"))
                     pending["items"][sub_index] = (
                         action[i],
-                        internal_state[i : i + 1],
+                        slice_batched_state(internal_state, slice(i, i + 1)),
                         req.get("env_id"),
                         req["obs"],
                     )

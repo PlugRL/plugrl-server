@@ -11,6 +11,7 @@ from plugrl_server.common.checkpoint_manager import Checkpoint
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm, BaseAlgoConfig
 from plugrl_server.algorithm.registration import register_algo, register_algo_config
 from plugrl_server.policy.base_policy import InternalState
+from plugrl_server.policy.state import PolicyRuntimeState
 from plugrl_server.policy.base_policy_gradient_diffusion_policy import (
     BasePolicyGradientDiffusionPolicy,
 )
@@ -179,7 +180,7 @@ class DPPOAlgorithm(BaseAlgorithm):
             self.critic_optimizer = None
             self.critic_lr_scheduler = None
 
-    def infer(self, obs: dict) -> tuple[np.ndarray, InternalState]:
+    def infer(self, obs: dict) -> tuple[np.ndarray, PolicyRuntimeState]:
         with torch.inference_mode():
             action, internal_state = self.active_policy.get_action_and_internal_state(
                 obs, sampling_noise_level=self.config.sampling_noise_level
@@ -190,7 +191,7 @@ class DPPOAlgorithm(BaseAlgorithm):
         self,
         *,
         obs: dict,
-        internal_state: InternalState | None,
+        internal_state: PolicyRuntimeState,
         terminated: bool,
         truncated: bool,
         next_obs: dict,
@@ -202,6 +203,9 @@ class DPPOAlgorithm(BaseAlgorithm):
     ) -> tuple[tuple, int, dict]:
         assert internal_state is not None, (
             "Internal state must be provided for feedback."
+        )
+        assert isinstance(internal_state, InternalState), (
+            "DPPO feedback currently requires InternalState-compatible runtime state."
         )
         current_node = self.rollout_buffer.add_frame(
             prev_node=prev_node,

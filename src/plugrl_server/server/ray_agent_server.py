@@ -20,6 +20,7 @@ from plugrl_protocol.websocket_protocol import (
 from plugrl_server.algorithm.base_algorithm import DDPAlgorithm
 from plugrl_server.common.checkpoint_manager import CheckpointManager
 from plugrl_server.common.data_utils import batch_aggregate
+from plugrl_server.policy.state import slice_batched_state
 from plugrl_server.server.inference_coordinator import InferenceCoordinator
 from plugrl_server.server.lifecycle import ServerLifecycle
 from plugrl_server.server.protocol import (
@@ -279,11 +280,19 @@ class RayAgentServer:
             obs = batch_aggregate([req["obs"] for req in batch])
             logger.debug(f"Processing inference for batch size {len(batch)}")
             async with self._model_lock:
-                action, internal_state = self._algorithm.infer(obs)
+                action, step_state = self._algorithm.infer_step(
+                    obs,
+                    include_train_state=False,
+                )
+                internal_state = step_state.runtime_state
             logger.debug(f"Inference done for batch size {len(batch)}")
             for i, req in enumerate(batch):
                 self._inference.resolve_request(
-                    req, result=(action[i : i + 1], internal_state[i : i + 1])
+                    req,
+                    result=(
+                        action[i : i + 1],
+                        slice_batched_state(internal_state, slice(i, i + 1)),
+                    ),
                 )
         except Exception as exc:
             self._inference.fail_batch(batch, exc)

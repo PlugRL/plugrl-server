@@ -3,6 +3,7 @@ import dataclasses
 import numpy as np
 
 from plugrl_server.policy.base_policy import BasePolicy, InternalState
+from plugrl_server.policy.state import PolicyRuntimeState, PolicyStepState
 from plugrl_server.common.checkpoint_manager import Checkpoint
 
 
@@ -23,15 +24,33 @@ class BaseAlgorithm(abc.ABC):
     def active_policy(self) -> BasePolicy:
         return self.policy
 
+    def export_policy_step_state(
+        self,
+        internal_state: InternalState,
+        *,
+        include_train_state: bool = True,
+    ) -> PolicyStepState:
+        return self.active_policy.build_policy_step_state(
+            internal_state,
+            include_train_state=include_train_state,
+        )
+
+    def infer_step(self, obs: dict, *, include_train_state: bool = False) -> tuple[np.ndarray, PolicyStepState]:
+        action, internal_state = self.infer(obs)
+        return action, self.export_policy_step_state(
+            internal_state,
+            include_train_state=include_train_state,
+        )
+
     @abc.abstractmethod
-    def infer(self, obs: dict) -> tuple[np.ndarray, InternalState]: ...
+    def infer(self, obs: dict) -> tuple[np.ndarray, PolicyRuntimeState]: ...
 
     @abc.abstractmethod
     def feedback(
         self,
         *,
         obs: dict,
-        internal_state: InternalState | None,
+        internal_state: PolicyRuntimeState,
         terminated: bool,
         truncated: bool,
         next_obs: dict,

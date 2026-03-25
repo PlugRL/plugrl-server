@@ -10,6 +10,7 @@ from .base_algorithm import BaseAlgorithm, BaseAlgoConfig
 from .registration import register_algo, register_algo_config
 
 from plugrl_server.policy.base_policy import InternalState, BasePolicy
+from plugrl_server.policy.state import PolicyRuntimeState
 from plugrl_server.common.checkpoint_manager import (
     Checkpoint,
     load_checkpoint_from_path,
@@ -50,7 +51,7 @@ class Evaluation(BaseAlgorithm):
             )
             self.load_checkpoint(checkpoint_manager)
 
-    def infer(self, obs: dict) -> tuple[np.ndarray, InternalState]:
+    def infer(self, obs: dict) -> tuple[np.ndarray, PolicyRuntimeState]:
         with torch.inference_mode():
             action, internal_state = self.policy.get_action_and_internal_state(obs)
         return action, internal_state
@@ -59,7 +60,7 @@ class Evaluation(BaseAlgorithm):
         self,
         *,
         obs: dict,
-        internal_state: InternalState | None,
+        internal_state: PolicyRuntimeState,
         terminated: bool,
         truncated: bool,
         next_obs: dict,

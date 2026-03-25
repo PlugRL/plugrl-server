@@ -8,6 +8,7 @@ from .base_algorithm import DDPAlgorithm, BaseAlgoConfig
 from .registration import register_algo, register_algo_config
 
 from plugrl_server.policy.base_policy import InternalState, BasePolicy
+from plugrl_server.policy.state import PolicyRuntimeState
 from plugrl_server.common.checkpoint_manager import Checkpoint
 from plugrl_server.common.data_utils import unbatch_aggregate
 
@@ -58,7 +59,7 @@ class DummyAlgorithm(DDPAlgorithm):
             step <= 1 or step % self.verbose_feedback_interval == 0
         )
 
-    def infer(self, obs: dict) -> tuple[np.ndarray, InternalState]:
+    def infer(self, obs: dict) -> tuple[np.ndarray, PolicyRuntimeState]:
         next_step = self.global_step + 1
         batch_size = len(unbatch_aggregate(obs, aggregate_method="concat"))
         should_log = self._should_log_progress(next_step)
@@ -88,7 +89,7 @@ class DummyAlgorithm(DDPAlgorithm):
         self,
         *,
         obs: dict,
-        internal_state: InternalState | None,
+        internal_state: PolicyRuntimeState,
         terminated: bool,
         truncated: bool,
         next_obs: dict,
