@@ -7,12 +7,17 @@ import torch.distributed as dist
 import torch.nn.parallel
 from typing import Any, Dict
 
-from plugrl_server.algorithm.base_algorithm import DDPAlgorithm, BaseAlgoConfig
+from plugrl_server.algorithm.base_algorithm import BaseAlgoConfig
+from plugrl_server.algorithm.distributed import DDPAlgorithm
 from plugrl_server.policy.base_policy import BasePolicyConfig
 from plugrl_server.policy.registration import make_policy
 from plugrl_server.algorithm.registration import make_algo
 from plugrl_server.common.checkpoint_manager import Checkpoint
 from plugrl_server.common.logging_utils import get_logger
+
+# Deferred path:
+# This Ray learner path is maintained only for minimal compatibility.
+# Real distributed redesign/debugging is postponed until a true multi-rank environment is available.
 
 logger = get_logger(__name__)
 

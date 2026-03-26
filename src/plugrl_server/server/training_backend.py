@@ -3,7 +3,12 @@ from typing import Any
 
 import ray
 
-from plugrl_server.algorithm.base_algorithm import BaseAlgorithm, DDPAlgorithm
+# Deferred path:
+# Ray-based distributed training support is maintained only for minimal compatibility.
+# Real distributed redesign/debugging is postponed until a true multi-rank environment is available.
+
+from plugrl_server.algorithm.base_algorithm import BaseAlgorithm
+from plugrl_server.algorithm.distributed import DDPAlgorithm
 from plugrl_server.common.checkpoint_manager import CheckpointManager, Checkpoint
 from plugrl_server.common.logging_utils import get_logger
 from plugrl_server.common.metrics import MetricSink

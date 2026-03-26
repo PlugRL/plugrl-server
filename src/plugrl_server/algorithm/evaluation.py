@@ -105,10 +105,7 @@ class Evaluation(BaseAlgorithm):
 
     def load_checkpoint(self, checkpoint: Checkpoint):
         if checkpoint.model is not None:
-            self.active_policy.load_state_dict(checkpoint.model)
-
-    def get_active_policy(self) -> BasePolicy:
-        return self.policy
+            self.policy.load_state_dict(checkpoint.model)
 
     def get_recorded_episode_stats(self) -> dict:
         avg_stats = {}

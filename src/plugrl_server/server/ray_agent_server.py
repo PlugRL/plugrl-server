@@ -14,7 +14,11 @@ from plugrl_protocol.websocket_protocol import (
     SERVER_STOP_REASON,
 )
 
-from plugrl_server.algorithm.base_algorithm import DDPAlgorithm
+# Deferred path:
+# This Ray server path is maintained only for minimal compatibility.
+# Real distributed redesign/debugging is postponed until a true multi-rank environment is available.
+
+from plugrl_server.algorithm.distributed import DDPAlgorithm
 from plugrl_server.common.checkpoint_manager import CheckpointManager
 from plugrl_server.common.data_utils import batch_aggregate
 from plugrl_server.common.logging_utils import get_logger

@@ -3,7 +3,7 @@ import numpy as np
 import time
 import torch
 
-from .base_algorithm import DDPAlgorithm, BaseAlgoConfig
+from .base_algorithm import BaseAlgorithm, BaseAlgoConfig
 from .registration import register_algo, register_algo_config
 
 from plugrl_server.policy.base_policy import BasePolicy
@@ -31,7 +31,7 @@ class DummyAlgoConfig(BaseAlgoConfig):
 
 
 @register_algo(UID)
-class DummyAlgorithm(DDPAlgorithm):
+class DummyAlgorithm(BaseAlgorithm):
     config: DummyAlgoConfig
 
     def __init__(self, config: DummyAlgoConfig, policy: BasePolicy):
@@ -171,35 +171,3 @@ class DummyAlgorithm(DDPAlgorithm):
         self.counter = 0
         self._stop_logged = False
         self._verbose_log(f"checkpoint loaded | step={self.global_step}")
-
-    def activate_ddp(self, ddp_policy) -> None: ...
-
-    def set_device(self, device) -> None: ...
-
-    def get_serializable_buffer_data(self) -> dict:
-        return {}
-
-    def load_serializable_buffer_data(self, data: dict) -> None: ...
-
-    def get_active_policy(self) -> BasePolicy:
-        return self.policy
-
-    def load_learner_state(self, checkpoint: Checkpoint) -> None:
-        self.load_checkpoint(checkpoint)
-
-    def get_server_data(self) -> tuple[int, dict, dict]:
-        return self.global_step, {}, {}
-
-    def load_server_data(self, global_step: int, meta_info: dict, data: dict) -> None:
-        self.global_step = global_step
-        self._stop_logged = False
-        self._verbose_log(
-            "server data loaded"
-            f" | global_step={self.global_step}"
-            f" | meta_keys={tuple(meta_info.keys())}"
-            f" | data_keys={tuple(data.keys())}"
-        )
-
-    def create_ddp_checkpoint(self) -> Checkpoint:
-        self._verbose_log(f"create ddp checkpoint | step={self.global_step}")
-        return Checkpoint(step=self.global_step)

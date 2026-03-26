@@ -63,7 +63,7 @@ class SACAlgorithm(BaseAlgorithm):
     def __init__(self, config: SACAlgoConfig, policy: SACPolicy):
         super().__init__(config=config, policy=policy)
         example_runtime_state = cast(
-            SACRuntimeState, self.active_policy.fake_runtime_state(batch_size=1)
+            SACRuntimeState, self.policy.fake_runtime_state(batch_size=1)
         )
         self.replay_buffer = ReplayBuffer(
             buffer_size=config.buffer_size,
@@ -77,16 +77,13 @@ class SACAlgorithm(BaseAlgorithm):
         self.update_counter = 0
 
         q_optimizer = torch.optim.Adam(
-            list(self.active_policy.qf1.parameters())
-            + list(self.active_policy.qf2.parameters()),
+            list(self.policy.qf1.parameters()) + list(self.policy.qf2.parameters()),
             lr=config.q_lr,
         )
-        actor_optimizer = torch.optim.Adam(
-            self.active_policy.actor.parameters(), lr=config.policy_lr
-        )
-        if self.active_policy.autotune:
+        actor_optimizer = torch.optim.Adam(self.policy.actor.parameters(), lr=config.policy_lr)
+        if self.policy.autotune:
             a_optimizer = torch.optim.Adam(
-                [self.active_policy.log_alpha], lr=config.q_lr
+                [self.policy.log_alpha], lr=config.q_lr
             )
         else:
             a_optimizer = None
@@ -96,14 +93,9 @@ class SACAlgorithm(BaseAlgorithm):
         self.a_optimizer = a_optimizer
 
     @override
-    @property
-    def active_policy(self) -> SACPolicy:
-        return cast(SACPolicy, self.policy)
-
-    @override
     def infer(self, obs: dict[str, Any]) -> tuple[np.ndarray, SACRuntimeState]:
         with torch.inference_mode():
-            action, runtime_state = self.active_policy.get_action_and_runtime_state(
+            action, runtime_state = self.policy.get_action_and_runtime_state(
                 obs, random_sample=self.global_step < self.config.learning_starts
             )
         return action, runtime_state
@@ -128,7 +120,7 @@ class SACAlgorithm(BaseAlgorithm):
         current_node = self.replay_buffer.add_frame(
             prev_node=prev_node,
             obs=sac_runtime_state["obs"],
-            next_obs=self.active_policy.prepare_observation(next_obs),
+            next_obs=self.policy.prepare_observation(next_obs),
             action=sac_runtime_state["action"],
             reward=reward,
             done=next_terminated or next_truncated,
@@ -151,12 +143,12 @@ class SACAlgorithm(BaseAlgorithm):
         return current_node, self.global_step, log_dict
 
     def update(self, data: ReplayBufferSamples):
-        data = data.to(self.active_policy.device)
-        actor: Actor = self.active_policy.actor
-        qf1: SoftQNetwork = self.active_policy.qf1
-        qf2: SoftQNetwork = self.active_policy.qf2
-        qf1_target: SoftQNetwork = self.active_policy.qf1_target
-        qf2_target: SoftQNetwork = self.active_policy.qf2_target
+        data = data.to(self.policy.device)
+        actor: Actor = self.policy.actor
+        qf1: SoftQNetwork = self.policy.qf1
+        qf2: SoftQNetwork = self.policy.qf2
+        qf1_target: SoftQNetwork = self.policy.qf1_target
+        qf2_target: SoftQNetwork = self.policy.qf2_target
 
         with torch.no_grad():
             next_state_actions, next_state_log_pi, _ = actor.get_action(data.next_obs)
@@ -164,7 +156,7 @@ class SACAlgorithm(BaseAlgorithm):
             qf2_next_target = qf2_target(data.next_obs, next_state_actions)
             min_qf_next_target = (
                 torch.min(qf1_next_target, qf2_next_target)
-                - self.active_policy.alpha * next_state_log_pi
+                - self.policy.alpha * next_state_log_pi
             )
             next_q_value = data.rewards.flatten() + (
                 1 - data.dones.float().flatten()
@@ -188,24 +180,24 @@ class SACAlgorithm(BaseAlgorithm):
                 qf1_pi = qf1(data.obs, pi)
                 qf2_pi = qf2(data.obs, pi)
                 min_qf_pi = torch.min(qf1_pi, qf2_pi)
-                actor_loss = ((self.active_policy.alpha * log_pi) - min_qf_pi).mean()
+                actor_loss = ((self.policy.alpha * log_pi) - min_qf_pi).mean()
 
                 self.actor_optimizer.zero_grad()
                 actor_loss.backward()
                 self.actor_optimizer.step()
 
-                if self.a_optimizer is not None and self.active_policy.autotune:
+                if self.a_optimizer is not None and self.policy.autotune:
                     with torch.no_grad():
                         _, log_pi, _ = actor.get_action(data.obs)
                     alpha_loss = (
-                        -self.active_policy.log_alpha.exp()
-                        * (log_pi + self.active_policy.target_entropy)
+                        -self.policy.log_alpha.exp()
+                        * (log_pi + self.policy.target_entropy)
                     ).mean()
 
                     self.a_optimizer.zero_grad()
                     alpha_loss.backward()
                     self.a_optimizer.step()
-                    self.active_policy.alpha = self.active_policy.log_alpha.exp().item()
+                    self.policy.alpha = self.policy.log_alpha.exp().item()
 
         if self.update_counter % self.config.target_network_frequency == 0:
             for param, target_param in zip(qf1.parameters(), qf1_target.parameters()):
@@ -243,7 +235,7 @@ class SACAlgorithm(BaseAlgorithm):
         for k, v in update_stats.items():
             log_dict[f"train/{k}"] = np.mean(v)
 
-        log_dict["train/alpha"] = self.active_policy.alpha
+        log_dict["train/alpha"] = self.policy.alpha
         return self.global_step, log_dict
 
     @override
@@ -272,7 +264,7 @@ class SACAlgorithm(BaseAlgorithm):
             optimizers["a_optimizer"] = self.a_optimizer.state_dict()
         return Checkpoint(
             step=self.global_step,
-            model=self.active_policy.state_dict(),
+            model=self.policy.state_dict(),
             optimizer=optimizers,
             meta={
                 "last_learn_step": self.last_learn_step,
@@ -285,7 +277,7 @@ class SACAlgorithm(BaseAlgorithm):
     def load_checkpoint(self, checkpoint: Checkpoint) -> None:
         self.global_step = checkpoint.step
         if checkpoint.model is not None:
-            self.active_policy.load_state_dict(checkpoint.model)
+            self.policy.load_state_dict(checkpoint.model)
         if checkpoint.optimizer is not None:
             self.q_optimizer.load_state_dict(checkpoint.optimizer["q_optimizer"])
             self.actor_optimizer.load_state_dict(

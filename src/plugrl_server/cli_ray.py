@@ -7,6 +7,11 @@ import ray
 import torch
 
 import plugrl_server
+
+# Deferred path:
+# This Ray CLI path is maintained only for minimal compatibility.
+# Real distributed redesign/debugging is postponed until a true multi-rank environment is available.
+
 from plugrl_server.cli import (
     Args as BaseArgs,
     build_cli_from_registry,

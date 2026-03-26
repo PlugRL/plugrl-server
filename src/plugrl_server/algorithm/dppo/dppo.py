@@ -142,15 +142,11 @@ class DPPOAlgorithm(BaseAlgorithm):
             smoothing=0.01,
         )
 
-    @property
-    def active_policy(self) -> BasePolicyGradientDiffusionPolicy:
-        return self.policy
-
     def init_optimizers(self):
         logger.info("Initializing DPPO Optimizers and Schedulers...")
         config = self.config
         self.actor_optimizer = torch.optim.AdamW(
-            self.active_policy.actor.parameters(),
+            self.policy.actor.parameters(),
             lr=config.actor_lr,
             weight_decay=config.actor_weight_decay,
         )
@@ -164,9 +160,9 @@ class DPPOAlgorithm(BaseAlgorithm):
             )
         else:
             self.actor_lr_scheduler = None
-        if self.active_policy.critic is not None:
+        if self.policy.critic is not None:
             self.critic_optimizer = torch.optim.AdamW(
-                self.active_policy.critic.parameters(),
+                self.policy.critic.parameters(),
                 lr=config.critic_lr,
                 weight_decay=config.critic_weight_decay,
             )
@@ -188,7 +184,7 @@ class DPPOAlgorithm(BaseAlgorithm):
 
     def infer(self, obs: dict) -> tuple[np.ndarray, PolicyRuntimeState]:
         with torch.inference_mode():
-            action, runtime_state = self.active_policy.get_action_and_runtime_state(
+            action, runtime_state = self.policy.get_action_and_runtime_state(
                 obs, sampling_noise_level=self.config.sampling_noise_level
             )
         return action, runtime_state
@@ -204,7 +200,7 @@ class DPPOAlgorithm(BaseAlgorithm):
         return numpy_state
 
     def example_train_state(self, batch_size: int) -> PolicyTrainState:
-        return self.derive_train_state(self.active_policy.fake_runtime_state(batch_size))
+        return self.derive_train_state(self.policy.fake_runtime_state(batch_size))
 
     def feedback(
         self,
@@ -256,7 +252,7 @@ class DPPOAlgorithm(BaseAlgorithm):
 
     def pre_learn(self) -> None:
         self.rollout_buffer.compute_advantages_and_returns(
-            policy=self.active_policy, batch_size=self.config.batch_size
+            policy=self.policy, batch_size=self.config.batch_size
         )
 
     def create_dataloaders(
@@ -277,17 +273,17 @@ class DPPOAlgorithm(BaseAlgorithm):
     ) -> tuple[float | None, float | None]:
         if force or accum_steps % grad_accum == 0:
             max_actor_grad_norm = torch.nn.utils.clip_grad_norm_(
-                self.active_policy.actor.parameters(), float("inf")
+                self.policy.actor.parameters(), float("inf")
             ).item()
             max_critic_grad_norm = 0.0
-            if self.active_policy.critic is not None:
+            if self.policy.critic is not None:
                 max_critic_grad_norm = torch.nn.utils.clip_grad_norm_(
-                    self.active_policy.critic.parameters(), float("inf")
+                    self.policy.critic.parameters(), float("inf")
                 ).item()
 
             if self.config.max_grad_norm is not None:
                 nn.utils.clip_grad_norm_(
-                    self.active_policy.parameters(), self.config.max_grad_norm
+                    self.policy.parameters(), self.config.max_grad_norm
                 )
             if self.curr_train_itrs >= self.config.n_critic_warmup_itrs:
                 self.actor_optimizer.step()
@@ -311,7 +307,7 @@ class DPPOAlgorithm(BaseAlgorithm):
         )
 
         # Policy forward step
-        _, newlogprob, entropy = self.active_policy._denoising_step(
+        _, newlogprob, entropy = self.policy._denoising_step(
             x=x,
             t=t,
             cond=cond,
@@ -369,8 +365,8 @@ class DPPOAlgorithm(BaseAlgorithm):
         pg_loss = torch.max(pg_loss1, pg_loss2).mean()
         entropy_loss = entropy.mean()
 
-        if self.active_policy.critic is not None:
-            newvalue = self.active_policy._get_value(obs["cond"]).view(-1)
+        if self.policy.critic is not None:
+            newvalue = self.policy._get_value(obs["cond"]).view(-1)
             if self.config.clip_vloss_coef is not None:
                 v_loss_unclipped = (newvalue - ret) ** 2
                 v_clipped = value + torch.clamp(
@@ -410,13 +406,13 @@ class DPPOAlgorithm(BaseAlgorithm):
 
             for batch in dataloader:
                 obs, action, oldlogprob, reward, value, advantage, ret = batch
-                obs = torch_tree_to_device(obs, self.active_policy.device)
-                action = action.to(self.active_policy.device)
-                oldlogprob = oldlogprob.to(self.active_policy.device)
-                reward = reward.to(self.active_policy.device)
-                value = value.to(self.active_policy.device)
-                advantage = advantage.to(self.active_policy.device)
-                ret = ret.to(self.active_policy.device)
+                obs = torch_tree_to_device(obs, self.policy.device)
+                action = action.to(self.policy.device)
+                oldlogprob = oldlogprob.to(self.policy.device)
+                reward = reward.to(self.policy.device)
+                value = value.to(self.policy.device)
+                advantage = advantage.to(self.policy.device)
+                ret = ret.to(self.policy.device)
                 pg_loss, v_loss, entropy_loss, logratio, ratio = self._compute_loss(
                     obs, action, oldlogprob, reward, value, advantage, ret
                 )
@@ -545,7 +541,7 @@ class DPPOAlgorithm(BaseAlgorithm):
     def load_checkpoint(self, checkpoint: Checkpoint) -> None:
         self.global_step = checkpoint.step
         if checkpoint.model is not None:
-            self.active_policy.load_state_dict(checkpoint.model)
+            self.policy.load_state_dict(checkpoint.model)
         if checkpoint.optimizer is not None:
             self.actor_optimizer.load_state_dict(checkpoint.optimizer["actor"])
             if (

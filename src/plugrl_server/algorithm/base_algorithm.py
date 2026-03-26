@@ -26,10 +26,6 @@ class BaseAlgorithm(abc.ABC):
 
     def init_optimizers(self) -> None: ...
 
-    @property
-    def active_policy(self) -> BasePolicy:
-        return self.policy
-
     def derive_train_state(self, runtime_state: PolicyRuntimeState) -> PolicyTrainState:
         return None
 
@@ -93,24 +89,3 @@ class BaseAlgorithm(abc.ABC):
     def pre_learn(self) -> None: ...
 
     def post_learn(self) -> None: ...
-
-
-class DDPAlgorithm(BaseAlgorithm):
-    ddp_enabled: bool
-
-    @abc.abstractmethod
-    def activate_ddp(self, ddp_policy) -> None: ...
-
-    @abc.abstractmethod
-    def get_server_data(self) -> tuple[int, dict, dict]: ...
-
-    @abc.abstractmethod
-    def load_server_data(
-        self, global_step: int, meta_info: dict, data: dict
-    ) -> None: ...
-
-    @abc.abstractmethod
-    def load_learner_state(self, checkpoint: Checkpoint) -> None: ...
-
-    @abc.abstractmethod
-    def create_ddp_checkpoint(self) -> Checkpoint: ...

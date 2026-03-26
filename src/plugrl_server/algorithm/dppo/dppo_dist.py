@@ -4,14 +4,17 @@ import torch.distributed as dist
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.sampler import Sampler
 import plugrl_server.algorithm.dppo.dppo as _dppo
-from typing import cast
-from plugrl_server.algorithm.base_algorithm import DDPAlgorithm
+from plugrl_server.algorithm.distributed import DDPAlgorithm
 from plugrl_server.algorithm.registration import register_algo, register_algo_config
 from plugrl_server.common.checkpoint_manager import Checkpoint
 from plugrl_server.common.checkpoint_manager import (
     move_model_to_cpu,
     move_optimizer_to_cpu,
 )
+
+# Deferred path:
+# This distributed adapter is maintained only for minimal compatibility.
+# Real distributed redesign/debugging is postponed until a true multi-rank environment is available.
 
 UID = "dppo-dist"
 
@@ -36,13 +39,6 @@ class DPPOAlgoDistributed(_dppo.DPPOAlgorithm, DDPAlgorithm):
         super().__init__(config, policy)
         self.ddp_enabled = False
         self.checkpoint_cache: Checkpoint | None = None
-
-    @property
-    def active_policy(self) -> _dppo.BasePolicyGradientDiffusionPolicy:
-        return cast(
-            _dppo.BasePolicyGradientDiffusionPolicy,
-            self.policy.module if self.ddp_enabled else self.policy,
-        )
 
     def create_dataloaders(self) -> tuple[Sampler | None, DataLoader]:
         if self.ddp_enabled:
@@ -106,7 +102,7 @@ class DPPOAlgoDistributed(_dppo.DPPOAlgorithm, DDPAlgorithm):
             optimizer = self.checkpoint_cache.optimizer
         else:
             assert self.ddp_enabled, "DDP is not enabled. Cannot create DDP checkpoint."
-            model = move_model_to_cpu(self.active_policy.state_dict())
+            model = move_model_to_cpu(self.policy.module.state_dict())
             optimizer = move_optimizer_to_cpu(
                 {
                     "actor": self.actor_optimizer.state_dict(),
