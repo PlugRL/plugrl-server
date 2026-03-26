@@ -3,10 +3,14 @@ from __future__ import annotations
 from collections.abc import Mapping
 import dataclasses
 from typing import Any, Protocol, TypeAlias
+from rich.console import Console
+from rich.table import Table
+from rich import box
 
 from plugrl_server.common.logging_utils import get_logger
 
 logger = get_logger(__name__)
+_TABLE_CONSOLE = Console(highlight=False)
 
 MetricScalar: TypeAlias = float | int
 MetricValue: TypeAlias = MetricScalar | dict[str, "MetricValue"]
@@ -80,38 +84,72 @@ class TensorBoardMetricSink:
         self._writer.close()
 
 
+def build_metrics_table(metrics: Mapping[str, MetricValue]) -> Table | None:
+    rows = _build_single_column_metric_rows(metrics)
+    if not rows:
+        return None
+
+    title = _build_metrics_table_title(metrics)
+    table = Table(
+        box=box.ROUNDED,
+        show_header=False,
+        expand=False,
+        pad_edge=False,
+        collapse_padding=True,
+        title=title,
+        title_justify="left",
+    )
+    table.add_column(no_wrap=True)
+    table.add_column(justify="right", no_wrap=True)
+    for key, value in rows:
+        table.add_row(_style_metric_key(key), value)
+    return table
+
+
 def format_metrics_table(metrics: Mapping[str, MetricValue]) -> str:
-    left_rows, right_rows = _build_two_column_metric_rows(metrics)
-    if not left_rows and not right_rows:
+    table = build_metrics_table(metrics)
+    if table is None:
         return ""
-
-    row_count = max(len(left_rows), len(right_rows))
-    left_rows += [("", "")] * (row_count - len(left_rows))
-    right_rows += [("", "")] * (row_count - len(right_rows))
-
-    all_rows = [*left_rows, *right_rows]
-    key_width = max(len(key) for key, _ in all_rows)
-    value_width = max(len(value) for _, value in all_rows)
-    border = "-" * (2 * key_width + 2 * value_width + 13)
-    lines = [border]
-    for (left_key, left_value), (right_key, right_value) in zip(left_rows, right_rows):
-        lines.append(
-            f"| {left_key:<{key_width}} | {left_value:<{value_width}} | "
-            f"{right_key:<{key_width}} | {right_value:<{value_width}} |"
-        )
-    lines.append(border)
-    return "\n".join(lines)
+    console = Console(
+        width=120,
+        record=True,
+        force_terminal=False,
+        color_system=None,
+    )
+    with console.capture() as capture:
+        console.print(table)
+    return capture.get().rstrip()
 
 
-def _build_two_column_metric_rows(
+def render_metrics_table(
+    metrics: Mapping[str, MetricValue], *, console: Console | None = None
+) -> bool:
+    table = build_metrics_table(metrics)
+    if table is None:
+        return False
+    (console or _TABLE_CONSOLE).print(table)
+    return True
+
+
+def _build_single_column_metric_rows(
     metrics: Mapping[str, MetricValue],
-) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
-    left_group_names = ("rollout", "train", "losses")
-    right_group_names = ("models", "server", "progress")
+) -> list[tuple[str, str]]:
+    group_names = ("rollout", "train", "losses", "models", "server", "progress")
+    return _flatten_metric_groups(metrics, group_names)
 
-    left_rows = _flatten_metric_groups(metrics, left_group_names)
-    right_rows = _flatten_metric_groups(metrics, right_group_names)
-    return left_rows, right_rows
+
+def _build_metrics_table_title(metrics: Mapping[str, MetricValue]) -> str | None:
+    progress = metrics.get("progress")
+    if not isinstance(progress, Mapping):
+        return None
+
+    global_step = progress.get("global_step")
+    global_steps = progress.get("global_steps")
+    if global_step is None:
+        return None
+    if global_steps is None:
+        return f"Step {int(float(global_step))}"
+    return f"Step {int(float(global_step))} / {int(float(global_steps))}"
 
 
 def _flatten_metric_groups(
@@ -132,37 +170,48 @@ def _flatten_metric_group(
     rows.append((f"{group_name}/", ""))
     for metric_name, metric_value in group_value.items():
         if isinstance(metric_value, Mapping):
-            rows.append((f"  {metric_name}/", ""))
+            rows.append((f" {metric_name}/", ""))
             for nested_name, nested_value in metric_value.items():
                 rows.append(
                     (
-                        f"    {nested_name}",
+                        f"  {nested_name}",
                         _format_metric_value(nested_name, nested_value),
                     )
                 )
         else:
             rows.append(
                 (
-                    f"  {metric_name}",
+                    f" {metric_name}",
                     _format_metric_value(metric_name, metric_value),
                 )
             )
     return rows
 
 
+def _style_metric_key(metric_key: str) -> str:
+    if not metric_key:
+        return ""
+    if metric_key.endswith("/"):
+        return f"[bold cyan]{metric_key}[/bold cyan]"
+    return metric_key
+
+
 def _format_metric_value(metric_name: str, value: MetricValue) -> str:
     if isinstance(value, Mapping):
         return ""
+    formatted_value: str
     float_value = float(value)
     if metric_name.endswith("time"):
-        return _format_duration(float_value)
-    if metric_name.endswith("step") or metric_name.endswith("steps"):
-        return str(int(float_value))
-    if metric_name.endswith("remaining"):
-        return str(int(float_value))
-    if abs(float_value) >= 1000 and float_value.is_integer():
-        return str(int(float_value))
-    return f"{float_value:.6g}"
+        formatted_value = _format_duration(float_value)
+    elif metric_name.endswith("step") or metric_name.endswith("steps"):
+        formatted_value = str(int(float_value))
+    elif metric_name.endswith("remaining"):
+        formatted_value = str(int(float_value))
+    elif abs(float_value) >= 1000 and float_value.is_integer():
+        formatted_value = str(int(float_value))
+    else:
+        formatted_value = f"{float_value:.6g}"
+    return formatted_value
 
 
 def _format_duration(seconds: float) -> str:

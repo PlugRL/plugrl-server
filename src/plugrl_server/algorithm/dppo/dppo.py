@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import math
 
 from plugrl_server.common.checkpoint_manager import Checkpoint
 from plugrl_server.common.data_utils import torch_tree_to_device
@@ -132,6 +133,14 @@ class DPPOAlgorithm(BaseAlgorithm):
     def pre_learn(self) -> None:
         self.rollout_buffer.compute_advantages_and_returns(
             policy=self.policy, batch_size=self.config.batch_size
+        )
+
+    def get_collect_progress_total(self) -> int | None:
+        return self.config.buffer_size
+
+    def get_learn_progress_total(self) -> int | None:
+        return self.config.update_epochs * math.ceil(
+            self.config.buffer_size / self.config.batch_size
         )
 
     def create_dataloaders(
@@ -274,6 +283,8 @@ class DPPOAlgorithm(BaseAlgorithm):
         clipfracs = []
         max_actor_grad_norms, max_critic_grad_norms = [], []
         actor_enabled = self.curr_train_itrs >= self.config.n_critic_warmup_itrs
+        learn_progress_total = self.get_learn_progress_total()
+        learn_progress_current = 0
 
         grad_accum = max(1, int(self.config.grad_accum_steps))
         for update_epoch in range(self.config.update_epochs):
@@ -311,6 +322,8 @@ class DPPOAlgorithm(BaseAlgorithm):
                 loss = loss / grad_accum
                 loss.backward()
                 accum_steps += 1
+                learn_progress_current += 1
+                self.report_learn_progress(learn_progress_current, learn_progress_total)
 
                 max_actor_grad_norm, max_critic_grad_norm = self._step_optimizers(
                     accum_steps=accum_steps,

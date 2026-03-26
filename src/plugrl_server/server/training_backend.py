@@ -15,10 +15,11 @@ from plugrl_server.common.logging_utils import get_logger
 from plugrl_server.common.metrics import (
     MetricDict,
     MetricSink,
-    format_metrics_table,
     merge_metric_groups,
+    render_metrics_table,
 )
 from plugrl_server.common.progress import ProgressTracker
+from plugrl_server.common.progress import ProgressReporter
 
 logger = get_logger(__name__)
 
@@ -32,12 +33,14 @@ class LocalTrainingBackend:
         metric_sink: MetricSink,
         runtime_metrics_provider: Callable[[], MetricDict] | None = None,
         show_metric_table: bool = True,
+        progress_reporter: ProgressReporter | None = None,
     ) -> None:
         self._algorithm = algorithm
         self._checkpoint_manager = checkpoint_manager
         self._metric_sink = metric_sink
         self._runtime_metrics_provider = runtime_metrics_provider or (lambda: dict())
         self._show_metric_table = show_metric_table
+        self._progress_reporter = progress_reporter
         self._progress_tracker = ProgressTracker(
             global_steps=algorithm.get_total_training_steps()
         )
@@ -53,9 +56,20 @@ class LocalTrainingBackend:
 
     async def process_learn(self) -> None:
         learn_started_at = self._progress_tracker.mark_learn_start()
-        self._algorithm.pre_learn()
-        step, log_dict = await asyncio.to_thread(self._algorithm.learn)
-        self._algorithm.post_learn()
+        learn_total = self._algorithm.get_learn_progress_total()
+        if self._progress_reporter is not None:
+            self._progress_reporter.start_phase(
+                "learn", total=learn_total, description="learn"
+            )
+        self._algorithm.set_learn_progress_callback(self._on_learn_progress)
+        try:
+            self._algorithm.pre_learn()
+            step, log_dict = await asyncio.to_thread(self._algorithm.learn)
+            self._algorithm.post_learn()
+        finally:
+            self._algorithm.set_learn_progress_callback(None)
+            if self._progress_reporter is not None:
+                self._progress_reporter.finish_phase("learn")
         self.log(
             log_dict,
             step=step,
@@ -75,9 +89,22 @@ class LocalTrainingBackend:
             progress_snapshot.as_metrics(),
         )
         self._metric_sink.log_scalars(merged_metrics, step=step)
-        table = format_metrics_table(merged_metrics)
-        if self._show_metric_table and table:
-            logger.info("\n%s", table)
+        if self._show_metric_table:
+            render_metrics_table(
+                merged_metrics,
+                console=(
+                    self._progress_reporter.get_console()
+                    if self._progress_reporter is not None
+                    else None
+                ),
+            )
+
+    def _on_learn_progress(self, current: int, total: int | None) -> None:
+        if self._progress_reporter is None:
+            return
+        self._progress_reporter.update_phase(
+            "learn", completed=current, total=total, advance=0
+        )
 
 
 class RayTrainingBackend:
@@ -90,6 +117,7 @@ class RayTrainingBackend:
         learner_actor_ref: ray.ObjectRef,
         runtime_metrics_provider: Callable[[], MetricDict] | None = None,
         show_metric_table: bool = True,
+        progress_reporter: ProgressReporter | None = None,
     ) -> None:
         self._algorithm = algorithm
         self._checkpoint_manager = checkpoint_manager
@@ -97,6 +125,7 @@ class RayTrainingBackend:
         self._learner_actor: Any = learner_actor_ref
         self._runtime_metrics_provider = runtime_metrics_provider or (lambda: dict())
         self._show_metric_table = show_metric_table
+        self._progress_reporter = progress_reporter
         self._progress_tracker = ProgressTracker(
             global_steps=algorithm.get_total_training_steps()
         )
@@ -113,6 +142,11 @@ class RayTrainingBackend:
     async def process_learn(self) -> None:
         logger.info("Scheduler initiating distributed training via LearnerActor.")
         learn_started_at = self._progress_tracker.mark_learn_start()
+        learn_total = self._algorithm.get_learn_progress_total()
+        if self._progress_reporter is not None:
+            self._progress_reporter.start_phase(
+                "learn", total=learn_total, description="learn"
+            )
         self._algorithm.pre_learn()
         global_step, meta_info, serializable_buffer_data = (
             self._algorithm.get_server_data()
@@ -125,6 +159,8 @@ class RayTrainingBackend:
         checkpoint, global_step, train_info = await asyncio.to_thread(ray.get, learn_ref)
 
         await self._update_inference_policy(checkpoint)
+        if self._progress_reporter is not None:
+            self._progress_reporter.finish_phase("learn")
         await asyncio.to_thread(
             self.log,
             train_info,
@@ -156,6 +192,12 @@ class RayTrainingBackend:
             progress_snapshot.as_metrics(),
         )
         self._metric_sink.log_scalars(merged_metrics, step=step)
-        table = format_metrics_table(merged_metrics)
-        if self._show_metric_table and table:
-            logger.info("\n%s", table)
+        if self._show_metric_table:
+            render_metrics_table(
+                merged_metrics,
+                console=(
+                    self._progress_reporter.get_console()
+                    if self._progress_reporter is not None
+                    else None
+                ),
+            )

@@ -1,7 +1,20 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 import dataclasses
+import sys
 import time
+from rich.console import Console
+from rich.progress import (
+    BarColumn,
+    Progress,
+    SpinnerColumn,
+    TaskID,
+    TaskProgressColumn,
+    TextColumn,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
+)
 
 from plugrl_server.common.metrics import MetricDict
 
@@ -71,3 +84,73 @@ class ProgressTracker:
             fps=fps,
             eta_time=eta_time,
         )
+
+
+class ProgressReporter:
+    def __init__(self, *, enabled: bool = True) -> None:
+        self._enabled = enabled and sys.stderr.isatty()
+        self._task_ids: dict[str, TaskID] = dict()
+        if self._enabled:
+            self._progress = Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TaskProgressColumn(),
+                TimeElapsedColumn(),
+                TimeRemainingColumn(),
+                transient=True,
+            )
+            self._progress.start()
+        else:
+            self._progress = None
+
+    def start_phase(
+        self, phase: str, *, total: int | None, description: str | None = None
+    ) -> None:
+        if not self._enabled or self._progress is None:
+            return
+        self.finish_phase(phase)
+        self._task_ids[phase] = self._progress.add_task(
+            description or phase,
+            total=total if total is not None else None,
+        )
+
+    def update_phase(
+        self,
+        phase: str,
+        *,
+        advance: int = 1,
+        completed: int | None = None,
+        total: int | None = None,
+    ) -> None:
+        if not self._enabled or self._progress is None:
+            return
+        task_id = self._task_ids.get(phase)
+        if task_id is None:
+            return
+        kwargs = dict(advance=advance)
+        if completed is not None:
+            kwargs["completed"] = completed
+        if total is not None:
+            kwargs["total"] = total
+        self._progress.update(task_id, **kwargs)
+
+    def finish_phase(self, phase: str) -> None:
+        if not self._enabled or self._progress is None:
+            return
+        task_id = self._task_ids.pop(phase, None)
+        if task_id is None:
+            return
+        self._progress.remove_task(task_id)
+        self._progress.refresh()
+
+    def close(self) -> None:
+        if not self._enabled or self._progress is None:
+            return
+        self._task_ids.clear()
+        self._progress.stop()
+
+    def get_console(self) -> Console | None:
+        if not self._enabled or self._progress is None:
+            return None
+        return self._progress.console

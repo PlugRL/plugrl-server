@@ -1,5 +1,6 @@
 import abc
 import dataclasses
+from collections.abc import Callable
 import numpy as np
 
 from plugrl_server.common.logging_utils import get_logger
@@ -56,6 +57,7 @@ class BaseAlgorithm(abc.ABC):
         self.config = config
         self.policy = policy
         self._episode_metric_window = EpisodeMetricWindow()
+        self._learn_progress_callback: Callable[[int, int | None], None] | None = None
         logger.debug(
             "Initialized algorithm %s with policy %s",
             self.__class__.__name__,
@@ -116,6 +118,21 @@ class BaseAlgorithm(abc.ABC):
 
     def get_total_training_steps(self) -> int | None:
         return self.config.global_steps
+
+    def get_collect_progress_total(self) -> int | None:
+        return None
+
+    def get_learn_progress_total(self) -> int | None:
+        return None
+
+    def set_learn_progress_callback(
+        self, callback: Callable[[int, int | None], None] | None
+    ) -> None:
+        self._learn_progress_callback = callback
+
+    def report_learn_progress(self, current: int, total: int | None = None) -> None:
+        if self._learn_progress_callback is not None:
+            self._learn_progress_callback(current, total)
 
     def build_train_info(self, *metric_groups: MetricDict) -> MetricDict:
         return merge_metric_groups(

@@ -18,6 +18,7 @@ from plugrl_server.common.checkpoint_manager import CheckpointManager
 from plugrl_server.common.data_utils import batch_aggregate, unbatch_aggregate
 from plugrl_server.common.logging_utils import get_logger
 from plugrl_server.common.metrics import MetricSink
+from plugrl_server.common.progress import ProgressReporter
 from plugrl_server.policy.state import PolicyStepState, slice_policy_step_state
 from plugrl_server.server.inference_coordinator import InferenceCoordinator
 from plugrl_server.server.lifecycle import ServerLifecycle
@@ -50,6 +51,7 @@ class WebSocketAgentServer:
         metric_sink: MetricSink,
         mini_infer_batch_size: int | None = None,
         show_metric_table: bool = True,
+        show_progress_bar: bool = True,
         host: str = "0.0.0.0",
         port: int = 8000,
         metadata: dict | None = None,
@@ -74,16 +76,19 @@ class WebSocketAgentServer:
             stop_event=self._lifecycle.stop_event,
             sleep_interval=SCHEDULER_SLEEP_INTERVAL,
         )
+        self._progress_reporter = ProgressReporter(enabled=show_progress_bar)
         self._training = LocalTrainingBackend(
             algorithm=self._algorithm,
             checkpoint_manager=self._checkpoint_manager,
             metric_sink=self._metric_sink,
             runtime_metrics_provider=self._runtime_metrics,
             show_metric_table=show_metric_table,
+            progress_reporter=self._progress_reporter,
         )
 
         self._total_connections = 0
         self._infer_wait_start: float | None = None
+        self._collect_progress_started = False
 
         self._mini_infer_batch_size = mini_infer_batch_size
 
@@ -120,6 +125,7 @@ class WebSocketAgentServer:
             abort_pending_infer_requests=self._abort_pending_infer_requests,
         )
         self._server = None
+        self._progress_reporter.close()
 
     async def run(self):
         scheduler_task = asyncio.create_task(self._scheduler_loop())
@@ -303,6 +309,8 @@ class WebSocketAgentServer:
                         truncated_map[eid] = bool(n_trunc)
 
                         self._metric_sink.log_scalars(log_dict, step=step)
+                        self._ensure_collect_progress_started()
+                        self._progress_reporter.update_phase("collect", advance=1)
 
         except websockets.ConnectionClosed:
             pass
@@ -321,6 +329,22 @@ class WebSocketAgentServer:
 
     def _runtime_metrics(self) -> dict:
         return dict(server=dict(total_connections=self._total_connections))
+
+    def _start_collect_progress(self) -> None:
+        self._collect_progress_started = True
+        self._progress_reporter.start_phase(
+            "collect",
+            total=self._algorithm.get_collect_progress_total(),
+            description="collect",
+        )
+
+    def _ensure_collect_progress_started(self) -> None:
+        if (
+            not self._collect_progress_started
+            and not self._training.should_stop()
+            and not self._lifecycle.stop_event.is_set()
+        ):
+            self._start_collect_progress()
 
     def should_infer(self) -> bool:
         current_qsize = self._inference.queue.qsize()
@@ -425,6 +449,9 @@ class WebSocketAgentServer:
     async def _run_control_cycle(self) -> None:
         async with self._model_lock:
             if self._training.should_learn():
+                if self._collect_progress_started:
+                    self._progress_reporter.finish_phase("collect")
+                    self._collect_progress_started = False
                 await self._training.process_learn()
 
         async with self._model_lock:

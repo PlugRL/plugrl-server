@@ -116,6 +116,7 @@ def _main(args: RayArgs):
         host=args.host,
         port=args.port,
         show_metric_table=args.show_metric_table,
+        show_progress_bar=args.show_progress_bar,
     )
     try:
         server.serve_forever()
