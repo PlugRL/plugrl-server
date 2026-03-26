@@ -1,4 +1,5 @@
 import dataclasses
+from collections.abc import Mapping
 
 from openpi import transforms as _transforms
 from openpi.training import checkpoints as _checkpoints
@@ -7,8 +8,6 @@ from openpi.models import model as _model
 from openpi.models_pytorch.pi0_pytorch import make_att_2d_masks
 from openpi.models import gemma as _gemma
 
-from tensordict import TensorDict
-from tensordict import tensordict
 import torch
 import pathlib
 import numpy as np
@@ -20,6 +19,8 @@ from .openpi_transforming import get_transform
 from ..base_policy_gradient_diffusion_policy import (
     BasePolicyGradientDiffusionPolicy,
     BasePolicyGradientDiffusionPolicyConfig,
+    TorchTree,
+    _torch_tree_batch_size,
 )
 from ..registration import register_policy, register_policy_config
 from .value_head import ValueHead
@@ -110,8 +111,8 @@ class Pi0Policy(BasePolicyGradientDiffusionPolicy):
         )
         return timestep
 
-    def _initialize_x(self, obs: TensorDict) -> torch.Tensor:
-        batch_size = obs.shape[0]
+    def _initialize_x(self, obs: TorchTree) -> torch.Tensor:
+        batch_size = _torch_tree_batch_size(obs)
         x = torch.randn(
             batch_size, self.action_horizon, self.action_dim, device=self.device
         )
@@ -128,8 +129,8 @@ class Pi0Policy(BasePolicyGradientDiffusionPolicy):
         batch_obs = batch_aggregate(obs_list)
         return jax.tree.map(lambda x: np.array(x), batch_obs)
 
-    def preprocess_observation(self, obs: TensorDict) -> Any:
-        obs_dict = obs.to(self.device).to_dict()
+    def preprocess_observation(self, obs: TorchTree) -> Any:
+        obs_dict = _torch_tree_to_device(obs, self.device)
         observation = _model.Observation.from_dict(obs_dict)
         images, img_masks, lang_tokens, lang_masks, state = (
             self.actor._preprocess_observation(observation, train=False)
@@ -153,41 +154,37 @@ class Pi0Policy(BasePolicyGradientDiffusionPolicy):
         )
         return state, prefix_pad_masks, outputs, past_key_values
 
-    def fake_diffusion_cond(self, batch_size: int) -> tensordict.TensorDict:
-        return tensordict.TensorDict(
-            dict(
-                image=dict(
-                    base_0_rgb=torch.zeros(batch_size, 224, 224, 3, dtype=torch.uint8),
-                    left_wrist_0_rgb=torch.zeros(
-                        batch_size, 224, 224, 3, dtype=torch.uint8
-                    ),
-                    right_wrist_0_rgb=torch.zeros(
-                        batch_size, 224, 224, 3, dtype=torch.uint8
-                    ),
+    def fake_diffusion_cond(self, batch_size: int) -> TorchTree:
+        return dict(
+            image=dict(
+                base_0_rgb=torch.zeros(batch_size, 224, 224, 3, dtype=torch.uint8),
+                left_wrist_0_rgb=torch.zeros(
+                    batch_size, 224, 224, 3, dtype=torch.uint8
                 ),
-                image_mask=dict(
-                    base_0_rgb=torch.zeros(batch_size, dtype=torch.bool),
-                    left_wrist_0_rgb=torch.zeros(batch_size, dtype=torch.bool),
-                    right_wrist_0_rgb=torch.zeros(batch_size, dtype=torch.bool),
-                ),
-                state=torch.zeros(batch_size, self.action_dim),
-                tokenized_prompt=torch.zeros(
-                    batch_size, self.max_token_len, dtype=torch.long
-                ),
-                tokenized_prompt_mask=torch.zeros(
-                    batch_size, self.max_token_len, dtype=torch.bool
+                right_wrist_0_rgb=torch.zeros(
+                    batch_size, 224, 224, 3, dtype=torch.uint8
                 ),
             ),
-            batch_size=[batch_size],
+            image_mask=dict(
+                base_0_rgb=torch.zeros(batch_size, dtype=torch.bool),
+                left_wrist_0_rgb=torch.zeros(batch_size, dtype=torch.bool),
+                right_wrist_0_rgb=torch.zeros(batch_size, dtype=torch.bool),
+            ),
+            state=torch.zeros(batch_size, self.action_dim),
+            tokenized_prompt=torch.zeros(
+                batch_size, self.max_token_len, dtype=torch.long
+            ),
+            tokenized_prompt_mask=torch.zeros(
+                batch_size, self.max_token_len, dtype=torch.bool
+            ),
         )
 
     def _iterative_process_action(self, action: torch.Tensor) -> torch.Tensor:
         return action
 
-    def _postprocess_action(
-        self, action: torch.Tensor, obs: tensordict.TensorDict
-    ) -> Any:
-        outputs = {"state": obs.get("state"), "actions": action}
+    def _postprocess_action(self, action: torch.Tensor, obs: TorchTree) -> Any:
+        assert isinstance(obs, Mapping), "OpenPI expects mapping-like observations."
+        outputs = dict(state=obs["state"], actions=action)
         outputs = jax.tree.map(lambda x: x.detach().cpu().numpy(), outputs)
         unbatched_outputs = unbatch_aggregate(outputs)
         actions = []
@@ -200,7 +197,7 @@ class Pi0Policy(BasePolicyGradientDiffusionPolicy):
         self,
         x: torch.Tensor,
         t: torch.Tensor,
-        cond: tensordict.TensorDict,
+        cond: TorchTree,
         x_next: torch.Tensor | None = None,
         *,
         processed_cond: Any = None,
@@ -214,9 +211,9 @@ class Pi0Policy(BasePolicyGradientDiffusionPolicy):
         t = t.to(device)
         x = x.to(device)
 
-        b_cond = cond.shape[0]
+        b_cond = _torch_tree_batch_size(cond)
         if processed_cond is None:
-            cond = cond.to(device)
+            cond = _torch_tree_to_device(cond, device)
             processed_cond = self.preprocess_observation(cond)
         state, prefix_pad_masks, outputs, past_key_values = processed_cond
 
@@ -257,7 +254,7 @@ class Pi0Policy(BasePolicyGradientDiffusionPolicy):
 
         return x_next, logprob, entropy
 
-    def _get_value(self, obs: TensorDict, processed_obs: Any = None) -> torch.Tensor:
+    def _get_value(self, obs: TorchTree, processed_obs: Any = None) -> torch.Tensor:
         if processed_obs is None:
             processed_obs = self.preprocess_observation(obs)
         _, _, outputs, _ = processed_obs
@@ -270,3 +267,9 @@ class Pi0Policy(BasePolicyGradientDiffusionPolicy):
             self.actor.paligemma_with_expert.paligemma.eval()
             for params in self.actor.paligemma_with_expert.paligemma.parameters():
                 params.requires_grad = False
+
+
+def _torch_tree_to_device(value: TorchTree, device: torch.device) -> TorchTree:
+    if isinstance(value, torch.Tensor):
+        return value.to(device)
+    return dict((key, _torch_tree_to_device(item, device)) for key, item in value.items())

@@ -1,5 +1,6 @@
 import dataclasses
 import pathlib
+from collections.abc import Mapping
 from typing import Any
 
 import numpy as np
@@ -12,10 +13,11 @@ from lerobot.policies.diffusion.configuration_diffusion import (
 from lerobot.policies.diffusion.modeling_diffusion import DiffusionPolicy
 from lerobot.constants import OBS_STATE, OBS_IMAGES, ACTION
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
-from tensordict import TensorDict
 from plugrl_server.policy.base_policy_gradient_diffusion_policy import (
     BasePolicyGradientDiffusionPolicyConfig,
     BasePolicyGradientDiffusionPolicy,
+    TorchTree,
+    _torch_tree_batch_size,
 )
 from plugrl_server.policy.registration import register_policy, register_policy_config
 
@@ -94,15 +96,14 @@ class LeRobotDiffusionPolicy(BasePolicyGradientDiffusionPolicy):
         self.actor.diffusion.noise_scheduler.set_timesteps(self.num_denoising_steps)
         return self.actor.diffusion.noise_scheduler.timesteps
 
-    def _initialize_x(self, obs: TensorDict) -> torch.Tensor:
-        batch_size = obs.shape[0]
+    def _initialize_x(self, obs: TorchTree) -> torch.Tensor:
+        batch_size = _torch_tree_batch_size(obs)
         x = torch.randn(
             batch_size, self.action_horizon, self.action_dim, device=self.device
         )
         return x
 
-    def prepare_observation(self, _obs: dict) -> torch.Tensor | TensorDict:
-        batch_size = len(_obs["text"])
+    def prepare_observation(self, _obs: dict) -> dict[str, np.ndarray]:
         n_obs_steps = self.actor.config.n_obs_steps
 
         state_map, image_map = [], []
@@ -112,38 +113,39 @@ class LeRobotDiffusionPolicy(BasePolicyGradientDiffusionPolicy):
         else:
             raise NotImplementedError(f"Task {self.task} not implemented.")
 
-        obs = {}
+        obs = dict()
         for i, key in enumerate(state_map):
-            obs[state_map[key]] = torch.tensor(
+            obs[state_map[key]] = (
                 np.stack(
                     [_obs["states"][f"{key}_{j}"] for j in range(n_obs_steps)], axis=1
-                ),
-                device=self.device,
-                dtype=torch.float32,
+                )
+                .astype(np.float32)
             )
         for i, key in enumerate(image_map):
             obs[image_map[key]] = (
-                torch.tensor(
-                    np.stack(
-                        [_obs["images"][f"{key}_{j}"] for j in range(n_obs_steps)],
-                        axis=1,
-                    ),
-                    device=self.device,
-                    dtype=torch.float32,
-                ).permute(0, 1, 4, 2, 3)
+                np.stack(
+                    [_obs["images"][f"{key}_{j}"] for j in range(n_obs_steps)],
+                    axis=1,
+                )
+                .astype(np.float32)
+                .transpose(0, 1, 4, 2, 3)
                 / 255.0
             )  # B, T, C, H, W
-        obs_normalized = self.actor.normalize_inputs(obs)
+        obs_normalized = self.actor.normalize_inputs(
+            dict((key, torch.from_numpy(value).to(self.device)) for key, value in obs.items())
+        )
         obs_normalized[OBS_IMAGES] = torch.stack(
             [obs_normalized[key] for key in self.actor.config.image_features], dim=-4
         )
         obs_normalized.pop(*self.actor.config.image_features)
-        return TensorDict(obs_normalized, batch_size=[batch_size]).cpu()
+        return dict(
+            (key, value.detach().cpu().numpy()) for key, value in obs_normalized.items()
+        )
 
-    def fake_diffusion_cond(self, batch_size: int) -> TensorDict:
+    def fake_diffusion_cond(self, batch_size: int) -> TorchTree:
         n_obs_steps = self.actor.config.n_obs_steps
         n_cams = len(self.actor.config.image_features)
-        cond = {}
+        cond = dict()
         if n_cams > 0:
             cam_name = list(self.actor.config.image_features.keys())[0]
             cam_shape = self.actor.config.image_features[cam_name].shape
@@ -154,11 +156,12 @@ class LeRobotDiffusionPolicy(BasePolicyGradientDiffusionPolicy):
         cond[OBS_STATE] = torch.zeros(
             (batch_size, n_obs_steps, state_dims),
         )
-        return TensorDict(cond, batch_size=[batch_size])
+        return cond
 
-    def preprocess_observation(self, obs: TensorDict) -> Any:
+    def preprocess_observation(self, obs: TorchTree) -> Any:
+        assert isinstance(obs, Mapping), "LeRobot expects mapping-like observations."
         processed_cond = self.actor.diffusion._prepare_global_conditioning(
-            obs.to(self.device)
+            _torch_tree_to_device(obs, self.device)
         )
         return processed_cond
 
@@ -229,7 +232,7 @@ class LeRobotDiffusionPolicy(BasePolicyGradientDiffusionPolicy):
         self,
         x: torch.Tensor,
         t: torch.Tensor,
-        cond: TensorDict,
+        cond: TorchTree,
         x_next: torch.Tensor | None = None,
         *,
         processed_cond: Any = None,
@@ -245,9 +248,9 @@ class LeRobotDiffusionPolicy(BasePolicyGradientDiffusionPolicy):
         t = t.to(device).long()
         x = x.to(device)
 
-        b_cond = cond.shape[0]
+        b_cond = _torch_tree_batch_size(cond)
         if processed_cond is None:
-            cond = cond.to(device)
+            cond = _torch_tree_to_device(cond, device)
             processed_cond = self.preprocess_observation(cond)
 
         global_cond = processed_cond
@@ -350,16 +353,14 @@ class LeRobotDiffusionPolicy(BasePolicyGradientDiffusionPolicy):
     def _iterative_process_action(self, action: torch.Tensor) -> torch.Tensor:
         return action
 
-    def _get_value(self, obs: TensorDict, processed_obs: Any = None) -> torch.Tensor:
+    def _get_value(self, obs: TorchTree, processed_obs: Any = None) -> torch.Tensor:
         if processed_obs is None:
             processed_obs = self.preprocess_observation(obs)
         global_cond = processed_obs
         value = self.critic(global_cond).squeeze(-1)
         return value
 
-    def _postprocess_action(
-        self, action: torch.Tensor, obs: torch.Tensor | TensorDict
-    ) -> Any:
+    def _postprocess_action(self, action: torch.Tensor, obs: TorchTree) -> Any:
         start = self.actor.config.n_obs_steps - 1
         end = start + self.actor.config.n_action_steps
         action = action[:, start:end]
@@ -377,3 +378,9 @@ if __name__ == "__main__":
     from plugrl_server.cli import main
 
     main()
+
+
+def _torch_tree_to_device(value: TorchTree, device: torch.device) -> TorchTree:
+    if isinstance(value, torch.Tensor):
+        return value.to(device)
+    return dict((key, _torch_tree_to_device(item, device)) for key, item in value.items())
