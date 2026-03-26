@@ -1,5 +1,6 @@
 import sys
 import os
+import uuid
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -8,16 +9,18 @@ from collections import defaultdict
 import numpy as np
 import torch
 import torch.nn.functional as F
+from typing import Any, cast
+from typing_extensions import override
 
 from loguru import logger
 
 from plugrl_server.common.checkpoint_manager import Checkpoint
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm, BaseAlgoConfig
 from plugrl_server.algorithm.registration import register_algo, register_algo_config
-from plugrl_server.policy.base_policy import InternalState
 from plugrl_server.buffer.replay_buffer import ReplayBuffer, ReplayBufferSamples
+from plugrl_server.policy.state import PolicyRuntimeState
 
-from sac_policy import SACPolicy, Actor, SoftQNetwork
+from sac_policy import SACPolicy, SACRuntimeState, Actor, SoftQNetwork
 
 UID = "sac"
 
@@ -47,12 +50,25 @@ class SACAlgoConfig(BaseAlgoConfig):
 class SACAlgorithm(BaseAlgorithm):
     config: SACAlgoConfig
     policy: SACPolicy
+    replay_buffer: ReplayBuffer
+    save_interval: int
+    global_step: int
+    last_learn_step: int
+    last_save_step: int
+    update_counter: int
+    q_optimizer: torch.optim.Optimizer
+    actor_optimizer: torch.optim.Optimizer
+    a_optimizer: torch.optim.Optimizer | None
 
     def __init__(self, config: SACAlgoConfig, policy: SACPolicy):
         super().__init__(config=config, policy=policy)
+        example_runtime_state = cast(
+            SACRuntimeState, self.active_policy.fake_runtime_state(batch_size=1)
+        )
         self.replay_buffer = ReplayBuffer(
             buffer_size=config.buffer_size,
-            example_internal_state=policy.fake_internal_state(batch_size=1),
+            example_obs=example_runtime_state["obs"],
+            example_action=example_runtime_state["action"],
         )
         self.save_interval = config.save_interval
         self.global_step = 0
@@ -61,14 +77,17 @@ class SACAlgorithm(BaseAlgorithm):
         self.update_counter = 0
 
         q_optimizer = torch.optim.Adam(
-            list(policy.qf1.parameters()) + list(policy.qf2.parameters()),
+            list(self.active_policy.qf1.parameters())
+            + list(self.active_policy.qf2.parameters()),
             lr=config.q_lr,
         )
         actor_optimizer = torch.optim.Adam(
-            policy.actor.parameters(), lr=config.policy_lr
+            self.active_policy.actor.parameters(), lr=config.policy_lr
         )
-        if policy.autotune:
-            a_optimizer = torch.optim.Adam([policy.log_alpha], lr=config.q_lr)
+        if self.active_policy.autotune:
+            a_optimizer = torch.optim.Adam(
+                [self.active_policy.log_alpha], lr=config.q_lr
+            )
         else:
             a_optimizer = None
 
@@ -76,35 +95,41 @@ class SACAlgorithm(BaseAlgorithm):
         self.actor_optimizer = actor_optimizer
         self.a_optimizer = a_optimizer
 
-    def infer(self, obs: dict) -> tuple[np.ndarray, InternalState]:
-        with torch.inference_mode():
-            action, internal_state = self.policy.get_action_and_internal_state(
-                obs, self.global_step < self.config.learning_starts
-            )
-        return action, internal_state
+    @override
+    @property
+    def active_policy(self) -> SACPolicy:
+        return cast(SACPolicy, self.policy)
 
+    @override
+    def infer(self, obs: dict[str, Any]) -> tuple[np.ndarray, SACRuntimeState]:
+        with torch.inference_mode():
+            action, runtime_state = self.active_policy.get_action_and_runtime_state(
+                obs, random_sample=self.global_step < self.config.learning_starts
+            )
+        return action, runtime_state
+
+    @override
     def feedback(
         self,
         *,
-        obs: dict,
-        internal_state: InternalState | None,
+        obs: dict[str, Any],
+        runtime_state: PolicyRuntimeState,
+        train_state: Any = None,
         terminated: bool,
         truncated: bool,
-        next_obs: dict,
+        next_obs: dict[str, Any],
         reward: float,
-        info: dict,
+        info: dict[str, Any],
         next_terminated: bool,
         next_truncated: bool,
-        prev_node: tuple,
-    ) -> tuple[tuple, int, dict]:
-        assert internal_state is not None, (
-            "Internal state must be provided for training."
-        )
+        prev_node: tuple[int, uuid.UUID],
+    ) -> tuple[tuple[int, uuid.UUID], int, dict[str, Any]]:
+        sac_runtime_state = cast(SACRuntimeState, runtime_state)
         current_node = self.replay_buffer.add_frame(
             prev_node=prev_node,
-            obs=internal_state.obs,
-            next_obs=self.policy.prepare_observation(next_obs),
-            action=internal_state.action,
+            obs=sac_runtime_state["obs"],
+            next_obs=self.active_policy.prepare_observation(next_obs),
+            action=sac_runtime_state["action"],
             reward=reward,
             done=next_terminated or next_truncated,
             timeout=False,
@@ -126,12 +151,12 @@ class SACAlgorithm(BaseAlgorithm):
         return current_node, self.global_step, log_dict
 
     def update(self, data: ReplayBufferSamples):
-        data = data.to(self.policy.device)
-        actor: Actor = self.policy.actor
-        qf1: SoftQNetwork = self.policy.qf1
-        qf2: SoftQNetwork = self.policy.qf2
-        qf1_target: SoftQNetwork = self.policy.qf1_target
-        qf2_target: SoftQNetwork = self.policy.qf2_target
+        data = data.to(self.active_policy.device)
+        actor: Actor = self.active_policy.actor
+        qf1: SoftQNetwork = self.active_policy.qf1
+        qf2: SoftQNetwork = self.active_policy.qf2
+        qf1_target: SoftQNetwork = self.active_policy.qf1_target
+        qf2_target: SoftQNetwork = self.active_policy.qf2_target
 
         with torch.no_grad():
             next_state_actions, next_state_log_pi, _ = actor.get_action(data.next_obs)
@@ -139,7 +164,7 @@ class SACAlgorithm(BaseAlgorithm):
             qf2_next_target = qf2_target(data.next_obs, next_state_actions)
             min_qf_next_target = (
                 torch.min(qf1_next_target, qf2_next_target)
-                - self.policy.alpha * next_state_log_pi
+                - self.active_policy.alpha * next_state_log_pi
             )
             next_q_value = data.rewards.flatten() + (
                 1 - data.dones.float().flatten()
@@ -163,24 +188,24 @@ class SACAlgorithm(BaseAlgorithm):
                 qf1_pi = qf1(data.obs, pi)
                 qf2_pi = qf2(data.obs, pi)
                 min_qf_pi = torch.min(qf1_pi, qf2_pi)
-                actor_loss = ((self.policy.alpha * log_pi) - min_qf_pi).mean()
+                actor_loss = ((self.active_policy.alpha * log_pi) - min_qf_pi).mean()
 
                 self.actor_optimizer.zero_grad()
                 actor_loss.backward()
                 self.actor_optimizer.step()
 
-                if self.a_optimizer is not None and self.policy.autotune:
+                if self.a_optimizer is not None and self.active_policy.autotune:
                     with torch.no_grad():
                         _, log_pi, _ = actor.get_action(data.obs)
                     alpha_loss = (
-                        -self.policy.log_alpha.exp()
-                        * (log_pi + self.policy.target_entropy)
+                        -self.active_policy.log_alpha.exp()
+                        * (log_pi + self.active_policy.target_entropy)
                     ).mean()
 
                     self.a_optimizer.zero_grad()
                     alpha_loss.backward()
                     self.a_optimizer.step()
-                    self.policy.alpha = self.policy.log_alpha.exp().item()
+                    self.active_policy.alpha = self.active_policy.log_alpha.exp().item()
 
         if self.update_counter % self.config.target_network_frequency == 0:
             for param, target_param in zip(qf1.parameters(), qf1_target.parameters()):
@@ -204,7 +229,8 @@ class SACAlgorithm(BaseAlgorithm):
             qf_loss=qf_loss.item() / 2,
         )
 
-    def learn(self) -> tuple[int, dict]:
+    @override
+    def learn(self) -> tuple[int, dict[str, Any]]:
         self.last_learn_step = self.global_step
         log_dict = {}
         num_updates = int(self.config.update_to_data_ratio * self.config.update_every)
@@ -217,21 +243,25 @@ class SACAlgorithm(BaseAlgorithm):
         for k, v in update_stats.items():
             log_dict[f"train/{k}"] = np.mean(v)
 
-        log_dict["train/alpha"] = self.policy.alpha
+        log_dict["train/alpha"] = self.active_policy.alpha
         return self.global_step, log_dict
 
+    @override
     def should_learn(self) -> bool:
         return (
             self.global_step >= self.config.learning_starts
             and (self.global_step - self.last_learn_step) >= self.config.update_every
         )
 
+    @override
     def should_stop(self) -> bool:
         return self.global_step >= self.config.total_timesteps
 
+    @override
     def should_save(self) -> bool:
         return self.global_step - self.last_save_step >= self.save_interval
 
+    @override
     def create_checkpoint(self) -> Checkpoint:
         self.last_save_step = self.global_step
         optimizers = {
@@ -242,7 +272,7 @@ class SACAlgorithm(BaseAlgorithm):
             optimizers["a_optimizer"] = self.a_optimizer.state_dict()
         return Checkpoint(
             step=self.global_step,
-            model=self.policy.state_dict(),
+            model=self.active_policy.state_dict(),
             optimizer=optimizers,
             meta={
                 "last_learn_step": self.last_learn_step,
@@ -251,10 +281,11 @@ class SACAlgorithm(BaseAlgorithm):
             },
         )
 
+    @override
     def load_checkpoint(self, checkpoint: Checkpoint) -> None:
         self.global_step = checkpoint.step
         if checkpoint.model is not None:
-            self.policy.load_state_dict(checkpoint.model)
+            self.active_policy.load_state_dict(checkpoint.model)
         if checkpoint.optimizer is not None:
             self.q_optimizer.load_state_dict(checkpoint.optimizer["q_optimizer"])
             self.actor_optimizer.load_state_dict(

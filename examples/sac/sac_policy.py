@@ -1,16 +1,22 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Any
-from plugrl_server.policy.base_policy import BasePolicy, BasePolicyConfig, InternalState
+import numpy as np
+from typing import Any, TypeAlias
+from typing_extensions import override
+from plugrl_server.policy.base_torch_policy import (
+    BaseTorchPolicy,
+    BaseTorchPolicyConfig,
+)
 from plugrl_server.policy.registration import register_policy, register_policy_config
 
 LOG_STD_MAX = 2
 LOG_STD_MIN = -5
+SACRuntimeState: TypeAlias = dict[str, np.ndarray]
 
 
 @register_policy_config("sac_policy")
-class SACPolicyConfig(BasePolicyConfig):
+class SACPolicyConfig(BaseTorchPolicyConfig):
     state_dim: int = 11
     action_dim: int = 3
     action_high: float = 1.0
@@ -80,7 +86,7 @@ class SoftQNetwork(nn.Module):
 
 
 @register_policy("sac_policy")
-class SACPolicy(BasePolicy):
+class SACPolicy(BaseTorchPolicy):
     autotune: bool
 
     def __init__(self, config: SACPolicyConfig):
@@ -115,16 +121,16 @@ class SACPolicy(BasePolicy):
         self.action_high = config.action_high
         self.action_low = config.action_low
 
-    def prepare_observation(self, _obs: dict) -> torch.Tensor:
+    @override
+    def prepare_observation(self, _obs: dict[str, Any]) -> np.ndarray:
         state = _obs["states"]["obs"]
-        state_tensor = torch.tensor(state, dtype=torch.float32, device=self.device)
-        return state_tensor
+        return np.asarray(state, dtype=np.float32)
 
-    def get_action_and_internal_state(
-        self, _obs: dict, random_sample: bool = False
-    ) -> tuple[Any, InternalState]:
-        obs = self.prepare_observation(_obs)
-        obs = obs.to(self.device)
+    @override
+    def get_action_and_runtime_state(
+        self, _obs: dict[str, Any], random_sample: bool = False
+    ) -> tuple[Any, SACRuntimeState]:
+        obs = torch.as_tensor(self.prepare_observation(_obs), device=self.device)
         batch_size = obs.shape[0]
         if random_sample:
             action = (
@@ -135,17 +141,14 @@ class SACPolicy(BasePolicy):
         else:
             action, _, _ = self.actor.get_action(obs)
         action_numpy = action.detach().cpu().numpy()
-        internal_state = self.fake_internal_state(batch_size)
-        internal_state.obs = obs
-        internal_state.action = action
-        return action_numpy[:, None], internal_state.cpu()
+        runtime_state = self.fake_runtime_state(batch_size)
+        runtime_state["obs"] = obs.detach().cpu().numpy()
+        runtime_state["action"] = action.detach().cpu().numpy()
+        return action_numpy[:, None], runtime_state
 
-    def fake_internal_state(self, batch_size: int) -> InternalState:
-        obs = torch.zeros((batch_size, self.state_dim))
-        action = torch.zeros((batch_size, self.action_dim))
-        logprob = torch.zeros((batch_size,))
-        entropy = torch.zeros((batch_size,))
-        value = torch.zeros((batch_size,))
-        return InternalState(
-            obs=obs, action=action, logprob=logprob, entropy=entropy, value=value
+    @override
+    def fake_runtime_state(self, batch_size: int) -> SACRuntimeState:
+        return dict(
+            obs=np.zeros((batch_size, self.state_dim), dtype=np.float32),
+            action=np.zeros((batch_size, self.action_dim), dtype=np.float32),
         )

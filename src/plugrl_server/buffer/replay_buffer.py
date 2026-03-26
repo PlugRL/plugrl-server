@@ -1,15 +1,15 @@
 import dataclasses
 import uuid
 
+import numpy as np
 import torch
 
+from plugrl_server.buffer.numpy_tree_storage import NumpyTreeStorage
 from plugrl_server.common.data_utils import (
+    NumpyTree,
     TorchTree,
-    create_empty_torch_tree,
-    torch_tree_get_item,
-    torch_tree_set_item,
+    numpy_tree_to_torch,
 )
-from plugrl_server.policy.state_adapter import TrainStateLike, train_state_to_tensors
 
 
 @dataclasses.dataclass(frozen=True)
@@ -21,30 +21,42 @@ class ReplayBufferSamples:
     dones: torch.Tensor
     timeouts: torch.Tensor
 
+    def to(self, device: torch.device) -> "ReplayBufferSamples":
+        return ReplayBufferSamples(
+            obs=_torch_tree_to_device(self.obs, device),
+            next_obs=_torch_tree_to_device(self.next_obs, device),
+            actions=self.actions.to(device),
+            rewards=self.rewards.to(device),
+            dones=self.dones.to(device),
+            timeouts=self.timeouts.to(device),
+        )
+
 
 class ReplayBuffer(torch.utils.data.Dataset):
-    obs: TorchTree
-    next_obs: TorchTree
-    actions: torch.Tensor
-    rewards: torch.Tensor
-    dones: torch.Tensor
-    timeouts: torch.Tensor
+    buffer_size: int
+    obs_storage: NumpyTreeStorage
+    next_obs_storage: NumpyTreeStorage
+    actions: np.ndarray
+    rewards: np.ndarray
+    dones: np.ndarray
+    timeouts: np.ndarray
+    idx: int
+    _full: bool
+    buffer_signature: uuid.UUID
 
-    def __init__(self, buffer_size, example_train_state: TrainStateLike):
+    def __init__(self, buffer_size: int, example_obs: NumpyTree, example_action: np.ndarray):
+        super().__init__()
         self.buffer_size = buffer_size
-        example_train_tensors = train_state_to_tensors(example_train_state)
+        self.obs_storage = NumpyTreeStorage.from_example(example_obs, buffer_size)
+        self.next_obs_storage = NumpyTreeStorage.from_example(example_obs, buffer_size)
 
-        sample_obs = torch_tree_get_item(example_train_tensors.obs, 0)
-        self.obs = create_empty_torch_tree(sample_obs, buffer_size)
-        self.next_obs = create_empty_torch_tree(sample_obs, buffer_size)
-
-        self.actions = torch.empty(
-            (buffer_size,) + example_train_tensors.action.shape[1:],
-            dtype=example_train_tensors.action.dtype,
+        self.actions = np.empty(
+            (buffer_size,) + tuple(example_action.shape),
+            dtype=example_action.dtype,
         )
-        self.rewards = torch.zeros(buffer_size, dtype=torch.float32)
-        self.dones = torch.zeros(buffer_size, dtype=torch.bool)
-        self.timeouts = torch.zeros(buffer_size, dtype=torch.bool)
+        self.rewards = np.zeros(buffer_size, dtype=np.float32)
+        self.dones = np.zeros(buffer_size, dtype=np.bool_)
+        self.timeouts = np.zeros(buffer_size, dtype=np.bool_)
 
         self.idx = 0
         self._full = False
@@ -54,15 +66,15 @@ class ReplayBuffer(torch.utils.data.Dataset):
         self,
         *,
         prev_node: tuple[int, uuid.UUID],
-        obs: TorchTree,
-        next_obs: TorchTree,
-        action: torch.Tensor,
+        obs: NumpyTree,
+        next_obs: NumpyTree,
+        action: np.ndarray,
         reward: float,
         done: bool,
         timeout: bool,
     ) -> tuple[int, uuid.UUID]:
-        torch_tree_set_item(self.obs, self.idx, obs)
-        torch_tree_set_item(self.next_obs, self.idx, next_obs)
+        self.obs_storage.set_item(self.idx, obs)
+        self.next_obs_storage.set_item(self.idx, next_obs)
         self.actions[self.idx] = action
         self.rewards[self.idx] = reward
         self.dones[self.idx] = done
@@ -71,26 +83,23 @@ class ReplayBuffer(torch.utils.data.Dataset):
         self.idx += 1
         if self.idx == self.buffer_size:
             self._full = True
-            self.idx = 0  # Overwrite old data once buffer is full
+            self.idx = 0
 
         return (-1, self.buffer_signature)
 
     def sample(self, batch_size: int) -> ReplayBufferSamples:
-        if self._full:
-            batch_inds = torch.randint(0, self.buffer_size, (batch_size,))
-        else:
-            batch_inds = torch.randint(0, self.idx, (batch_size,))
-
+        upper = self.buffer_size if self._full else self.idx
+        batch_inds = np.random.randint(0, upper, size=batch_size)
         return self._get_samples(batch_inds)
 
-    def _get_samples(self, batch_inds: torch.Tensor) -> ReplayBufferSamples:
+    def _get_samples(self, batch_inds: np.ndarray) -> ReplayBufferSamples:
         return ReplayBufferSamples(
-            obs=torch_tree_get_item(self.obs, batch_inds),
-            next_obs=torch_tree_get_item(self.next_obs, batch_inds),
-            actions=self.actions[batch_inds],
-            rewards=self.rewards[batch_inds],
-            dones=self.dones[batch_inds],
-            timeouts=self.timeouts[batch_inds],
+            obs=numpy_tree_to_torch(self.obs_storage.get_item(batch_inds)),
+            next_obs=numpy_tree_to_torch(self.next_obs_storage.get_item(batch_inds)),
+            actions=torch.from_numpy(self.actions[batch_inds]),
+            rewards=torch.from_numpy(self.rewards[batch_inds]),
+            dones=torch.from_numpy(self.dones[batch_inds]),
+            timeouts=torch.from_numpy(self.timeouts[batch_inds]),
         )
 
     def __len__(self) -> int:
@@ -98,3 +107,9 @@ class ReplayBuffer(torch.utils.data.Dataset):
 
     def full(self) -> bool:
         return self._full
+
+
+def _torch_tree_to_device(tree: TorchTree, device: torch.device) -> TorchTree:
+    if isinstance(tree, torch.Tensor):
+        return tree.to(device)
+    return dict((key, _torch_tree_to_device(value, device)) for key, value in tree.items())
