@@ -49,6 +49,7 @@ class WebSocketAgentServer:
         checkpoint_manager: CheckpointManager,
         metric_sink: MetricSink,
         mini_infer_batch_size: int | None = None,
+        show_metric_table: bool = True,
         host: str = "0.0.0.0",
         port: int = 8000,
         metadata: dict | None = None,
@@ -77,6 +78,8 @@ class WebSocketAgentServer:
             algorithm=self._algorithm,
             checkpoint_manager=self._checkpoint_manager,
             metric_sink=self._metric_sink,
+            runtime_metrics_provider=self._runtime_metrics,
+            show_metric_table=show_metric_table,
         )
 
         self._total_connections = 0
@@ -151,9 +154,6 @@ class WebSocketAgentServer:
         )
 
     async def _handler(self, websocket: _server.ServerConnection):
-        logger.info(
-            f"Connection from {websocket.remote_address} opened. Total connections: {self._total_connections + 1}"
-        )
         packer = msgpack_numpy.Packer()
         session_id = str(websocket.remote_address)
         connection_counted = False
@@ -318,9 +318,9 @@ class WebSocketAgentServer:
         finally:
             if connection_counted:
                 self._total_connections = max(0, self._total_connections - 1)
-                logger.info(
-                    f"Connection from {websocket.remote_address} closed. Total connections: {self._total_connections}"
-                )
+
+    def _runtime_metrics(self) -> dict:
+        return dict(server=dict(total_connections=self._total_connections))
 
     def should_infer(self) -> bool:
         current_qsize = self._inference.queue.qsize()

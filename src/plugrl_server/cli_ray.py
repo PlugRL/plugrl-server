@@ -109,7 +109,13 @@ def _main(args: RayArgs):
     )
 
     server = RayAgentServer(
-        algo, checkpoint_manager, metric_sink, learner_ref, host=args.host, port=args.port
+        algo,
+        checkpoint_manager,
+        metric_sink,
+        learner_ref,
+        host=args.host,
+        port=args.port,
+        show_metric_table=args.show_metric_table,
     )
     try:
         server.serve_forever()

@@ -28,7 +28,7 @@ logger = get_logger(__name__)
 @register_algo_config(UID)
 @dataclasses.dataclass
 class SACAlgoConfig(BaseAlgoConfig):
-    total_timesteps: int = 1_000_000
+    global_steps: int | None = 1_000_000
     buffer_size: int = 1_000_000
     gamma: float = 0.99
     tau: float = 0.005
@@ -254,7 +254,8 @@ class SACAlgorithm(BaseAlgorithm):
 
     @override
     def should_stop(self) -> bool:
-        return self.global_step >= self.config.total_timesteps
+        assert self.config.global_steps is not None
+        return self.global_step >= self.config.global_steps
 
     @override
     def should_save(self) -> bool:

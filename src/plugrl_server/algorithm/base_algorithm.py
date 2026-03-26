@@ -18,7 +18,8 @@ logger = get_logger(__name__)
 
 
 @dataclasses.dataclass
-class BaseAlgoConfig: ...
+class BaseAlgoConfig:
+    global_steps: int | None = None
 
 
 class EpisodeMetricWindow:
@@ -111,10 +112,10 @@ class BaseAlgorithm(abc.ABC):
         self._episode_metric_window.reset()
 
     def get_lifecycle_metrics(self) -> MetricDict:
-        global_step = getattr(self, "global_step", None)
-        if global_step is None:
-            return dict()
-        return dict(train=dict(global_step=float(global_step)))
+        return dict()
+
+    def get_total_training_steps(self) -> int | None:
+        return self.config.global_steps
 
     def build_train_info(self, *metric_groups: MetricDict) -> MetricDict:
         return merge_metric_groups(

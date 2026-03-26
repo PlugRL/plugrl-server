@@ -80,6 +80,104 @@ class TensorBoardMetricSink:
         self._writer.close()
 
 
+def format_metrics_table(metrics: Mapping[str, MetricValue]) -> str:
+    left_rows, right_rows = _build_two_column_metric_rows(metrics)
+    if not left_rows and not right_rows:
+        return ""
+
+    row_count = max(len(left_rows), len(right_rows))
+    left_rows += [("", "")] * (row_count - len(left_rows))
+    right_rows += [("", "")] * (row_count - len(right_rows))
+
+    all_rows = [*left_rows, *right_rows]
+    key_width = max(len(key) for key, _ in all_rows)
+    value_width = max(len(value) for _, value in all_rows)
+    border = "-" * (2 * key_width + 2 * value_width + 13)
+    lines = [border]
+    for (left_key, left_value), (right_key, right_value) in zip(left_rows, right_rows):
+        lines.append(
+            f"| {left_key:<{key_width}} | {left_value:<{value_width}} | "
+            f"{right_key:<{key_width}} | {right_value:<{value_width}} |"
+        )
+    lines.append(border)
+    return "\n".join(lines)
+
+
+def _build_two_column_metric_rows(
+    metrics: Mapping[str, MetricValue],
+) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+    left_group_names = ("rollout", "train", "losses")
+    right_group_names = ("models", "server", "progress")
+
+    left_rows = _flatten_metric_groups(metrics, left_group_names)
+    right_rows = _flatten_metric_groups(metrics, right_group_names)
+    return left_rows, right_rows
+
+
+def _flatten_metric_groups(
+    metrics: Mapping[str, MetricValue], group_names: tuple[str, ...]
+) -> list[tuple[str, str]]:
+    rows: list[tuple[str, str]] = []
+    for group_name in group_names:
+        group_value = metrics.get(group_name)
+        if isinstance(group_value, Mapping):
+            rows.extend(_flatten_metric_group(group_name, group_value))
+    return rows
+
+
+def _flatten_metric_group(
+    group_name: str, group_value: Mapping[str, MetricValue]
+) -> list[tuple[str, str]]:
+    rows: list[tuple[str, str]] = []
+    rows.append((f"{group_name}/", ""))
+    for metric_name, metric_value in group_value.items():
+        if isinstance(metric_value, Mapping):
+            rows.append((f"  {metric_name}/", ""))
+            for nested_name, nested_value in metric_value.items():
+                rows.append(
+                    (
+                        f"    {nested_name}",
+                        _format_metric_value(nested_name, nested_value),
+                    )
+                )
+        else:
+            rows.append(
+                (
+                    f"  {metric_name}",
+                    _format_metric_value(metric_name, metric_value),
+                )
+            )
+    return rows
+
+
+def _format_metric_value(metric_name: str, value: MetricValue) -> str:
+    if isinstance(value, Mapping):
+        return ""
+    float_value = float(value)
+    if metric_name.endswith("time"):
+        return _format_duration(float_value)
+    if metric_name.endswith("step") or metric_name.endswith("steps"):
+        return str(int(float_value))
+    if metric_name.endswith("remaining"):
+        return str(int(float_value))
+    if abs(float_value) >= 1000 and float_value.is_integer():
+        return str(int(float_value))
+    return f"{float_value:.6g}"
+
+
+def _format_duration(seconds: float) -> str:
+    seconds = max(0.0, seconds)
+    if seconds < 60:
+        return f"{seconds:.1f}s"
+
+    total_seconds = int(seconds)
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, secs = divmod(remainder, 60)
+    if hours > 0:
+        return f"{hours:d}:{minutes:02d}:{secs:02d}"
+    return f"{minutes:02d}:{secs:02d}"
+
+
 def init_metric_sink_by_tracker(
     args: Any, *, resuming: bool, log_code: bool, enabled: bool = True
 ) -> tuple[MetricSink, Any]:

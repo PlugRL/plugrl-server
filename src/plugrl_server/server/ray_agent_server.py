@@ -53,6 +53,7 @@ class RayAgentServer:
         checkpoint_manager: CheckpointManager,
         metric_sink: MetricSink,
         learner_actor_ref: ray.ObjectRef,
+        show_metric_table: bool = True,
         host: str = "0.0.0.0",
         port: int = 8000,
         metadata: dict | None = None,
@@ -81,6 +82,8 @@ class RayAgentServer:
             checkpoint_manager=self._checkpoint_manager,
             metric_sink=self._metric_sink,
             learner_actor_ref=self._learner_actor,
+            runtime_metrics_provider=self._runtime_metrics,
+            show_metric_table=show_metric_table,
         )
 
         self._total_connections = 0
@@ -155,7 +158,6 @@ class RayAgentServer:
         )
 
     async def _handler(self, websocket: _server.ServerConnection):
-        logger.info(f"Connection from {websocket.remote_address} opened")
         packer = msgpack_numpy.Packer()
         session_id = str(websocket.remote_address)
         connection_counted = False
@@ -164,7 +166,6 @@ class RayAgentServer:
             await websocket.send(
                 packer.pack(MetadataMessage(data=self._metadata).to_payload())
             )
-            logger.info("Sent initial metadata to client.")
             self._total_connections += 1
             connection_counted = True
             prev_node: tuple = (-1, "")
@@ -270,9 +271,9 @@ class RayAgentServer:
         finally:
             if connection_counted:
                 self._total_connections = max(0, self._total_connections - 1)
-                logger.info(
-                    f"Connection from {websocket.remote_address} closed. Total connections: {self._total_connections}"
-                )
+
+    def _runtime_metrics(self) -> dict:
+        return dict(server=dict(total_connections=self._total_connections))
 
     def should_infer(self) -> bool:
         return (

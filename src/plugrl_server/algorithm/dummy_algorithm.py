@@ -19,7 +19,7 @@ class DummyAlgoConfig(BaseAlgoConfig):
     fake_inference_duration_sec: float = 0.1
     fake_learn_duration_sec: float = 10.0
     fake_learn_freq: int = 100
-    fake_total_steps: int = 300
+    global_steps: int | None = 300
 
     break_action_chunk: bool = False
 
@@ -68,7 +68,8 @@ class DummyAlgorithm(BaseAlgorithm):
         return self.counter >= self.config.fake_learn_freq
 
     def should_stop(self) -> bool:
-        return self.global_step >= self.config.fake_total_steps
+        assert self.config.global_steps is not None
+        return self.global_step >= self.config.global_steps
 
     def should_save(self) -> bool:
         return False

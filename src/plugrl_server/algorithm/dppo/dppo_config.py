@@ -50,13 +50,10 @@ class DPPOAlgoConfig(BaseAlgoConfig):
     save_interval: int = 10
     grad_accum_steps: int = 8
 
-    @property
-    def total_steps(self) -> int:
-        return self.buffer_size * self.train_itrs
-
     def __post_init__(self):
         if self.critic_batch_size is None:
             self.critic_batch_size = self.batch_size
+        self.global_steps = self.train_itrs * self.buffer_size
 
 
 @register_algo_config(UID, "hopper")

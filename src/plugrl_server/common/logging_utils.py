@@ -10,6 +10,8 @@ def configure_logging(level: str) -> None:
         stream=sys.stdout,
         force=True,
     )
+    logging.getLogger("websockets").setLevel(logging.WARNING)
+    logging.getLogger("websockets.server").setLevel(logging.WARNING)
 
 
 def get_logger(name: str) -> logging.Logger:
