@@ -8,7 +8,6 @@ import tqdm
 from loguru import logger
 
 from plugrl_server.common.checkpoint_manager import Checkpoint
-from plugrl_server.common.tensor_container import TensorContainer
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm, BaseAlgoConfig
 from plugrl_server.algorithm.registration import register_algo, register_algo_config
 from plugrl_server.policy.state import PolicyRuntimeState, PolicyTrainState, to_numpy_state
@@ -191,10 +190,6 @@ class DPPOAlgorithm(BaseAlgorithm):
         return action, runtime_state
 
     def derive_train_state(self, runtime_state: PolicyRuntimeState) -> PolicyTrainState:
-        if not isinstance(runtime_state, TensorContainer):
-            raise TypeError(
-                "DPPO requires runtime_state to be TensorContainer-compatible."
-            )
         numpy_state = to_numpy_state(runtime_state)
         if numpy_state is None or not isinstance(numpy_state, dict):
             raise TypeError("DPPO requires mapping-like train_state export.")

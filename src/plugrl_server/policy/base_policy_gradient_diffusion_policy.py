@@ -1,17 +1,25 @@
 import abc
+import dataclasses
 from collections.abc import Mapping
 import numpy as np
 import torch
-import tensordict
-from typing import Any
-from plugrl_server.common.tensor_container import TensorContainer, tensor_container
+from typing import Any, TypeAlias
 from .base_torch_policy import BaseTorchPolicy, BaseTorchPolicyConfig
 from .state import NumpyState, PolicyRuntimeState
 
+TorchTree: TypeAlias = torch.Tensor | dict[str, "TorchTree"]
 
-@tensor_container
-class _DiffusionRuntimeState(TensorContainer):
-    obs: torch.Tensor | tensordict.TensorDict
+
+@dataclasses.dataclass
+class DiffusionObs:
+    x: torch.Tensor
+    t: torch.Tensor
+    cond: TorchTree
+
+
+@dataclasses.dataclass
+class DiffusionRuntimeState:
+    obs: DiffusionObs
     action: torch.Tensor
     logprob: torch.Tensor
     entropy: torch.Tensor
@@ -36,7 +44,7 @@ class BasePolicyGradientDiffusionPolicy(BaseTorchPolicy):
         self,
         x: torch.Tensor,
         t: torch.Tensor,
-        cond: dict | tensordict.TensorDict,
+        cond: TorchTree,
         x_next: torch.Tensor | None = None,
         *,
         processed_cond: Any = None,
@@ -53,20 +61,16 @@ class BasePolicyGradientDiffusionPolicy(BaseTorchPolicy):
 
     @abc.abstractmethod
     def _postprocess_action(
-        self, action: torch.Tensor, obs: torch.Tensor | tensordict.TensorDict
+        self, action: torch.Tensor, obs: TorchTree
     ) -> Any: ...
 
     @abc.abstractmethod
-    def _initialize_x(self, obs: dict | tensordict.TensorDict) -> torch.Tensor: ...
+    def _initialize_x(self, obs: TorchTree) -> torch.Tensor: ...
 
-    def preprocess_observation(
-        self, obs: tensordict.TensorDict | torch.Tensor
-    ) -> Any: ...
+    def preprocess_observation(self, obs: TorchTree) -> Any: ...
 
-    def build_model_observation(
-        self, obs: NumpyState
-    ) -> torch.Tensor | tensordict.TensorDict:
-        return _to_model_observation(obs)
+    def build_model_observation(self, obs: NumpyState) -> TorchTree:
+        return _to_torch_tree(obs)
 
     def get_action_and_runtime_state(
         self, _obs: dict, sampling_noise_level: float | None = None
@@ -75,7 +79,7 @@ class BasePolicyGradientDiffusionPolicy(BaseTorchPolicy):
         model_obs = self.build_model_observation(prepared_obs)
         processed_obs = self.preprocess_observation(model_obs)
         timesteps = self._get_timesteps()
-        b = model_obs.shape[0]
+        b = _torch_tree_batch_size(model_obs)
         x = self._initialize_x(model_obs)
 
         runtime_state = self.fake_runtime_state(b)
@@ -87,8 +91,8 @@ class BasePolicyGradientDiffusionPolicy(BaseTorchPolicy):
                 processed_cond=processed_obs,
                 sampling_noise_level=sampling_noise_level,
             )
-            runtime_state.obs["x"][:, i] = x
-            runtime_state.obs["t"][:, i] = t.repeat(b)
+            runtime_state.obs.x[:, i] = x
+            runtime_state.obs.t[:, i] = t.repeat(b)
             runtime_state.action[:, i] = x_next
             runtime_state.logprob[:, i] = logprob
             runtime_state.entropy[:, i] = entropy
@@ -96,7 +100,7 @@ class BasePolicyGradientDiffusionPolicy(BaseTorchPolicy):
 
         x = self._postprocess_action(x, model_obs)
         value = self._get_value(model_obs, processed_obs)
-        runtime_state.obs["cond"] = model_obs
+        runtime_state.obs.cond = model_obs
         runtime_state.value[:] = value
         return x, runtime_state
 
@@ -106,31 +110,26 @@ class BasePolicyGradientDiffusionPolicy(BaseTorchPolicy):
         processed_obs = self.preprocess_observation(model_obs)
         return self._get_value(model_obs, processed_obs).cpu()
 
-    def _get_value(
-        self, obs: torch.Tensor | tensordict.TensorDict, processed_obs: Any = None
-    ) -> torch.Tensor: ...
+    def _get_value(self, obs: TorchTree, processed_obs: Any = None) -> torch.Tensor: ...
 
     @abc.abstractmethod
-    def fake_diffusion_cond(self, batch_size: int) -> tensordict.TensorDict: ...
+    def fake_diffusion_cond(self, batch_size: int) -> TorchTree: ...
 
     def fake_runtime_state(self, batch_size: int) -> PolicyRuntimeState:
         action = torch.zeros(
             (batch_size, self.num_denoising_steps, self.action_horizon, self.action_dim)
         )
-        obs = tensordict.TensorDict(
-            dict(
-                x=torch.zeros(
-                    (
-                        batch_size,
-                        self.num_denoising_steps,
-                        self.action_horizon,
-                        self.action_dim,
-                    )
-                ),
-                t=torch.zeros((batch_size, self.num_denoising_steps)),
-                cond=self.fake_diffusion_cond(batch_size),
+        obs = DiffusionObs(
+            x=torch.zeros(
+                (
+                    batch_size,
+                    self.num_denoising_steps,
+                    self.action_horizon,
+                    self.action_dim,
+                )
             ),
-            batch_size=[batch_size],
+            t=torch.zeros((batch_size, self.num_denoising_steps)),
+            cond=self.fake_diffusion_cond(batch_size),
         )
         logprob = torch.zeros(
             (batch_size, self.num_denoising_steps, self.action_horizon, self.action_dim)
@@ -139,29 +138,25 @@ class BasePolicyGradientDiffusionPolicy(BaseTorchPolicy):
             (batch_size, self.num_denoising_steps, self.action_horizon, self.action_dim)
         )
         value = torch.zeros((batch_size,))
-        return _DiffusionRuntimeState(
+        return DiffusionRuntimeState(
             obs=obs, action=action, logprob=logprob, entropy=entropy, value=value
         )
 
 
-def _to_model_observation(value: NumpyState) -> torch.Tensor | tensordict.TensorDict:
+def _to_torch_tree(value: NumpyState) -> TorchTree:
     if isinstance(value, np.ndarray):
         return torch.from_numpy(value)
     if isinstance(value, Mapping):
-        converted = dict(
-            (key, _to_model_observation(item)) for key, item in value.items()
-        )
-        batch_size = _infer_batch_size(converted)
-        if batch_size is None:
-            raise TypeError("Mapping observation must expose a batch dimension.")
-        return tensordict.TensorDict(converted, batch_size=batch_size)
+        return dict((key, _to_torch_tree(item)) for key, item in value.items())
     raise TypeError(f"Unsupported observation type: {type(value)!r}")
 
 
-def _infer_batch_size(value: dict[str, Any]) -> list[int] | None:
+def _torch_tree_batch_size(value: TorchTree) -> int:
+    if isinstance(value, torch.Tensor):
+        return int(value.shape[0])
     for item in value.values():
         if isinstance(item, torch.Tensor):
-            return list(item.shape[:1])
-        if isinstance(item, tensordict.TensorDict):
-            return list(item.batch_size)
-    return None
+            return int(item.shape[0])
+        if isinstance(item, dict):
+            return _torch_tree_batch_size(item)
+    raise TypeError("TorchTree observation must expose a batch dimension.")

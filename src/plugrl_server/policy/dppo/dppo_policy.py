@@ -10,7 +10,6 @@ import pathlib
 import dataclasses
 import omegaconf
 import hydra
-import tensordict
 import torch
 import numpy as np
 from typing import Tuple, Any
@@ -18,6 +17,7 @@ from plugrl_server.paths import PACKAGE_DIR
 from ..base_policy_gradient_diffusion_policy import (
     BasePolicyGradientDiffusionPolicy,
     BasePolicyGradientDiffusionPolicyConfig,
+    TorchTree,
 )
 from ..registration import register_policy, register_policy_config
 
@@ -119,8 +119,8 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         timesteps = list(reversed(range(self.actor.denoising_steps)))
         return torch.tensor(timesteps)
 
-    def _initialize_x(self, obs: torch.Tensor | tensordict.TensorDict) -> torch.Tensor:
-        batch_size = obs.shape[0]
+    def _initialize_x(self, obs: TorchTree) -> torch.Tensor:
+        batch_size = next(iter(obs.values())).shape[0]
         x = torch.randn(
             batch_size, self.action_horizon, self.action_dim, device=self.device
         )
@@ -137,16 +137,14 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         )
         return dict(state=normalized_state.astype(np.float32))
 
-    def fake_diffusion_cond(self, batch_size: int) -> tensordict.TensorDict:
-        return tensordict.TensorDict(
-            {"state": torch.zeros(batch_size, self.obs_dim)}, batch_size=[batch_size]
-        )
+    def fake_diffusion_cond(self, batch_size: int) -> TorchTree:
+        return dict(state=torch.zeros(batch_size, self.obs_dim))
 
     def _iterative_process_action(self, action: torch.Tensor) -> torch.Tensor:
         return action
 
     def _postprocess_action(
-        self, action: torch.Tensor, obs: tensordict.TensorDict
+        self, action: torch.Tensor, obs: TorchTree
     ) -> np.ndarray:
         if self.actor.final_action_clip_value is not None:
             action = torch.clamp(
@@ -172,7 +170,7 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         self,
         x: torch.Tensor,
         t: torch.Tensor,
-        cond: dict | tensordict.TensorDict,
+        cond: TorchTree,
         x_next: torch.Tensor | None = None,
         *,
         processed_cond: Any = None,
@@ -223,11 +221,10 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         return x_next, logprob, entropy
 
     def _get_value(
-        self, obs: tensordict.TensorDict, processed_obs=None
+        self, obs: TorchTree, processed_obs=None
     ) -> torch.Tensor:
-        obs = obs.to(self.device)
-        batch_size = obs.shape[0]
-        cond = {k: v for k, v in obs.items()}
+        cond = {key: value.to(self.device) for key, value in obs.items()}
+        batch_size = next(iter(cond.values())).shape[0]
         if self.critic is not None:
             value = self.critic(cond).squeeze(-1)
             assert value.shape == (batch_size,)

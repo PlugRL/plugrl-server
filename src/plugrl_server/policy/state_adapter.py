@@ -6,10 +6,9 @@ from typing import Any
 import tensordict
 import torch
 
-from plugrl_server.common.tensor_container import TensorContainer
 from plugrl_server.policy.state import PolicyTrainState
 
-TrainStateLike = PolicyTrainState | TensorContainer
+TrainStateLike = PolicyTrainState
 
 
 @dataclasses.dataclass(frozen=True)
@@ -24,14 +23,6 @@ class TrainStateTensors:
 def train_state_to_tensors(
     train_state: TrainStateLike,
 ) -> TrainStateTensors:
-    if isinstance(train_state, TensorContainer):
-        return TrainStateTensors(
-            obs=train_state.obs,
-            action=train_state.action,
-            logprob=train_state.logprob,
-            entropy=train_state.entropy,
-            value=train_state.value,
-        )
     if train_state is None:
         raise ValueError("train_state must not be None")
     return TrainStateTensors(

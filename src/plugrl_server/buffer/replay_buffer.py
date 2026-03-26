@@ -1,15 +1,15 @@
+import dataclasses
 import uuid
 
 import torch
 import tensordict
 
-from plugrl_server.common.tensor_container import TensorContainer, tensor_container
 from plugrl_server.common.data_utils import _recursively_create_empty_td
 from plugrl_server.policy.state_adapter import TrainStateLike, train_state_to_tensors
 
 
-@tensor_container
-class ReplayBufferSamples(TensorContainer):
+@dataclasses.dataclass(frozen=True)
+class ReplayBufferSamples:
     obs: torch.Tensor | tensordict.TensorDict
     next_obs: torch.Tensor | tensordict.TensorDict
     actions: torch.Tensor
