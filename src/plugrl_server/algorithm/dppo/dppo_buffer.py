@@ -6,7 +6,7 @@ from dppo.util.reward_scaling import RunningMeanStd
 from plugrl_server.buffer.rollout_buffer import GAEBuffer
 from plugrl_server.policy.base_policy import BasePolicy
 from plugrl_server.policy.state_adapter import TrainStateLike, train_state_to_tensors
-from plugrl_server.common.data_utils import batch_aggregate
+from plugrl_server.common.data_utils import batch_aggregate, torch_tree_get_item, torch_tree_set_item
 
 
 class DPPOBuffer(GAEBuffer):
@@ -52,7 +52,11 @@ class DPPOBuffer(GAEBuffer):
             self.rets[current_idx] = self.rets[prev_idx] * self.gamma + float(reward)
         else:
             self.rets[current_idx] = float(reward)
-        self.obs[current_idx] = train_state_tensors.obs[0]
+        torch_tree_set_item(
+            self.obs,
+            current_idx,
+            torch_tree_get_item(train_state_tensors.obs, 0),
+        )
         self.actions[current_idx] = train_state_tensors.action
         self.logprobs[current_idx] = train_state_tensors.logprob
         self.values[current_idx] = train_state_tensors.value

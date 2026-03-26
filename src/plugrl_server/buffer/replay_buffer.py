@@ -2,16 +2,20 @@ import dataclasses
 import uuid
 
 import torch
-import tensordict
 
-from plugrl_server.common.data_utils import _recursively_create_empty_td
+from plugrl_server.common.data_utils import (
+    TorchTree,
+    create_empty_torch_tree,
+    torch_tree_get_item,
+    torch_tree_set_item,
+)
 from plugrl_server.policy.state_adapter import TrainStateLike, train_state_to_tensors
 
 
 @dataclasses.dataclass(frozen=True)
 class ReplayBufferSamples:
-    obs: torch.Tensor | tensordict.TensorDict
-    next_obs: torch.Tensor | tensordict.TensorDict
+    obs: TorchTree
+    next_obs: TorchTree
     actions: torch.Tensor
     rewards: torch.Tensor
     dones: torch.Tensor
@@ -19,8 +23,8 @@ class ReplayBufferSamples:
 
 
 class ReplayBuffer(torch.utils.data.Dataset):
-    obs: torch.Tensor | tensordict.TensorDict
-    next_obs: torch.Tensor | tensordict.TensorDict
+    obs: TorchTree
+    next_obs: TorchTree
     actions: torch.Tensor
     rewards: torch.Tensor
     dones: torch.Tensor
@@ -30,21 +34,9 @@ class ReplayBuffer(torch.utils.data.Dataset):
         self.buffer_size = buffer_size
         example_train_tensors = train_state_to_tensors(example_train_state)
 
-        sample_obs = example_train_tensors.obs[0]
-        if isinstance(sample_obs, tensordict.TensorDict):
-            self.obs = _recursively_create_empty_td(sample_obs, buffer_size)
-            self.next_obs = _recursively_create_empty_td(sample_obs, buffer_size)
-        else:
-            self.obs = torch.empty(
-                (buffer_size,) + sample_obs.shape,
-                dtype=sample_obs.dtype,
-                device=sample_obs.device,
-            )
-            self.next_obs = torch.empty(
-                (buffer_size,) + sample_obs.shape,
-                dtype=sample_obs.dtype,
-                device=sample_obs.device,
-            )
+        sample_obs = torch_tree_get_item(example_train_tensors.obs, 0)
+        self.obs = create_empty_torch_tree(sample_obs, buffer_size)
+        self.next_obs = create_empty_torch_tree(sample_obs, buffer_size)
 
         self.actions = torch.empty(
             (buffer_size,) + example_train_tensors.action.shape[1:],
@@ -62,15 +54,15 @@ class ReplayBuffer(torch.utils.data.Dataset):
         self,
         *,
         prev_node: tuple[int, uuid.UUID],
-        obs: torch.Tensor | tensordict.TensorDict,
-        next_obs: torch.Tensor | tensordict.TensorDict,
+        obs: TorchTree,
+        next_obs: TorchTree,
         action: torch.Tensor,
         reward: float,
         done: bool,
         timeout: bool,
     ) -> tuple[int, uuid.UUID]:
-        self.obs[self.idx] = obs
-        self.next_obs[self.idx] = next_obs
+        torch_tree_set_item(self.obs, self.idx, obs)
+        torch_tree_set_item(self.next_obs, self.idx, next_obs)
         self.actions[self.idx] = action
         self.rewards[self.idx] = reward
         self.dones[self.idx] = done
@@ -93,8 +85,8 @@ class ReplayBuffer(torch.utils.data.Dataset):
 
     def _get_samples(self, batch_inds: torch.Tensor) -> ReplayBufferSamples:
         return ReplayBufferSamples(
-            obs=self.obs[batch_inds],
-            next_obs=self.next_obs[batch_inds],
+            obs=torch_tree_get_item(self.obs, batch_inds),
+            next_obs=torch_tree_get_item(self.next_obs, batch_inds),
             actions=self.actions[batch_inds],
             rewards=self.rewards[batch_inds],
             dones=self.dones[batch_inds],

@@ -2,16 +2,23 @@ import uuid
 from typing import Any
 
 import torch
-import tensordict
 import numpy as np
 from loguru import logger
 
+from plugrl_server.common.data_utils import (
+    TorchTree,
+    create_empty_torch_tree,
+    numpy_tree_to_torch,
+    stack_torch_tree,
+    torch_tree_get_item,
+    torch_tree_set_item,
+    torch_tree_to_numpy,
+)
 from plugrl_server.policy.state_adapter import TrainStateLike, train_state_to_tensors
-from plugrl_server.common.data_utils import _recursively_create_empty_td
 
 
 class RolloutBuffer(torch.utils.data.Dataset):
-    obs: torch.Tensor | tensordict.TensorDict
+    obs: TorchTree
     actions: torch.Tensor
     logprobs: torch.Tensor
     rewards: torch.Tensor
@@ -33,18 +40,11 @@ class RolloutBuffer(torch.utils.data.Dataset):
         example_train_state: TrainStateLike,
     ):
         example_train_tensors = train_state_to_tensors(example_train_state)
-        sample_obs = example_train_tensors.obs[0]
+        sample_obs = torch_tree_get_item(example_train_tensors.obs, 0)
 
         self.buffer_size = buffer_size
 
-        if isinstance(sample_obs, tensordict.TensorDict):
-            self.obs = _recursively_create_empty_td(sample_obs, buffer_size)
-        else:
-            self.obs = torch.empty(
-                (buffer_size,) + sample_obs.shape[1:],
-                dtype=sample_obs.dtype,
-                device=sample_obs.device,
-            )
+        self.obs = create_empty_torch_tree(sample_obs, buffer_size)
 
         action_shape = example_train_tensors.action.shape[1:]
         value_shape = example_train_tensors.value.shape[1:]
@@ -77,7 +77,7 @@ class RolloutBuffer(torch.utils.data.Dataset):
 
         logger.info(f"""
             Initialized RolloutBuffer with buffer_size={buffer_size}
-            obs shape: {self.obs.shape}
+            obs shape: {_describe_tree_shape(self.obs)}
             actions shape: {self.actions.shape}
             logprobs shape: {self.logprobs.shape}
             rewards shape: {self.rewards.shape}
@@ -108,7 +108,11 @@ class RolloutBuffer(torch.utils.data.Dataset):
         current_idx = self.idx
         if prev_idx != -1:
             self.next_indices[prev_idx] = current_idx
-        self.obs[current_idx] = train_state_tensors.obs[0]
+        torch_tree_set_item(
+            self.obs,
+            current_idx,
+            torch_tree_get_item(train_state_tensors.obs, 0),
+        )
         self.actions[current_idx] = train_state_tensors.action
         self.logprobs[current_idx] = train_state_tensors.logprob
         self.values[current_idx] = train_state_tensors.value
@@ -140,7 +144,7 @@ class RolloutBuffer(torch.utils.data.Dataset):
         if idx < 0 or idx >= self.idx:
             raise IndexError("RolloutBuffer index out of range")
         return (
-            self.obs[idx],
+            torch_tree_get_item(self.obs, idx),
             self.actions[idx],
             self.logprobs[idx],
             self.rewards[idx],
@@ -159,15 +163,15 @@ class RolloutBuffer(torch.utils.data.Dataset):
         }
 
     def collate_fn(self, batch: list[tuple]) -> tuple:
-        return tuple(torch.stack(items, dim=0) for items in zip(*batch))
+        obs_items, *rest = zip(*batch)
+        return (
+            stack_torch_tree(list(obs_items), dim=0),
+            *(torch.stack(items, dim=0) for items in rest),
+        )
 
     def as_dict(self) -> dict:
         idx = self.idx
-        obs_slice = self.obs[:idx]
-        if isinstance(obs_slice, tensordict.TensorDict):
-            obs_slice = obs_slice.to_dict(convert_tensors="numpy")
-        else:
-            obs_slice = obs_slice.cpu().numpy()
+        obs_slice = torch_tree_to_numpy(torch_tree_get_item(self.obs, slice(None, idx)))
         data = dict(
             obs=obs_slice,
             actions=self.actions[:idx].cpu().numpy(),
@@ -181,20 +185,16 @@ class RolloutBuffer(torch.utils.data.Dataset):
             idx=idx,
             buffer_signature=self.buffer_signature,
             episode_info_buffer=self.episode_info_buffer.copy(),
-            obs_batch_shape=self.obs.batch_size
-            if isinstance(self.obs, tensordict.TensorDict)
-            else self.obs.shape,
         )
         return data
 
     def load_dict(self, data: dict) -> None:
         self.idx = data["idx"]
-        if isinstance(self.obs, tensordict.TensorDict):
-            self.obs[: self.idx] = tensordict.TensorDict(
-                data["obs"], batch_size=data["obs_batch_shape"]
-            )
-        else:
-            self.obs[: self.idx] = torch.from_numpy(data["obs"])
+        torch_tree_set_item(
+            self.obs,
+            slice(None, self.idx),
+            numpy_tree_to_torch(data["obs"]),
+        )
         self.actions[: self.idx] = torch.from_numpy(data["actions"])
         self.logprobs[: self.idx] = torch.from_numpy(data["logprobs"])
         self.rewards[: self.idx] = torch.from_numpy(data["rewards"])
@@ -204,6 +204,12 @@ class RolloutBuffer(torch.utils.data.Dataset):
         self.dones[: self.idx] = torch.from_numpy(data["dones"])
 
         # [WARNING] next_indices is not a tensor, and for some reason it is read-only so we just ignore it here
+
+
+def _describe_tree_shape(value: TorchTree) -> str:
+    if isinstance(value, torch.Tensor):
+        return str(tuple(value.shape))
+    return str(dict((key, _describe_tree_shape(item)) for key, item in value.items()))
 
 
 class GAEBuffer(RolloutBuffer):

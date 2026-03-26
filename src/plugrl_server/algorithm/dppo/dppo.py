@@ -8,6 +8,7 @@ import tqdm
 from loguru import logger
 
 from plugrl_server.common.checkpoint_manager import Checkpoint
+from plugrl_server.common.data_utils import torch_tree_to_device
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm, BaseAlgoConfig
 from plugrl_server.algorithm.registration import register_algo, register_algo_config
 from plugrl_server.policy.state import PolicyRuntimeState, PolicyTrainState, to_numpy_state
@@ -295,7 +296,7 @@ class DPPOAlgorithm(BaseAlgorithm):
         x, t, cond = (
             obs["x"].reshape(-1, *obs["x"].shape[2:]),
             obs["t"].reshape(-1),
-            obs["cond"].reshape(-1),
+            obs["cond"],
         )
 
         # Policy forward step
@@ -397,9 +398,14 @@ class DPPOAlgorithm(BaseAlgorithm):
             accum_steps = 0
 
             for batch in dataloader:
-                obs, action, oldlogprob, reward, value, advantage, ret = (
-                    t.to(self.active_policy.device) for t in batch
-                )
+                obs, action, oldlogprob, reward, value, advantage, ret = batch
+                obs = torch_tree_to_device(obs, self.active_policy.device)
+                action = action.to(self.active_policy.device)
+                oldlogprob = oldlogprob.to(self.active_policy.device)
+                reward = reward.to(self.active_policy.device)
+                value = value.to(self.active_policy.device)
+                advantage = advantage.to(self.active_policy.device)
+                ret = ret.to(self.active_policy.device)
                 pg_loss, v_loss, entropy_loss, logratio, ratio = self._compute_loss(
                     obs, action, oldlogprob, reward, value, advantage, ret
                 )
