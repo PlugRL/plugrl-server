@@ -12,7 +12,7 @@ from plugrl_server.common.data_utils import (
 )
 from plugrl_server.buffer.schema_migration import migrate_buffer_payload
 
-REPLAY_BUFFER_SCHEMA_VERSION = 1
+REPLAY_BUFFER_SCHEMA_VERSION = 2
 
 
 @dataclasses.dataclass(frozen=True)
@@ -117,8 +117,8 @@ class ReplayBuffer(torch.utils.data.Dataset):
             buffer_kind="replay",
             buffer_schema_version=REPLAY_BUFFER_SCHEMA_VERSION,
             storage_format="numpy_tree",
-            obs=self.obs_storage.get_item(slice(None, idx)),
-            next_obs=self.next_obs_storage.get_item(slice(None, idx)),
+            state=self.obs_storage.get_item(slice(None, idx)),
+            next_state=self.next_obs_storage.get_item(slice(None, idx)),
             actions=self.actions[:idx].copy(),
             rewards=self.rewards[:idx].copy(),
             dones=self.dones[:idx].copy(),
@@ -126,7 +126,7 @@ class ReplayBuffer(torch.utils.data.Dataset):
             idx=self.idx,
             full=self._full,
             buffer_signature=self.buffer_signature,
-            obs_spec=self.obs_storage.spec,
+            state_spec=self.obs_storage.spec,
         )
 
     def load_dict(self, data: dict) -> None:
@@ -138,13 +138,15 @@ class ReplayBuffer(torch.utils.data.Dataset):
         self.idx = data["idx"]
         self._full = data["full"]
         self.buffer_signature = data["buffer_signature"]
-        self.obs_storage = NumpyTreeStorage(spec=data["obs_spec"], capacity=self.buffer_size)
+        self.obs_storage = NumpyTreeStorage(
+            spec=data["state_spec"], capacity=self.buffer_size
+        )
         self.next_obs_storage = NumpyTreeStorage(
-            spec=data["obs_spec"], capacity=self.buffer_size
+            spec=data["state_spec"], capacity=self.buffer_size
         )
         upper = self.buffer_size if self._full else self.idx
-        self.obs_storage.set_item(slice(None, upper), data["obs"])
-        self.next_obs_storage.set_item(slice(None, upper), data["next_obs"])
+        self.obs_storage.set_item(slice(None, upper), data["state"])
+        self.next_obs_storage.set_item(slice(None, upper), data["next_state"])
         self.actions[:upper] = data["actions"]
         self.rewards[:upper] = data["rewards"]
         self.dones[:upper] = data["dones"]

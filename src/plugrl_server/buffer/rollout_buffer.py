@@ -13,7 +13,7 @@ from plugrl_server.buffer.numpy_tree_storage import NumpyTreeStorage
 from plugrl_server.buffer.schema_migration import migrate_buffer_payload
 from plugrl_server.policy.state import PolicyTrainState
 
-ROLLOUT_BUFFER_SCHEMA_VERSION = 1
+ROLLOUT_BUFFER_SCHEMA_VERSION = 2
 
 
 def _require_array(value: Any, name: str) -> np.ndarray:
@@ -127,7 +127,7 @@ class RolloutBuffer(torch.utils.data.Dataset):
         self.rewards[current_idx] = reward
         self.dones[current_idx] = done
         if last_value is not None:
-            self.last_values[current_idx] = last_value
+            self.last_values[current_idx] = np.asarray(last_value).reshape(-1)[0]
         self.next_done[current_idx] = next_done
 
         self.idx += 1
@@ -184,19 +184,21 @@ class RolloutBuffer(torch.utils.data.Dataset):
             buffer_kind="rollout",
             buffer_schema_version=ROLLOUT_BUFFER_SCHEMA_VERSION,
             storage_format="numpy_tree",
-            obs=obs_slice,
+            train_state=obs_slice,
             actions=self.actions[:idx].copy(),
             logprobs=self.logprobs[:idx].copy(),
             rewards=self.rewards[:idx].copy(),
             values=self.values[:idx].copy(),
+            last_values=self.last_values[:idx].copy(),
             advantages=self.advantages[:idx].copy(),
             returns=self.returns[:idx].copy(),
             dones=self.dones[:idx].copy(),
+            next_done=self.next_done[:idx].copy(),
             next_indices=self.next_indices[:idx].copy(),
             idx=idx,
             buffer_signature=self.buffer_signature,
             episode_info_buffer=self.episode_info_buffer.copy(),
-            obs_spec=self.obs_storage.spec,
+            train_state_spec=self.obs_storage.spec,
         )
         return data
 
@@ -207,17 +209,22 @@ class RolloutBuffer(torch.utils.data.Dataset):
             target_version=ROLLOUT_BUFFER_SCHEMA_VERSION,
         )
         self.idx = data["idx"]
-        self.obs_storage = NumpyTreeStorage(spec=data["obs_spec"], capacity=self.buffer_size)
-        self.obs_storage.set_item(slice(None, self.idx), data["obs"])
+        self.obs_storage = NumpyTreeStorage(
+            spec=data["train_state_spec"], capacity=self.buffer_size
+        )
+        self.obs_storage.set_item(slice(None, self.idx), data["train_state"])
         self.actions[: self.idx] = data["actions"]
         self.logprobs[: self.idx] = data["logprobs"]
         self.rewards[: self.idx] = data["rewards"]
         self.values[: self.idx] = data["values"]
+        self.last_values[: self.idx] = data["last_values"]
         self.advantages[: self.idx] = data["advantages"]
         self.returns[: self.idx] = data["returns"]
         self.dones[: self.idx] = data["dones"]
-
-        # [WARNING] next_indices is not a tensor, and for some reason it is read-only so we just ignore it here
+        self.next_done[: self.idx] = data["next_done"]
+        self.next_indices[: self.idx] = data["next_indices"]
+        self.buffer_signature = data["buffer_signature"]
+        self.episode_info_buffer = list(data["episode_info_buffer"])
 
 def _describe_tree_shape(value) -> str:
     if isinstance(value, np.ndarray):
