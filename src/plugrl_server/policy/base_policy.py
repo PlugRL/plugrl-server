@@ -1,9 +1,7 @@
 import abc
 import dataclasses
 import tyro
-from typing import Any, Literal
-import torch
-import torch.nn as nn
+from typing import Any
 
 from plugrl_server.policy.state import NumpyState, PolicyRuntimeState
 
@@ -11,18 +9,11 @@ from plugrl_server.policy.state import NumpyState, PolicyRuntimeState
 @dataclasses.dataclass
 class BasePolicyConfig:
     algo: tyro.conf._markers.Suppress[str] = "unknown"
-    device: torch.device | Literal["cpu", "cuda"] = "cuda"
 
 
-class BasePolicy(abc.ABC, nn.Module):
+class BasePolicy(abc.ABC):
     def __init__(self, config: BasePolicyConfig):
-        super().__init__()
         self.config = config
-        self.device = (
-            config.device
-            if isinstance(config.device, torch.device)
-            else torch.device(config.device)
-        )
 
     def prepare_observation(
         self, _obs: dict
@@ -36,9 +27,9 @@ class BasePolicy(abc.ABC, nn.Module):
     @abc.abstractmethod
     def fake_runtime_state(self, batch_size: int) -> PolicyRuntimeState: ...
 
-    def get_value(self, _obs: dict) -> torch.Tensor: ...
+    def get_value(self, _obs: dict) -> Any: ...
 
-    def _get_value(self, obs: Any) -> torch.Tensor: ...
+    def _get_value(self, obs: Any) -> Any: ...
 
 __all__ = [
     "BasePolicy",

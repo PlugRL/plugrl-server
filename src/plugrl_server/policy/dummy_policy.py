@@ -3,20 +3,20 @@ import numpy as np
 import torch
 
 from .registration import register_policy_config, register_policy
-from .base_policy import BasePolicyConfig, BasePolicy
+from .base_torch_policy import BaseTorchPolicyConfig, BaseTorchPolicy
 from .state import PolicyRuntimeState
 
 
 @register_policy_config("dummy-policy")
 @dataclasses.dataclass
-class DummyPolicyConfig(BasePolicyConfig):
+class DummyPolicyConfig(BaseTorchPolicyConfig):
     discrete: bool = True
     action_dim: int = 4
     action_horizon: int = 4
 
 
 @register_policy("dummy-policy")
-class DummyPolicy(BasePolicy):
+class DummyPolicy(BaseTorchPolicy):
     discrete: bool
     action_dim: int = 4
     action_horizon: int = 4

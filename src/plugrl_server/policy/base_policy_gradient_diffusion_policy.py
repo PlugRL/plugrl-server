@@ -5,7 +5,7 @@ import torch
 import tensordict
 from typing import Any
 from plugrl_server.common.tensor_container import TensorContainer, tensor_container
-from .base_policy import BasePolicy, BasePolicyConfig
+from .base_torch_policy import BaseTorchPolicy, BaseTorchPolicyConfig
 from .state import NumpyState, PolicyRuntimeState
 
 
@@ -18,10 +18,10 @@ class _DiffusionRuntimeState(TensorContainer):
     value: torch.Tensor
 
 
-class BasePolicyGradientDiffusionPolicyConfig(BasePolicyConfig): ...
+class BasePolicyGradientDiffusionPolicyConfig(BaseTorchPolicyConfig): ...
 
 
-class BasePolicyGradientDiffusionPolicy(BasePolicy):
+class BasePolicyGradientDiffusionPolicy(BaseTorchPolicy):
     actor: torch.nn.Module
     critic: torch.nn.Module | None
     action_dim: int
