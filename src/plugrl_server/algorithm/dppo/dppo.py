@@ -18,6 +18,7 @@ from plugrl_server.policy.base_policy_gradient_diffusion_policy import (
 )
 
 from .dppo_buffer import DPPOBuffer
+from plugrl_server.buffer.rollout_buffer import ROLLOUT_BUFFER_SCHEMA_VERSION
 
 try:
     import dppo.util.scheduler as _dppo_scheduler
@@ -536,6 +537,7 @@ class DPPOAlgorithm(BaseAlgorithm):
             meta={
                 "train_itrs": self.curr_train_itrs,
                 "last_saved_itr": self.last_saved_itr,
+                "rollout_buffer_schema_version": ROLLOUT_BUFFER_SCHEMA_VERSION,
             },
         )
 

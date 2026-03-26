@@ -11,6 +11,8 @@ from plugrl_server.common.data_utils import (
     numpy_tree_to_torch,
 )
 
+REPLAY_BUFFER_SCHEMA_VERSION = 1
+
 
 @dataclasses.dataclass(frozen=True)
 class ReplayBufferSamples:
@@ -107,6 +109,44 @@ class ReplayBuffer(torch.utils.data.Dataset):
 
     def full(self) -> bool:
         return self._full
+
+    def as_dict(self) -> dict:
+        idx = self.buffer_size if self._full else self.idx
+        return dict(
+            buffer_schema_version=REPLAY_BUFFER_SCHEMA_VERSION,
+            obs=self.obs_storage.get_item(slice(None, idx)),
+            next_obs=self.next_obs_storage.get_item(slice(None, idx)),
+            actions=self.actions[:idx].copy(),
+            rewards=self.rewards[:idx].copy(),
+            dones=self.dones[:idx].copy(),
+            timeouts=self.timeouts[:idx].copy(),
+            idx=self.idx,
+            full=self._full,
+            buffer_signature=self.buffer_signature,
+            obs_spec=self.obs_storage.spec,
+        )
+
+    def load_dict(self, data: dict) -> None:
+        schema_version = data.get("buffer_schema_version", 0)
+        if schema_version != REPLAY_BUFFER_SCHEMA_VERSION:
+            raise ValueError(
+                "Unsupported replay buffer schema version: "
+                f"{schema_version}, expected {REPLAY_BUFFER_SCHEMA_VERSION}."
+            )
+        self.idx = data["idx"]
+        self._full = data["full"]
+        self.buffer_signature = data["buffer_signature"]
+        self.obs_storage = NumpyTreeStorage(spec=data["obs_spec"], capacity=self.buffer_size)
+        self.next_obs_storage = NumpyTreeStorage(
+            spec=data["obs_spec"], capacity=self.buffer_size
+        )
+        upper = self.buffer_size if self._full else self.idx
+        self.obs_storage.set_item(slice(None, upper), data["obs"])
+        self.next_obs_storage.set_item(slice(None, upper), data["next_obs"])
+        self.actions[:upper] = data["actions"]
+        self.rewards[:upper] = data["rewards"]
+        self.dones[:upper] = data["dones"]
+        self.timeouts[:upper] = data["timeouts"]
 
 
 def _torch_tree_to_device(tree: TorchTree, device: torch.device) -> TorchTree:
