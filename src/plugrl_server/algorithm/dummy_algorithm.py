@@ -2,7 +2,6 @@ import dataclasses
 import numpy as np
 import time
 import torch
-from loguru import logger
 
 from .base_algorithm import DDPAlgorithm, BaseAlgoConfig
 from .registration import register_algo, register_algo_config
@@ -11,6 +10,9 @@ from plugrl_server.policy.base_policy import BasePolicy
 from plugrl_server.policy.state import PolicyRuntimeState, PolicyTrainState
 from plugrl_server.common.checkpoint_manager import Checkpoint
 from plugrl_server.common.data_utils import unbatch_aggregate
+from plugrl_server.common.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 UID = "dummy"
 

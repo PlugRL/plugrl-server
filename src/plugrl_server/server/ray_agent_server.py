@@ -6,9 +6,6 @@ import websockets.asyncio.server as _server
 import websockets.frames
 import uuid
 import ray
-from torch.utils.tensorboard import SummaryWriter
-
-from loguru import logger
 
 from plugrl_protocol import msgpack_numpy
 from plugrl_protocol.websocket_protocol import (
@@ -20,6 +17,8 @@ from plugrl_protocol.websocket_protocol import (
 from plugrl_server.algorithm.base_algorithm import DDPAlgorithm
 from plugrl_server.common.checkpoint_manager import CheckpointManager
 from plugrl_server.common.data_utils import batch_aggregate
+from plugrl_server.common.logging_utils import get_logger
+from plugrl_server.common.metrics import MetricSink
 from plugrl_server.policy.state import PolicyStepState, slice_policy_step_state
 from plugrl_server.server.inference_coordinator import InferenceCoordinator
 from plugrl_server.server.lifecycle import ServerLifecycle
@@ -32,6 +31,8 @@ from plugrl_server.server.protocol import (
 )
 from plugrl_server.server.runtime_scheduler import RuntimeScheduler
 from plugrl_server.server.training_backend import RayTrainingBackend
+
+logger = get_logger(__name__)
 
 
 SCHEDULER_SLEEP_INTERVAL = 0.001  # seconds
@@ -46,7 +47,7 @@ class RayAgentServer:
         self,
         inference_algorithm: DDPAlgorithm,
         checkpoint_manager: CheckpointManager,
-        writer: SummaryWriter,
+        metric_sink: MetricSink,
         learner_actor_ref: ray.ObjectRef,
         host: str = "0.0.0.0",
         port: int = 8000,
@@ -54,7 +55,7 @@ class RayAgentServer:
     ):
         self._algorithm: DDPAlgorithm = inference_algorithm
         self._checkpoint_manager: CheckpointManager = checkpoint_manager
-        self._writer = writer
+        self._metric_sink = metric_sink
         self._learner_actor: Any = learner_actor_ref
 
         self._host = host
@@ -74,7 +75,7 @@ class RayAgentServer:
         self._training = RayTrainingBackend(
             algorithm=self._algorithm,
             checkpoint_manager=self._checkpoint_manager,
-            writer=self._writer,
+            metric_sink=self._metric_sink,
             learner_actor_ref=self._learner_actor,
         )
 

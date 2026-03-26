@@ -2,11 +2,13 @@ import asyncio
 from typing import Any
 
 import ray
-from loguru import logger
-from torch.utils.tensorboard import SummaryWriter
 
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm, DDPAlgorithm
 from plugrl_server.common.checkpoint_manager import CheckpointManager, Checkpoint
+from plugrl_server.common.logging_utils import get_logger
+from plugrl_server.common.metrics import MetricSink
+
+logger = get_logger(__name__)
 
 
 class LocalTrainingBackend:
@@ -15,11 +17,11 @@ class LocalTrainingBackend:
         *,
         algorithm: BaseAlgorithm,
         checkpoint_manager: CheckpointManager,
-        writer: SummaryWriter,
+        metric_sink: MetricSink,
     ) -> None:
         self._algorithm = algorithm
         self._checkpoint_manager = checkpoint_manager
-        self._writer = writer
+        self._metric_sink = metric_sink
 
     def should_learn(self) -> bool:
         return self._algorithm.should_learn()
@@ -41,8 +43,7 @@ class LocalTrainingBackend:
         await asyncio.to_thread(self._checkpoint_manager.save_checkpoint, checkpoint)
 
     def log(self, log_dict: dict, *, step: int) -> None:
-        for key, value in log_dict.items():
-            self._writer.add_scalar(key, value, step)
+        self._metric_sink.log_scalars(log_dict, step=step)
 
 
 class RayTrainingBackend:
@@ -51,12 +52,12 @@ class RayTrainingBackend:
         *,
         algorithm: DDPAlgorithm,
         checkpoint_manager: CheckpointManager,
-        writer: SummaryWriter,
+        metric_sink: MetricSink,
         learner_actor_ref: ray.ObjectRef,
     ) -> None:
         self._algorithm = algorithm
         self._checkpoint_manager = checkpoint_manager
-        self._writer = writer
+        self._metric_sink = metric_sink
         self._learner_actor: Any = learner_actor_ref
 
     def should_learn(self) -> bool:
@@ -100,5 +101,4 @@ class RayTrainingBackend:
         logger.info("Local inference policy successfully updated.")
 
     def log(self, log_dict: dict, *, step: int) -> None:
-        for key, value in log_dict.items():
-            self._writer.add_scalar(key, value, step)
+        self._metric_sink.log_scalars(log_dict, step=step)

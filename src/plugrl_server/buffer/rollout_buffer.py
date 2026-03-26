@@ -3,15 +3,17 @@ from typing import Any
 
 import torch
 import numpy as np
-from loguru import logger
 
 from plugrl_server.common.data_utils import (
     numpy_tree_to_torch,
     stack_numpy_tree,
 )
+from plugrl_server.common.logging_utils import get_logger
 from plugrl_server.buffer.numpy_tree_storage import NumpyTreeStorage
 from plugrl_server.buffer.schema_migration import migrate_buffer_payload
 from plugrl_server.policy.state import PolicyTrainState
+
+logger = get_logger(__name__)
 
 ROLLOUT_BUFFER_SCHEMA_VERSION = 2
 

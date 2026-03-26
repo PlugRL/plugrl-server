@@ -6,7 +6,6 @@ import tyro
 import uuid
 import datetime
 import dateutil.tz
-from loguru import logger
 import functools
 
 import plugrl_server
@@ -16,7 +15,14 @@ from plugrl_server.policy.registration import REGISTERED_POLICY_CONFIGS, make_po
 from plugrl_server.algorithm.registration import REGISTERED_ALGO_CONFIGS, make_algo
 from plugrl_server.server.websocket_agent_server import WebSocketAgentServer
 from plugrl_server.common.checkpoint_manager import CheckpointManager
+from plugrl_server.common.logging_utils import configure_logging, get_logger
+from plugrl_server.common.metrics import (
+    close_metric_sink_and_tracker,
+    init_metric_sink_by_tracker,
+)
 from plugrl_server.common.tyro_utils import subcommand_cli_from_nested_dict
+
+logger = get_logger(__name__)
 
 
 @dataclasses.dataclass
@@ -117,83 +123,8 @@ def build_cli_from_registry(args_cls: type[ArgsT]) -> ArgsT:
     return subcommand_cli_from_nested_dict(configs)[0][0][0]
 
 
-def init_writer_by_tracker(
-    args: Args, *, resuming: bool, log_code: bool, enabled: bool = True
-):
-    if not enabled:
-        tracker = None
-    else:
-        if args.track.tracker == "wandb":
-            import wandb
-
-            tracker_module = wandb
-        else:
-            import swanlab
-
-            tracker_module = swanlab
-            swanlab.sync_tensorboard_torch()
-
-        ckpt_dir = args.checkpoint_dir
-        if not ckpt_dir.exists():
-            raise FileNotFoundError(f"Checkpoint directory {ckpt_dir} does not exist.")
-        project_name = f"{args.track.project_name}-{args.algo_uid}-{args.policy_uid}"
-        if resuming:
-            run_id = (ckpt_dir / "run_id.txt").read_text().strip()
-            tracker = tracker_module.init(
-                id=run_id,
-                resume="must",
-                project=project_name,
-                entity=args.track.entity or None,
-                sync_tensorboard=True,
-            )
-        else:
-            tracker = tracker_module.init(
-                entity=args.track.entity or None,
-                project=project_name,
-                name=args.full_exp_name,
-                config=dataclasses.asdict(args),
-                save_code=log_code,
-                sync_tensorboard=True,
-            )
-            run_id_value = tracker.id
-            if run_id_value is None:
-                raise RuntimeError("Tracker did not return a run id")
-            (ckpt_dir / "run_id.txt").write_text(run_id_value)
-
-    from torch.utils.tensorboard import SummaryWriter
-
-    writer = SummaryWriter(log_dir=str(args.checkpoint_dir / "tensorboard"))
-    return writer, tracker
-
-
-def close_writer_and_tracker(writer, tracker) -> None:
-    try:
-        writer.flush()
-    except Exception as exc:
-        logger.warning(f"Failed to flush writer during shutdown: {exc}")
-
-    try:
-        writer.close()
-    except Exception as exc:
-        logger.warning(f"Failed to close writer during shutdown: {exc}")
-
-    if tracker is not None:
-        try:
-            tracker.finish()
-        except Exception as exc:
-            logger.warning(f"Failed to finish tracker during shutdown: {exc}")
-
-
 def _main(args: Args):
-    logger.configure(
-        handlers=[
-            {
-                "sink": sys.stdout,
-                "level": args.log_level.upper(),
-                "format": "{time:HH:mm:ss}|{level}|{message}",
-            }
-        ]
-    )
+    configure_logging(args.log_level)
 
     logger.info(f"plugrl_server version: {plugrl_server.__version__}")
     logger.info(f"Algorithm: {args.algo_uid}, Config: {args.algo}")
@@ -209,7 +140,7 @@ def _main(args: Args):
         f"Checkpoint Manager created: \n{checkpoint_manager} at {args.checkpoint_dir}"
     )
 
-    writer, tracker = init_writer_by_tracker(
+    metric_sink, tracker = init_metric_sink_by_tracker(
         args, resuming=args.resume, log_code=not args.resume, enabled=args.track.enabled
     )
 
@@ -232,7 +163,7 @@ def _main(args: Args):
     server = WebSocketAgentServer(
         algo,
         checkpoint_manager,
-        writer,
+        metric_sink,
         host=args.host,
         port=args.port,
         mini_infer_batch_size=args.mini_infer_batch_size,
@@ -240,7 +171,7 @@ def _main(args: Args):
     try:
         server.serve_forever()
     finally:
-        close_writer_and_tracker(writer, tracker)
+        close_metric_sink_and_tracker(metric_sink, tracker)
 
 
 def main():

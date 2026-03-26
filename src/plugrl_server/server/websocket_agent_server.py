@@ -5,8 +5,6 @@ import numpy as np
 import websockets.asyncio.server as _server
 import websockets.frames
 import uuid
-from loguru import logger
-from torch.utils.tensorboard import SummaryWriter
 
 from plugrl_protocol import msgpack_numpy
 from plugrl_protocol.websocket_protocol import (
@@ -18,6 +16,8 @@ from plugrl_protocol.websocket_protocol import (
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm
 from plugrl_server.common.checkpoint_manager import CheckpointManager
 from plugrl_server.common.data_utils import batch_aggregate, unbatch_aggregate
+from plugrl_server.common.logging_utils import get_logger
+from plugrl_server.common.metrics import MetricSink
 from plugrl_server.policy.state import PolicyStepState, slice_policy_step_state
 from plugrl_server.server.inference_coordinator import InferenceCoordinator
 from plugrl_server.server.lifecycle import ServerLifecycle
@@ -30,6 +30,8 @@ from plugrl_server.server.protocol import (
 )
 from plugrl_server.server.runtime_scheduler import RuntimeScheduler
 from plugrl_server.server.training_backend import LocalTrainingBackend
+
+logger = get_logger(__name__)
 
 SCHEDULER_SLEEP_INTERVAL = 0.001  # seconds
 INFER_READY_TIMEOUT = 5.0  # seconds to wait for full infer batch before warning
@@ -45,7 +47,7 @@ class WebSocketAgentServer:
         self,
         algorithm: BaseAlgorithm,
         checkpoint_manager: CheckpointManager,
-        writer: SummaryWriter,
+        metric_sink: MetricSink,
         mini_infer_batch_size: int | None = None,
         host: str = "0.0.0.0",
         port: int = 8000,
@@ -53,7 +55,7 @@ class WebSocketAgentServer:
     ):
         self._algorithm = algorithm
         self._checkpoint_manager = checkpoint_manager
-        self._writer = writer
+        self._metric_sink = metric_sink
         self._host = host
         self._port = port
         self._metadata = metadata or {}
@@ -74,7 +76,7 @@ class WebSocketAgentServer:
         self._training = LocalTrainingBackend(
             algorithm=self._algorithm,
             checkpoint_manager=self._checkpoint_manager,
-            writer=self._writer,
+            metric_sink=self._metric_sink,
         )
 
         self._total_connections = 0
@@ -300,8 +302,7 @@ class WebSocketAgentServer:
                         terminated_map[eid] = bool(n_term)
                         truncated_map[eid] = bool(n_trunc)
 
-                        for key, value in log_dict.items():
-                            self._writer.add_scalar(key, value, step)
+                        self._metric_sink.log_scalars(log_dict, step=step)
 
         except websockets.ConnectionClosed:
             pass

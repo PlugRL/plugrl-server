@@ -4,7 +4,6 @@ import pathlib
 import torch
 import tqdm
 from collections import deque
-from loguru import logger
 
 from .base_algorithm import BaseAlgorithm, BaseAlgoConfig
 from .registration import register_algo, register_algo_config
@@ -15,6 +14,9 @@ from plugrl_server.common.checkpoint_manager import (
     Checkpoint,
     load_checkpoint_from_path,
 )
+from plugrl_server.common.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 UID = "eval"
 

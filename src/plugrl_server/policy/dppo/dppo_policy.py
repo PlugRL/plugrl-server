@@ -5,7 +5,6 @@ except ImportError:
         'dppo is not installed. Please install it with pip install "plugrl-server[dppo]".'
     )
 
-from loguru import logger
 import pathlib
 import dataclasses
 import omegaconf
@@ -14,12 +13,15 @@ import torch
 import numpy as np
 from typing import Tuple, Any
 from plugrl_server.paths import PACKAGE_DIR
+from plugrl_server.common.logging_utils import get_logger
 from ..base_policy_gradient_diffusion_policy import (
     BasePolicyGradientDiffusionPolicy,
     BasePolicyGradientDiffusionPolicyConfig,
     TorchTree,
 )
 from ..registration import register_policy, register_policy_config
+
+logger = get_logger(__name__)
 
 UID = "dppo-policy"
 

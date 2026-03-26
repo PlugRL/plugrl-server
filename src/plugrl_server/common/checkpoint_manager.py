@@ -6,10 +6,12 @@ import yaml
 from pathlib import Path
 from typing import Optional, Any
 
-from loguru import logger
-
 import safetensors.torch
 import torch
+
+from plugrl_server.common.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 def get_latest_checkpoint_step(checkpoint_dir: Path) -> Optional[int]:

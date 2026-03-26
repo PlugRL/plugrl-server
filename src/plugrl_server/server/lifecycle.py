@@ -5,7 +5,9 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 import websockets.frames
-from loguru import logger
+from plugrl_server.common.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 class ServerLifecycle:

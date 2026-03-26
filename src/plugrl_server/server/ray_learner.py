@@ -5,7 +5,6 @@ import ray
 import torch
 import torch.distributed as dist
 import torch.nn.parallel
-from loguru import logger
 from typing import Any, Dict
 
 from plugrl_server.algorithm.base_algorithm import DDPAlgorithm, BaseAlgoConfig
@@ -13,6 +12,9 @@ from plugrl_server.policy.base_policy import BasePolicyConfig
 from plugrl_server.policy.registration import make_policy
 from plugrl_server.algorithm.registration import make_algo
 from plugrl_server.common.checkpoint_manager import Checkpoint
+from plugrl_server.common.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 @dataclasses.dataclass

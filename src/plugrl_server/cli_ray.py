@@ -2,24 +2,27 @@ import os
 
 os.environ.setdefault("RAY_DISABLE_METRICS", "1")
 import dataclasses
-import sys
 
 import ray
 import torch
-from loguru import logger
 
 import plugrl_server
 from plugrl_server.cli import (
     Args as BaseArgs,
     build_cli_from_registry,
-    close_writer_and_tracker,
-    init_writer_by_tracker,
 )
 from plugrl_server.policy.registration import make_policy
 from plugrl_server.algorithm.registration import make_algo
+from plugrl_server.common.logging_utils import configure_logging, get_logger
+from plugrl_server.common.metrics import (
+    close_metric_sink_and_tracker,
+    init_metric_sink_by_tracker,
+)
 from plugrl_server.server.ray_agent_server import RayAgentServer
 from plugrl_server.common.checkpoint_manager import CheckpointManager
 from plugrl_server.server.ray_learner import LearnerActor, LearnerAlgoSpec
+
+logger = get_logger(__name__)
 
 
 @dataclasses.dataclass
@@ -35,7 +38,7 @@ def cli() -> RayArgs:
 
 
 def _main(args: RayArgs):
-    logger.configure(handlers=[{"sink": sys.stderr, "level": args.log_level.upper()}])
+    configure_logging(args.log_level)
 
     logger.info(f"plugrl_server version: {plugrl_server.__version__}")
     logger.info(f"Algorithm: {args.algo_uid}, Config: {args.algo}")
@@ -55,7 +58,7 @@ def _main(args: RayArgs):
         f"Checkpoint Manager created: \n{checkpoint_manager} at {args.checkpoint_dir}"
     )
 
-    writer, tracker = init_writer_by_tracker(
+    metric_sink, tracker = init_metric_sink_by_tracker(
         args, resuming=args.resume, log_code=not args.resume, enabled=args.track.enabled
     )
 
@@ -101,12 +104,12 @@ def _main(args: RayArgs):
     )
 
     server = RayAgentServer(
-        algo, checkpoint_manager, writer, learner_ref, host=args.host, port=args.port
+        algo, checkpoint_manager, metric_sink, learner_ref, host=args.host, port=args.port
     )
     try:
         server.serve_forever()
     finally:
-        close_writer_and_tracker(writer, tracker)
+        close_metric_sink_and_tracker(metric_sink, tracker)
 
 
 def main():

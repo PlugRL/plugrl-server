@@ -5,10 +5,9 @@ import torch
 import torch.nn as nn
 import tqdm
 
-from loguru import logger
-
 from plugrl_server.common.checkpoint_manager import Checkpoint
 from plugrl_server.common.data_utils import torch_tree_to_device
+from plugrl_server.common.logging_utils import get_logger
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm, BaseAlgoConfig
 from plugrl_server.algorithm.registration import register_algo, register_algo_config
 from plugrl_server.policy.state import PolicyRuntimeState, PolicyTrainState, to_numpy_state
@@ -19,6 +18,8 @@ from plugrl_server.policy.base_policy_gradient_diffusion_policy import (
 
 from .dppo_buffer import DPPOBuffer
 from plugrl_server.buffer.rollout_buffer import ROLLOUT_BUFFER_SCHEMA_VERSION
+
+logger = get_logger(__name__)
 
 try:
     import dppo.util.scheduler as _dppo_scheduler
