@@ -31,7 +31,7 @@ class BasePolicyGradientDiffusionPolicyConfig(BaseTorchPolicyConfig): ...
 
 class BasePolicyGradientDiffusionPolicy(BaseTorchPolicy):
     actor: torch.nn.Module
-    critic: torch.nn.Module | None
+    critic: torch.nn.Module
     action_dim: int
     action_horizon: int
     num_denoising_steps: int

@@ -4,7 +4,10 @@ from typing import Literal
 import torch
 import torch.nn as nn
 
+from plugrl_server.common.logging_utils import get_logger
 from .base_policy import BasePolicy, BasePolicyConfig
+
+logger = get_logger(__name__)
 
 
 @dataclasses.dataclass
@@ -20,6 +23,11 @@ class BaseTorchPolicy(BasePolicy, nn.Module):
             config.device
             if isinstance(config.device, torch.device)
             else torch.device(config.device)
+        )
+        logger.debug(
+            "Initialized torch policy %s on device=%s",
+            self.__class__.__name__,
+            self.device,
         )
 
 

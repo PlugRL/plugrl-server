@@ -1,13 +1,12 @@
 import dataclasses
-import numpy as np
 import pathlib
+import numpy as np
 import torch
-import tqdm
-from collections import deque
 
 from .base_algorithm import BaseAlgorithm, BaseAlgoConfig
 from .registration import register_algo, register_algo_config
 
+from plugrl_server.common.metrics import MetricDict
 from plugrl_server.policy.base_policy import BasePolicy
 from plugrl_server.policy.state import PolicyRuntimeState, PolicyTrainState
 from plugrl_server.common.checkpoint_manager import (
@@ -36,14 +35,6 @@ class Evaluation(BaseAlgorithm):
         super().__init__(config, policy)
         self.counter = 0
         self.break_action_chunk = config.break_action_chunk
-        self._eval_pbar = tqdm.tqdm(
-            desc="Eval",
-            unit="episode",
-            leave=False,
-            ncols=0,
-            smoothing=0.01,
-        )
-        self._record_episode_stats = deque()
         if config.policy_checkpoint_path is not None:
             logger.info(
                 f"Loading policy checkpoint from {config.policy_checkpoint_path}"
@@ -77,17 +68,17 @@ class Evaluation(BaseAlgorithm):
         log_dict = {}
         if next_terminated or next_truncated:
             if "episode" in info:
-                log_dict = {
-                    "episode/reward": info["episode"]["r"],
-                    "episode/length": info["episode"]["l"],
-                    "episode/success": info["episode"]["s"],
-                }
-                self._record_episode_stats.append(log_dict)
-                self._eval_pbar.set_postfix(self.get_recorded_episode_stats())
-                self._eval_pbar.update(1)
+                log_dict = dict(
+                    episode=dict(
+                        reward=info["episode"]["r"],
+                        length=info["episode"]["l"],
+                        success=info["episode"]["s"],
+                    )
+                )
+                self.record_episode_metrics(info["episode"])
         return (-1, ""), 0, log_dict
 
-    def learn(self) -> tuple[int, dict]:
+    def learn_impl(self) -> tuple[int, MetricDict]:
         self.counter = 0
         return 0, {}
 
@@ -106,13 +97,3 @@ class Evaluation(BaseAlgorithm):
     def load_checkpoint(self, checkpoint: Checkpoint):
         if checkpoint.model is not None:
             self.policy.load_state_dict(checkpoint.model)
-
-    def get_recorded_episode_stats(self) -> dict:
-        avg_stats = {}
-        if len(self._record_episode_stats) > 0:
-            keys = self._record_episode_stats[0].keys()
-            for key in keys:
-                avg_stats[key] = np.mean(
-                    [ep_stats[key] for ep_stats in self._record_episode_stats]
-                )
-        return avg_stats

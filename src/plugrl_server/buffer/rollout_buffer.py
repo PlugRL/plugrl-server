@@ -25,7 +25,7 @@ def _require_array(value: Any, name: str) -> np.ndarray:
 
 
 class RolloutBuffer(torch.utils.data.Dataset):
-    obs_storage: NumpyTreeStorage
+    train_state_storage: NumpyTreeStorage
     actions: np.ndarray
     logprobs: np.ndarray
     rewards: np.ndarray
@@ -51,7 +51,7 @@ class RolloutBuffer(torch.utils.data.Dataset):
 
         self.buffer_size = buffer_size
 
-        self.obs_storage = NumpyTreeStorage.from_example(
+        self.train_state_storage = NumpyTreeStorage.from_example(
             example_train_state["obs"], buffer_size
         )
 
@@ -88,15 +88,20 @@ class RolloutBuffer(torch.utils.data.Dataset):
         self.dones = np.zeros(buffer_size, dtype=np.bool_)
         self.next_indices = np.zeros(buffer_size, dtype=np.int32)
 
-        logger.info(f"""
-            Initialized RolloutBuffer with buffer_size={buffer_size}
-            obs shape: {_describe_tree_shape(self.obs_storage.data)}
-            actions shape: {self.actions.shape}
-            logprobs shape: {self.logprobs.shape}
-            rewards shape: {self.rewards.shape}
-            values shape: {self.values.shape}
-            advantages shape: {self.advantages.shape}
-        """)
+        logger.info(
+            "Initialized RolloutBuffer buffer_size=%s action_shape=%s value_shape=%s",
+            buffer_size,
+            self.actions.shape,
+            self.values.shape,
+        )
+        logger.debug(
+            "RolloutBuffer details obs_shape=%s logprob_shape=%s reward_shape=%s "
+            "advantage_shape=%s",
+            _describe_tree_shape(self.train_state_storage.data),
+            self.logprobs.shape,
+            self.rewards.shape,
+            self.advantages.shape,
+        )
 
         self.idx = 0
         self.buffer_signature = uuid.uuid4()
@@ -122,7 +127,7 @@ class RolloutBuffer(torch.utils.data.Dataset):
         current_idx = self.idx
         if prev_idx != -1:
             self.next_indices[prev_idx] = current_idx
-        self.obs_storage.set_item(current_idx, train_state["obs"])
+        self.train_state_storage.set_item(current_idx, train_state["obs"])
         self.actions[current_idx] = _require_array(train_state["action"], "train_state['action']")[0]
         self.logprobs[current_idx] = _require_array(train_state["logprob"], "train_state['logprob']")[0]
         self.values[current_idx] = _require_array(train_state["value"], "train_state['value']")[0]
@@ -154,7 +159,7 @@ class RolloutBuffer(torch.utils.data.Dataset):
         if idx < 0 or idx >= self.idx:
             raise IndexError("RolloutBuffer index out of range")
         return (
-            self.obs_storage.get_item(idx),
+            self.train_state_storage.get_item(idx),
             self.actions[idx],
             self.logprobs[idx],
             self.rewards[idx],
@@ -168,9 +173,7 @@ class RolloutBuffer(torch.utils.data.Dataset):
         var_y = np.var(y_true)
         explained_var = np.nan if var_y == 0 else 1 - np.var(y_true - y_pred) / var_y
 
-        return {
-            "losses/explained_variance": explained_var,
-        }
+        return dict(explained_variance=explained_var)
 
     def collate_fn(self, batch: list[tuple]) -> tuple:
         obs_items, *rest = zip(*batch)
@@ -181,12 +184,12 @@ class RolloutBuffer(torch.utils.data.Dataset):
 
     def as_dict(self) -> dict:
         idx = self.idx
-        obs_slice = self.obs_storage.get_item(slice(None, idx))
+        train_state_slice = self.train_state_storage.get_item(slice(None, idx))
         data = dict(
             buffer_kind="rollout",
             buffer_schema_version=ROLLOUT_BUFFER_SCHEMA_VERSION,
             storage_format="numpy_tree",
-            train_state=obs_slice,
+            train_state=train_state_slice,
             actions=self.actions[:idx].copy(),
             logprobs=self.logprobs[:idx].copy(),
             rewards=self.rewards[:idx].copy(),
@@ -200,7 +203,7 @@ class RolloutBuffer(torch.utils.data.Dataset):
             idx=idx,
             buffer_signature=self.buffer_signature,
             episode_info_buffer=self.episode_info_buffer.copy(),
-            train_state_spec=self.obs_storage.spec,
+            train_state_spec=self.train_state_storage.spec,
         )
         return data
 
@@ -211,10 +214,10 @@ class RolloutBuffer(torch.utils.data.Dataset):
             target_version=ROLLOUT_BUFFER_SCHEMA_VERSION,
         )
         self.idx = data["idx"]
-        self.obs_storage = NumpyTreeStorage(
+        self.train_state_storage = NumpyTreeStorage(
             spec=data["train_state_spec"], capacity=self.buffer_size
         )
-        self.obs_storage.set_item(slice(None, self.idx), data["train_state"])
+        self.train_state_storage.set_item(slice(None, self.idx), data["train_state"])
         self.actions[: self.idx] = data["actions"]
         self.logprobs[: self.idx] = data["logprobs"]
         self.rewards[: self.idx] = data["rewards"]

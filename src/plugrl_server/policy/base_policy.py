@@ -3,7 +3,10 @@ import dataclasses
 import tyro
 from typing import Any
 
+from plugrl_server.common.logging_utils import get_logger
 from plugrl_server.policy.state import NumpyState, PolicyRuntimeState
+
+logger = get_logger(__name__)
 
 
 @dataclasses.dataclass
@@ -14,6 +17,7 @@ class BasePolicyConfig:
 class BasePolicy(abc.ABC):
     def __init__(self, config: BasePolicyConfig):
         self.config = config
+        logger.debug("Initialized policy %s", self.__class__.__name__)
 
     def prepare_observation(self, _obs: dict[str, Any]) -> NumpyState: ...
 

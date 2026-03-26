@@ -106,9 +106,7 @@ class DPPOAlgoDistributed(_dppo.DPPOAlgorithm, DDPAlgorithm):
             optimizer = move_optimizer_to_cpu(
                 {
                     "actor": self.actor_optimizer.state_dict(),
-                    "critic": self.critic_optimizer.state_dict()
-                    if self.critic_optimizer is not None
-                    else None,
+                    "critic": self.critic_optimizer.state_dict(),
                 }
             )
         return Checkpoint(

@@ -67,6 +67,7 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
     normalization: dict[str, np.ndarray]
     low_dim_keys: list[str]
     obs_dim: int
+    critic: dppo.model.critic.CriticObs
 
     def __init__(self, config: DPPOPolicyConfig):
         super().__init__(config)
@@ -85,15 +86,12 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         cfg.model.device = str(self.device)
         self.actor: dppo.diffusion.DiffusionModel = hydra.utils.instantiate(cfg.model)
         self.obs_dim = self.actor.obs_dim
-        if isinstance(config.critic, DPPOCriticObsConfig):
-            self.critic = dppo.model.critic.CriticObs(
-                self.obs_dim,
-                mlp_dims=self.config.critic.mlp_dims,
-                activation=self.config.critic.activation,
-                residual_style=self.config.critic.residual_style,
-            )
-        else:
-            self.critic = None
+        self.critic = dppo.model.critic.CriticObs(
+            self.obs_dim,
+            mlp_dims=self.config.critic.mlp_dims,
+            activation=self.config.critic.activation,
+            residual_style=self.config.critic.residual_style,
+        )
 
         if self.config.checkpoint_path is not None:
             checkpoint = torch.load(self.config.checkpoint_path, map_location="cpu")
@@ -227,9 +225,6 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
     ) -> torch.Tensor:
         cond = {key: value.to(self.device) for key, value in obs.items()}
         batch_size = next(iter(cond.values())).shape[0]
-        if self.critic is not None:
-            value = self.critic(cond).squeeze(-1)
-            assert value.shape == (batch_size,)
-            return value
-        else:
-            return torch.zeros(batch_size, device=self.device)
+        value = self.critic(cond).squeeze(-1)
+        assert value.shape == (batch_size,)
+        return value

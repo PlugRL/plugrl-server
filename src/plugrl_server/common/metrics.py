@@ -1,21 +1,61 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 import dataclasses
-from typing import Any, Protocol
+from typing import Any, Protocol, TypeAlias
 
 from plugrl_server.common.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
+MetricScalar: TypeAlias = float | int
+MetricValue: TypeAlias = MetricScalar | dict[str, "MetricValue"]
+MetricDict: TypeAlias = dict[str, MetricValue]
+
+
+def merge_metric_groups(*metric_groups: Mapping[str, MetricValue]) -> MetricDict:
+    merged: MetricDict = dict()
+    for metric_group in metric_groups:
+        _merge_metric_group_into(merged, metric_group)
+    return merged
+
+
+def _merge_metric_group_into(
+    target: MetricDict, source: Mapping[str, MetricValue]
+) -> None:
+    for key, value in source.items():
+        existing = target.get(key)
+        if isinstance(existing, dict) and isinstance(value, Mapping):
+            _merge_metric_group_into(existing, value)
+        elif isinstance(value, Mapping):
+            nested: MetricDict = dict()
+            _merge_metric_group_into(nested, value)
+            target[key] = nested
+        else:
+            target[key] = value
+
+
+def flatten_metrics(
+    metrics: Mapping[str, MetricValue], *, prefix: str = ""
+) -> dict[str, float]:
+    flattened = dict()
+    for key, value in metrics.items():
+        full_key = f"{prefix}/{key}" if prefix else key
+        if isinstance(value, Mapping):
+            flattened.update(flatten_metrics(value, prefix=full_key))
+        else:
+            flattened[full_key] = float(value)
+    return flattened
+
 
 class MetricSink(Protocol):
-    def log_scalars(self, scalars: dict[str, float], *, step: int) -> None: ...
+    def log_scalars(self, scalars: MetricDict, *, step: int) -> None: ...
     def flush(self) -> None: ...
     def close(self) -> None: ...
 
 
 class NoOpMetricSink:
-    def log_scalars(self, scalars: dict[str, float], *, step: int) -> None:
+    def log_scalars(self, scalars: MetricDict, *, step: int) -> None:
         return None
 
     def flush(self) -> None:
@@ -29,8 +69,8 @@ class TensorBoardMetricSink:
     def __init__(self, writer: Any) -> None:
         self._writer = writer
 
-    def log_scalars(self, scalars: dict[str, float], *, step: int) -> None:
-        for key, value in scalars.items():
+    def log_scalars(self, scalars: MetricDict, *, step: int) -> None:
+        for key, value in flatten_metrics(scalars).items():
             self._writer.add_scalar(key, value, step)
 
     def flush(self) -> None:

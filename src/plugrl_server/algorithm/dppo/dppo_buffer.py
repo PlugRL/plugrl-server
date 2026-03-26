@@ -54,7 +54,7 @@ class DPPOBuffer(GAEBuffer):
             self.rets[current_idx] = self.rets[prev_idx] * self.gamma + float(reward)
         else:
             self.rets[current_idx] = float(reward)
-        self.obs_storage.set_item(
+        self.train_state_storage.set_item(
             current_idx,
             dict(
                 x=dppo_train_state.obs.x,

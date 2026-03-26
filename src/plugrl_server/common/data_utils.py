@@ -6,6 +6,10 @@ from typing import Any, Literal, TypeAlias, cast
 import numpy as np
 import torch
 
+from plugrl_server.common.logging_utils import get_logger
+
+logger = get_logger(__name__)
+
 BatchDict: TypeAlias = dict[str, "BatchValue"]
 BatchValue: TypeAlias = BatchDict | np.ndarray | list[Any]
 TorchTree: TypeAlias = torch.Tensor | dict[str, "TorchTree"]
@@ -37,8 +41,10 @@ def batch_aggregate(
                         f"Unsupported aggregate_method: {aggregate_method}"
                     )
             except ValueError as e:
-                print(
-                    f"Warning: Incompatible np.ndarray shapes under key '{key}' ({e}), aggregating as list."
+                logger.warning(
+                    "Incompatible ndarray shapes under key '%s' (%s), aggregating as list.",
+                    key,
+                    e,
                 )
                 result[key] = values
 

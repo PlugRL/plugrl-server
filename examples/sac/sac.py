@@ -12,17 +12,17 @@ import torch.nn.functional as F
 from typing import Any, cast
 from typing_extensions import override
 
-from loguru import logger
-
 from plugrl_server.common.checkpoint_manager import Checkpoint
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm, BaseAlgoConfig
 from plugrl_server.algorithm.registration import register_algo, register_algo_config
 from plugrl_server.buffer.replay_buffer import ReplayBuffer, ReplayBufferSamples
+from plugrl_server.common.logging_utils import get_logger
 from plugrl_server.policy.state import PolicyRuntimeState
 
 from sac_policy import SACPolicy, SACRuntimeState, Actor, SoftQNetwork
 
 UID = "sac"
+logger = get_logger(__name__)
 
 
 @register_algo_config(UID)
@@ -67,7 +67,7 @@ class SACAlgorithm(BaseAlgorithm):
         )
         self.replay_buffer = ReplayBuffer(
             buffer_size=config.buffer_size,
-            example_obs=example_runtime_state["obs"],
+            example_state=example_runtime_state["obs"],
             example_action=example_runtime_state["action"],
         )
         self.save_interval = config.save_interval
@@ -119,8 +119,8 @@ class SACAlgorithm(BaseAlgorithm):
         sac_runtime_state = cast(SACRuntimeState, runtime_state)
         current_node = self.replay_buffer.add_frame(
             prev_node=prev_node,
-            obs=sac_runtime_state["obs"],
-            next_obs=self.policy.prepare_observation(next_obs),
+            state=sac_runtime_state["obs"],
+            next_state=self.policy.prepare_observation(next_obs),
             action=sac_runtime_state["action"],
             reward=reward,
             done=next_terminated or next_truncated,
@@ -131,14 +131,20 @@ class SACAlgorithm(BaseAlgorithm):
         if next_terminated or next_truncated:
             if "episode" in info:
                 log_dict.update(
-                    {
-                        "episode/reward": info["episode"]["r"],
-                        "episode/length": info["episode"]["l"],
-                        "episode/success": info["episode"]["s"],
-                    }
+                    dict(
+                        episode=dict(
+                            reward=info["episode"]["r"],
+                            length=info["episode"]["l"],
+                            success=info["episode"]["s"],
+                        )
+                    )
                 )
-                print(
-                    f"Episode done at step {self.global_step}: Reward={info['episode']['r']}, Length={info['episode']['l']}, Success={info['episode']['s']}"
+                logger.info(
+                    "Episode done at step %s: Reward=%s, Length=%s, Success=%s",
+                    self.global_step,
+                    info["episode"]["r"],
+                    info["episode"]["l"],
+                    info["episode"]["s"],
                 )
         return current_node, self.global_step, log_dict
 
@@ -151,9 +157,9 @@ class SACAlgorithm(BaseAlgorithm):
         qf2_target: SoftQNetwork = self.policy.qf2_target
 
         with torch.no_grad():
-            next_state_actions, next_state_log_pi, _ = actor.get_action(data.next_obs)
-            qf1_next_target = qf1_target(data.next_obs, next_state_actions)
-            qf2_next_target = qf2_target(data.next_obs, next_state_actions)
+            next_state_actions, next_state_log_pi, _ = actor.get_action(data.next_state)
+            qf1_next_target = qf1_target(data.next_state, next_state_actions)
+            qf2_next_target = qf2_target(data.next_state, next_state_actions)
             min_qf_next_target = (
                 torch.min(qf1_next_target, qf2_next_target)
                 - self.policy.alpha * next_state_log_pi
@@ -162,8 +168,8 @@ class SACAlgorithm(BaseAlgorithm):
                 1 - data.dones.float().flatten()
             ) * self.config.gamma * (min_qf_next_target).view(-1)
 
-        qf1_a_values = qf1(data.obs, data.actions).view(-1)
-        qf2_a_values = qf2(data.obs, data.actions).view(-1)
+        qf1_a_values = qf1(data.state, data.actions).view(-1)
+        qf2_a_values = qf2(data.state, data.actions).view(-1)
         qf1_loss = F.mse_loss(qf1_a_values, next_q_value)
         qf2_loss = F.mse_loss(qf2_a_values, next_q_value)
         qf_loss = qf1_loss + qf2_loss
@@ -176,9 +182,9 @@ class SACAlgorithm(BaseAlgorithm):
 
         if self.update_counter % self.config.policy_frequency == 0:
             for _ in range(self.config.policy_frequency):
-                pi, log_pi, _ = actor.get_action(data.obs)
-                qf1_pi = qf1(data.obs, pi)
-                qf2_pi = qf2(data.obs, pi)
+                pi, log_pi, _ = actor.get_action(data.state)
+                qf1_pi = qf1(data.state, pi)
+                qf2_pi = qf2(data.state, pi)
                 min_qf_pi = torch.min(qf1_pi, qf2_pi)
                 actor_loss = ((self.policy.alpha * log_pi) - min_qf_pi).mean()
 
@@ -188,7 +194,7 @@ class SACAlgorithm(BaseAlgorithm):
 
                 if self.a_optimizer is not None and self.policy.autotune:
                     with torch.no_grad():
-                        _, log_pi, _ = actor.get_action(data.obs)
+                        _, log_pi, _ = actor.get_action(data.state)
                     alpha_loss = (
                         -self.policy.log_alpha.exp()
                         * (log_pi + self.policy.target_entropy)
@@ -222,9 +228,8 @@ class SACAlgorithm(BaseAlgorithm):
         )
 
     @override
-    def learn(self) -> tuple[int, dict[str, Any]]:
+    def learn_impl(self) -> tuple[int, dict]:
         self.last_learn_step = self.global_step
-        log_dict = {}
         num_updates = int(self.config.update_to_data_ratio * self.config.update_every)
         update_stats = defaultdict(list)
         for _ in range(num_updates):
@@ -232,11 +237,13 @@ class SACAlgorithm(BaseAlgorithm):
             stats = self.update(data)
             for k, v in stats.items():
                 update_stats[k].append(v)
-        for k, v in update_stats.items():
-            log_dict[f"train/{k}"] = np.mean(v)
 
-        log_dict["train/alpha"] = self.policy.alpha
-        return self.global_step, log_dict
+        return self.global_step, dict(
+            train=dict(
+                **{k: float(np.mean(v)) for k, v in update_stats.items()},
+                alpha=self.policy.alpha,
+            )
+        )
 
     @override
     def should_learn(self) -> bool:
