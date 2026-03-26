@@ -10,6 +10,7 @@ from plugrl_server.common.data_utils import (
     stack_numpy_tree,
 )
 from plugrl_server.buffer.numpy_tree_storage import NumpyTreeStorage
+from plugrl_server.buffer.schema_migration import migrate_buffer_payload
 from plugrl_server.policy.state import PolicyTrainState
 
 ROLLOUT_BUFFER_SCHEMA_VERSION = 1
@@ -180,7 +181,9 @@ class RolloutBuffer(torch.utils.data.Dataset):
         idx = self.idx
         obs_slice = self.obs_storage.get_item(slice(None, idx))
         data = dict(
+            buffer_kind="rollout",
             buffer_schema_version=ROLLOUT_BUFFER_SCHEMA_VERSION,
+            storage_format="numpy_tree",
             obs=obs_slice,
             actions=self.actions[:idx].copy(),
             logprobs=self.logprobs[:idx].copy(),
@@ -198,12 +201,11 @@ class RolloutBuffer(torch.utils.data.Dataset):
         return data
 
     def load_dict(self, data: dict) -> None:
-        schema_version = data.get("buffer_schema_version", 0)
-        if schema_version != ROLLOUT_BUFFER_SCHEMA_VERSION:
-            raise ValueError(
-                "Unsupported rollout buffer schema version: "
-                f"{schema_version}, expected {ROLLOUT_BUFFER_SCHEMA_VERSION}."
-            )
+        data = migrate_buffer_payload(
+            data,
+            expected_kind="rollout",
+            target_version=ROLLOUT_BUFFER_SCHEMA_VERSION,
+        )
         self.idx = data["idx"]
         self.obs_storage = NumpyTreeStorage(spec=data["obs_spec"], capacity=self.buffer_size)
         self.obs_storage.set_item(slice(None, self.idx), data["obs"])

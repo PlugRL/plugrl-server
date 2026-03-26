@@ -10,6 +10,7 @@ from plugrl_server.common.data_utils import (
     TorchTree,
     numpy_tree_to_torch,
 )
+from plugrl_server.buffer.schema_migration import migrate_buffer_payload
 
 REPLAY_BUFFER_SCHEMA_VERSION = 1
 
@@ -113,7 +114,9 @@ class ReplayBuffer(torch.utils.data.Dataset):
     def as_dict(self) -> dict:
         idx = self.buffer_size if self._full else self.idx
         return dict(
+            buffer_kind="replay",
             buffer_schema_version=REPLAY_BUFFER_SCHEMA_VERSION,
+            storage_format="numpy_tree",
             obs=self.obs_storage.get_item(slice(None, idx)),
             next_obs=self.next_obs_storage.get_item(slice(None, idx)),
             actions=self.actions[:idx].copy(),
@@ -127,12 +130,11 @@ class ReplayBuffer(torch.utils.data.Dataset):
         )
 
     def load_dict(self, data: dict) -> None:
-        schema_version = data.get("buffer_schema_version", 0)
-        if schema_version != REPLAY_BUFFER_SCHEMA_VERSION:
-            raise ValueError(
-                "Unsupported replay buffer schema version: "
-                f"{schema_version}, expected {REPLAY_BUFFER_SCHEMA_VERSION}."
-            )
+        data = migrate_buffer_payload(
+            data,
+            expected_kind="replay",
+            target_version=REPLAY_BUFFER_SCHEMA_VERSION,
+        )
         self.idx = data["idx"]
         self._full = data["full"]
         self.buffer_signature = data["buffer_signature"]
