@@ -6,28 +6,30 @@ import numpy as np
 from loguru import logger
 
 from plugrl_server.common.data_utils import (
-    TorchTree,
-    create_empty_torch_tree,
     numpy_tree_to_torch,
-    stack_torch_tree,
-    torch_tree_get_item,
-    torch_tree_set_item,
-    torch_tree_to_numpy,
+    stack_numpy_tree,
 )
-from plugrl_server.policy.state_adapter import TrainStateLike, train_state_to_tensors
+from plugrl_server.buffer.numpy_tree_storage import NumpyTreeStorage
+from plugrl_server.policy.state import PolicyTrainState
+
+
+def _require_array(value: Any, name: str) -> np.ndarray:
+    if not isinstance(value, np.ndarray):
+        raise TypeError(f"{name} must be a numpy array, got {type(value)!r}.")
+    return value
 
 
 class RolloutBuffer(torch.utils.data.Dataset):
-    obs: TorchTree
-    actions: torch.Tensor
-    logprobs: torch.Tensor
-    rewards: torch.Tensor
-    values: torch.Tensor
-    last_values: torch.Tensor
-    next_done: torch.Tensor
-    advantages: torch.Tensor
-    returns: torch.Tensor
-    dones: torch.Tensor
+    obs_storage: NumpyTreeStorage
+    actions: np.ndarray
+    logprobs: np.ndarray
+    rewards: np.ndarray
+    values: np.ndarray
+    last_values: np.ndarray
+    next_done: np.ndarray
+    advantages: np.ndarray
+    returns: np.ndarray
+    dones: np.ndarray
     next_indices: np.ndarray
     idx: int
     buffer_signature: uuid.UUID
@@ -37,47 +39,53 @@ class RolloutBuffer(torch.utils.data.Dataset):
     def __init__(
         self,
         buffer_size,
-        example_train_state: TrainStateLike,
+        example_train_state: PolicyTrainState,
     ):
-        example_train_tensors = train_state_to_tensors(example_train_state)
-        sample_obs = torch_tree_get_item(example_train_tensors.obs, 0)
+        if example_train_state is None:
+            raise ValueError("RolloutBuffer requires non-empty example_train_state.")
 
         self.buffer_size = buffer_size
 
-        self.obs = create_empty_torch_tree(sample_obs, buffer_size)
-
-        action_shape = example_train_tensors.action.shape[1:]
-        value_shape = example_train_tensors.value.shape[1:]
-        logprob_shape = example_train_tensors.logprob.shape[1:]
-
-        self.actions = torch.empty(
-            (buffer_size,) + action_shape, dtype=example_train_tensors.action.dtype
-        )
-        self.logprobs = torch.empty(
-            (buffer_size,) + logprob_shape, dtype=example_train_tensors.logprob.dtype
+        self.obs_storage = NumpyTreeStorage.from_example(
+            example_train_state["obs"], buffer_size
         )
 
-        self.values = torch.empty(
-            (buffer_size,) + value_shape, dtype=example_train_tensors.value.dtype
+        example_action = _require_array(example_train_state["action"], "train_state['action']")
+        example_value = _require_array(example_train_state["value"], "train_state['value']")
+        example_logprob = _require_array(example_train_state["logprob"], "train_state['logprob']")
+
+        action_shape = example_action.shape[1:]
+        value_shape = example_value.shape[1:]
+        logprob_shape = example_logprob.shape[1:]
+
+        self.actions = np.empty(
+            (buffer_size,) + action_shape, dtype=example_action.dtype
         )
-        self.last_values = torch.empty(
-            (buffer_size,) + value_shape, dtype=example_train_tensors.value.dtype
-        )
-        self.advantages = torch.empty(
-            (buffer_size,) + value_shape, dtype=example_train_tensors.value.dtype
-        )
-        self.returns = torch.empty(
-            (buffer_size,) + value_shape, dtype=example_train_tensors.value.dtype
+        self.logprobs = np.empty(
+            (buffer_size,) + logprob_shape, dtype=example_logprob.dtype
         )
 
-        self.rewards = torch.zeros(buffer_size, dtype=torch.float32)
-        self.next_done = torch.zeros(buffer_size, dtype=torch.bool)
-        self.dones = torch.zeros(buffer_size, dtype=torch.bool)
+        self.values = np.empty(
+            (buffer_size,) + value_shape, dtype=example_value.dtype
+        )
+        self.last_values = np.empty(
+            (buffer_size,) + value_shape, dtype=example_value.dtype
+        )
+        self.advantages = np.empty(
+            (buffer_size,) + value_shape, dtype=example_value.dtype
+        )
+        self.returns = np.empty(
+            (buffer_size,) + value_shape, dtype=example_value.dtype
+        )
+
+        self.rewards = np.zeros(buffer_size, dtype=np.float32)
+        self.next_done = np.zeros(buffer_size, dtype=np.bool_)
+        self.dones = np.zeros(buffer_size, dtype=np.bool_)
         self.next_indices = np.zeros(buffer_size, dtype=np.int32)
 
         logger.info(f"""
             Initialized RolloutBuffer with buffer_size={buffer_size}
-            obs shape: {_describe_tree_shape(self.obs)}
+            obs shape: {_describe_tree_shape(self.obs_storage.data)}
             actions shape: {self.actions.shape}
             logprobs shape: {self.logprobs.shape}
             rewards shape: {self.rewards.shape}
@@ -93,13 +101,14 @@ class RolloutBuffer(torch.utils.data.Dataset):
         self,
         *,
         prev_node: tuple[int, uuid.UUID],
-        train_state: TrainStateLike,
+        train_state: PolicyTrainState,
         reward: float,
         done: bool,
-        last_value: torch.Tensor | None,
+        last_value: np.ndarray | None,
         next_done: bool,
     ) -> tuple[int, uuid.UUID]:
-        train_state_tensors = train_state_to_tensors(train_state)
+        if train_state is None:
+            raise ValueError("train_state must not be None")
         if self.idx >= self.buffer_size:
             return (-1, self.buffer_signature)
         prev_idx, prev_signature = prev_node
@@ -108,14 +117,10 @@ class RolloutBuffer(torch.utils.data.Dataset):
         current_idx = self.idx
         if prev_idx != -1:
             self.next_indices[prev_idx] = current_idx
-        torch_tree_set_item(
-            self.obs,
-            current_idx,
-            torch_tree_get_item(train_state_tensors.obs, 0),
-        )
-        self.actions[current_idx] = train_state_tensors.action
-        self.logprobs[current_idx] = train_state_tensors.logprob
-        self.values[current_idx] = train_state_tensors.value
+        self.obs_storage.set_item(current_idx, train_state["obs"])
+        self.actions[current_idx] = _require_array(train_state["action"], "train_state['action']")[0]
+        self.logprobs[current_idx] = _require_array(train_state["logprob"], "train_state['logprob']")[0]
+        self.values[current_idx] = _require_array(train_state["value"], "train_state['value']")[0]
         self.rewards[current_idx] = reward
         self.dones[current_idx] = done
         if last_value is not None:
@@ -144,7 +149,7 @@ class RolloutBuffer(torch.utils.data.Dataset):
         if idx < 0 or idx >= self.idx:
             raise IndexError("RolloutBuffer index out of range")
         return (
-            torch_tree_get_item(self.obs, idx),
+            self.obs_storage.get_item(idx),
             self.actions[idx],
             self.logprobs[idx],
             self.rewards[idx],
@@ -154,7 +159,7 @@ class RolloutBuffer(torch.utils.data.Dataset):
         )
 
     def description(self):
-        y_pred, y_true = self.values.cpu().numpy(), self.returns.cpu().numpy()
+        y_pred, y_true = self.values[: self.idx], self.returns[: self.idx]
         var_y = np.var(y_true)
         explained_var = np.nan if var_y == 0 else 1 - np.var(y_true - y_pred) / var_y
 
@@ -165,49 +170,46 @@ class RolloutBuffer(torch.utils.data.Dataset):
     def collate_fn(self, batch: list[tuple]) -> tuple:
         obs_items, *rest = zip(*batch)
         return (
-            stack_torch_tree(list(obs_items), dim=0),
-            *(torch.stack(items, dim=0) for items in rest),
+            numpy_tree_to_torch(stack_numpy_tree(list(obs_items), axis=0)),
+            *(torch.from_numpy(np.stack(items, axis=0)) for items in rest),
         )
 
     def as_dict(self) -> dict:
         idx = self.idx
-        obs_slice = torch_tree_to_numpy(torch_tree_get_item(self.obs, slice(None, idx)))
+        obs_slice = self.obs_storage.get_item(slice(None, idx))
         data = dict(
             obs=obs_slice,
-            actions=self.actions[:idx].cpu().numpy(),
-            logprobs=self.logprobs[:idx].cpu().numpy(),
-            rewards=self.rewards[:idx].cpu().numpy(),
-            values=self.values[:idx].cpu().numpy(),
-            advantages=self.advantages[:idx].cpu().numpy(),
-            returns=self.returns[:idx].cpu().numpy(),
-            dones=self.dones[:idx].cpu().numpy(),
+            actions=self.actions[:idx].copy(),
+            logprobs=self.logprobs[:idx].copy(),
+            rewards=self.rewards[:idx].copy(),
+            values=self.values[:idx].copy(),
+            advantages=self.advantages[:idx].copy(),
+            returns=self.returns[:idx].copy(),
+            dones=self.dones[:idx].copy(),
             next_indices=self.next_indices[:idx].copy(),
             idx=idx,
             buffer_signature=self.buffer_signature,
             episode_info_buffer=self.episode_info_buffer.copy(),
+            obs_spec=self.obs_storage.spec,
         )
         return data
 
     def load_dict(self, data: dict) -> None:
         self.idx = data["idx"]
-        torch_tree_set_item(
-            self.obs,
-            slice(None, self.idx),
-            numpy_tree_to_torch(data["obs"]),
-        )
-        self.actions[: self.idx] = torch.from_numpy(data["actions"])
-        self.logprobs[: self.idx] = torch.from_numpy(data["logprobs"])
-        self.rewards[: self.idx] = torch.from_numpy(data["rewards"])
-        self.values[: self.idx] = torch.from_numpy(data["values"])
-        self.advantages[: self.idx] = torch.from_numpy(data["advantages"])
-        self.returns[: self.idx] = torch.from_numpy(data["returns"])
-        self.dones[: self.idx] = torch.from_numpy(data["dones"])
+        self.obs_storage = NumpyTreeStorage(spec=data["obs_spec"], capacity=self.buffer_size)
+        self.obs_storage.set_item(slice(None, self.idx), data["obs"])
+        self.actions[: self.idx] = data["actions"]
+        self.logprobs[: self.idx] = data["logprobs"]
+        self.rewards[: self.idx] = data["rewards"]
+        self.values[: self.idx] = data["values"]
+        self.advantages[: self.idx] = data["advantages"]
+        self.returns[: self.idx] = data["returns"]
+        self.dones[: self.idx] = data["dones"]
 
         # [WARNING] next_indices is not a tensor, and for some reason it is read-only so we just ignore it here
 
-
-def _describe_tree_shape(value: TorchTree) -> str:
-    if isinstance(value, torch.Tensor):
+def _describe_tree_shape(value) -> str:
+    if isinstance(value, np.ndarray):
         return str(tuple(value.shape))
     return str(dict((key, _describe_tree_shape(item)) for key, item in value.items()))
 
@@ -216,7 +218,7 @@ class GAEBuffer(RolloutBuffer):
     def __init__(
         self,
         buffer_size,
-        example_train_state: TrainStateLike,
+        example_train_state: PolicyTrainState,
         gamma: float = 0.99,
         gae_lambda: float = 0.95,
     ):

@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from typing import Any, TypeAlias
 from .base_torch_policy import BaseTorchPolicy, BaseTorchPolicyConfig
-from .state import NumpyState, PolicyRuntimeState
+from .state import NumpyState
 
 TorchTree: TypeAlias = torch.Tensor | dict[str, "TorchTree"]
 
@@ -73,8 +73,8 @@ class BasePolicyGradientDiffusionPolicy(BaseTorchPolicy):
         return _to_torch_tree(obs)
 
     def get_action_and_runtime_state(
-        self, _obs: dict, sampling_noise_level: float | None = None
-    ) -> tuple[Any, PolicyRuntimeState]:
+        self, _obs: dict[str, Any], sampling_noise_level: float | None = None
+    ) -> tuple[Any, DiffusionRuntimeState]:
         prepared_obs = self.prepare_observation(_obs)
         model_obs = self.build_model_observation(prepared_obs)
         processed_obs = self.preprocess_observation(model_obs)
@@ -82,7 +82,7 @@ class BasePolicyGradientDiffusionPolicy(BaseTorchPolicy):
         b = _torch_tree_batch_size(model_obs)
         x = self._initialize_x(model_obs)
 
-        runtime_state = self.fake_runtime_state(b)
+        runtime_state: DiffusionRuntimeState = self.fake_runtime_state(b)
         for i, t in enumerate(timesteps):
             x_next, logprob, entropy = self._denoising_step(
                 x,
@@ -104,7 +104,7 @@ class BasePolicyGradientDiffusionPolicy(BaseTorchPolicy):
         runtime_state.value[:] = value
         return x, runtime_state
 
-    def get_value(self, _obs: dict) -> torch.Tensor:
+    def get_value(self, _obs: dict[str, Any]) -> torch.Tensor:
         prepared_obs = self.prepare_observation(_obs)
         model_obs = self.build_model_observation(prepared_obs)
         processed_obs = self.preprocess_observation(model_obs)
@@ -115,7 +115,7 @@ class BasePolicyGradientDiffusionPolicy(BaseTorchPolicy):
     @abc.abstractmethod
     def fake_diffusion_cond(self, batch_size: int) -> TorchTree: ...
 
-    def fake_runtime_state(self, batch_size: int) -> PolicyRuntimeState:
+    def fake_runtime_state(self, batch_size: int) -> DiffusionRuntimeState:
         action = torch.zeros(
             (batch_size, self.num_denoising_steps, self.action_horizon, self.action_dim)
         )
@@ -152,11 +152,17 @@ def _to_torch_tree(value: NumpyState) -> TorchTree:
 
 
 def _torch_tree_batch_size(value: TorchTree) -> int:
-    if isinstance(value, torch.Tensor):
-        return int(value.shape[0])
-    for item in value.values():
-        if isinstance(item, torch.Tensor):
-            return int(item.shape[0])
-        if isinstance(item, dict):
-            return _torch_tree_batch_size(item)
+    tensor = _first_tensor_in_tree(value)
+    if tensor is not None:
+        return int(tensor.shape[0])
     raise TypeError("TorchTree observation must expose a batch dimension.")
+
+
+def _first_tensor_in_tree(value: TorchTree) -> torch.Tensor | None:
+    if isinstance(value, torch.Tensor):
+        return value
+    for item in value.values():
+        tensor = _first_tensor_in_tree(item)
+        if tensor is not None:
+            return tensor
+    return None

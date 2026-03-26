@@ -3,7 +3,13 @@ import dataclasses
 import numpy as np
 
 from plugrl_server.policy.base_policy import BasePolicy
-from plugrl_server.policy.state import PolicyRuntimeState, PolicyStepState, PolicyTrainState
+from plugrl_server.policy.state import (
+    PolicyRuntimeState,
+    PolicyStepState,
+    PolicyTrainState,
+    TrainStateSpec,
+    infer_train_state_spec,
+)
 from plugrl_server.common.checkpoint_manager import Checkpoint
 
 
@@ -29,6 +35,9 @@ class BaseAlgorithm(abc.ABC):
 
     def example_train_state(self, batch_size: int) -> PolicyTrainState:
         return None
+
+    def example_train_state_spec(self) -> TrainStateSpec | None:
+        return infer_train_state_spec(self.example_train_state(batch_size=1))
 
     def build_step_state_from_runtime_state(
         self,

@@ -147,6 +147,18 @@ def stack_torch_tree(items: Sequence[TorchTree], dim: int = 0) -> TorchTree:
     )
 
 
+def stack_numpy_tree(items: Sequence[NumpyTree], axis: int = 0) -> NumpyTree:
+    if not items:
+        raise ValueError("Cannot stack an empty numpy tree sequence.")
+    first_item = items[0]
+    if isinstance(first_item, np.ndarray):
+        return np.stack(list(items), axis=axis)
+    return dict(
+        (key, stack_numpy_tree([item[key] for item in items], axis=axis))
+        for key in first_item.keys()
+    )
+
+
 def torch_tree_to_numpy(tree: TorchTree) -> NumpyTree:
     if isinstance(tree, torch.Tensor):
         return tree.cpu().numpy()

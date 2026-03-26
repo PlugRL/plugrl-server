@@ -1,19 +1,21 @@
 import uuid
-import torch
 from collections import deque
+import numpy as np
+import torch
 from dppo.util.reward_scaling import RunningMeanStd
 
 from plugrl_server.buffer.rollout_buffer import GAEBuffer
 from plugrl_server.policy.base_policy import BasePolicy
-from plugrl_server.policy.state_adapter import TrainStateLike, train_state_to_tensors
-from plugrl_server.common.data_utils import batch_aggregate, torch_tree_get_item, torch_tree_set_item
+from plugrl_server.policy.state import PolicyTrainState
+from plugrl_server.common.data_utils import batch_aggregate
+from .train_state import as_dppo_train_state
 
 
 class DPPOBuffer(GAEBuffer):
     def __init__(
         self,
         buffer_size,
-        example_train_state: TrainStateLike,
+        example_train_state: PolicyTrainState,
         gamma: float = 0.99,
         gae_lambda: float = 0.95,
         cliprew: float = 10.0,
@@ -27,20 +29,20 @@ class DPPOBuffer(GAEBuffer):
         self.cliprew = cliprew
         self.epsilon = epsilon
         self.use_normalized_rewards = use_normalized_rewards
-        self.rets = self.rewards.clone()
+        self.rets = np.zeros_like(self.rewards)
         self.next_obs_value_requests = deque()
 
     def add_frame(
         self,
         *,
         prev_node: tuple[int, uuid.UUID],
-        train_state: TrainStateLike,
+        train_state: PolicyTrainState,
         reward: float,
         done: bool,
-        last_value: torch.Tensor | None,
+        last_value: np.ndarray | None,
         next_done: bool,
     ) -> tuple[int, uuid.UUID]:
-        train_state_tensors = train_state_to_tensors(train_state)
+        dppo_train_state = as_dppo_train_state(train_state)
         if self.idx >= self.buffer_size:
             return (-1, self.buffer_signature)
         prev_idx, prev_signature = prev_node
@@ -52,14 +54,17 @@ class DPPOBuffer(GAEBuffer):
             self.rets[current_idx] = self.rets[prev_idx] * self.gamma + float(reward)
         else:
             self.rets[current_idx] = float(reward)
-        torch_tree_set_item(
-            self.obs,
+        self.obs_storage.set_item(
             current_idx,
-            torch_tree_get_item(train_state_tensors.obs, 0),
+            dict(
+                x=dppo_train_state.obs.x,
+                t=dppo_train_state.obs.t,
+                cond=dict(state=dppo_train_state.obs.cond.state),
+            ),
         )
-        self.actions[current_idx] = train_state_tensors.action
-        self.logprobs[current_idx] = train_state_tensors.logprob
-        self.values[current_idx] = train_state_tensors.value
+        self.actions[current_idx] = dppo_train_state.action[0]
+        self.logprobs[current_idx] = dppo_train_state.logprob[0]
+        self.values[current_idx] = dppo_train_state.value[0]
         self.rewards[current_idx] = float(reward)
         self.dones[current_idx] = bool(done)
         if last_value is not None:
@@ -81,12 +86,12 @@ class DPPOBuffer(GAEBuffer):
         self, policy: BasePolicy | None = None, batch_size: int = 1
     ):
         # Normalize rewards
-        rets = self.rets[: self.idx].cpu().numpy()
+        rets = self.rets[: self.idx]
         self.ret_rms.update(rets)
         if self.use_normalized_rewards:
-            self.rewards[: self.idx] = torch.clamp(
-                self.rewards[: self.idx]
-                / torch.sqrt(torch.tensor(self.ret_rms.var + self.epsilon).float()),
+            scale = np.float32(np.sqrt(self.ret_rms.var + self.epsilon))
+            self.rewards[: self.idx] = np.clip(
+                self.rewards[: self.idx] / scale,
                 -self.cliprew,
                 self.cliprew,
             )
@@ -108,7 +113,7 @@ class DPPOBuffer(GAEBuffer):
                     next_observations[i : i + batch_size], aggregate_method="concat"
                 )
                 with torch.inference_mode():
-                    batch_values = policy.get_value(batch_obs).cpu().float()
+                    batch_values = policy.get_value(batch_obs).cpu().numpy()
                 self.last_values[next_ids[i : i + batch_size]] = batch_values
 
         return super().compute_advantages_and_returns()

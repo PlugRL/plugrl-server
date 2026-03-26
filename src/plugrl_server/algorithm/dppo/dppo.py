@@ -14,6 +14,7 @@ from plugrl_server.algorithm.registration import register_algo, register_algo_co
 from plugrl_server.policy.state import PolicyRuntimeState, PolicyTrainState, to_numpy_state
 from plugrl_server.policy.base_policy_gradient_diffusion_policy import (
     BasePolicyGradientDiffusionPolicy,
+    DiffusionRuntimeState,
 )
 
 from .dppo_buffer import DPPOBuffer
@@ -191,9 +192,13 @@ class DPPOAlgorithm(BaseAlgorithm):
         return action, runtime_state
 
     def derive_train_state(self, runtime_state: PolicyRuntimeState) -> PolicyTrainState:
+        assert isinstance(runtime_state, DiffusionRuntimeState), (
+            "DPPO expects diffusion runtime state."
+        )
         numpy_state = to_numpy_state(runtime_state)
         if numpy_state is None or not isinstance(numpy_state, dict):
             raise TypeError("DPPO requires mapping-like train_state export.")
+        assert runtime_state.obs is not None
         return numpy_state
 
     def example_train_state(self, batch_size: int) -> PolicyTrainState:
@@ -218,6 +223,10 @@ class DPPOAlgorithm(BaseAlgorithm):
             assert runtime_state is not None, (
                 "Runtime state must be provided when train_state is missing."
             )
+            assert isinstance(runtime_state, DiffusionRuntimeState), (
+                "DPPO expects diffusion runtime state."
+            )
+            assert runtime_state.obs is not None
             train_state = self.derive_train_state(runtime_state)
         assert train_state is not None, "DPPO requires train_state for rollout storage."
         current_node = self.rollout_buffer.add_frame(
