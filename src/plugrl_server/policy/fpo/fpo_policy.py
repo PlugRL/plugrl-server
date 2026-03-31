@@ -127,6 +127,7 @@ class FPOPolicy(BasePolicyGradientFlowPolicy):
         self.register_buffer(
             "obs_stats_std", torch.ones(config.obs_dim, dtype=torch.float32)
         )
+        self.to(self.device)
 
     def _get_timesteps(self) -> torch.Tensor:
         return torch.linspace(

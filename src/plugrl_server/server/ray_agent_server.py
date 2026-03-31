@@ -88,6 +88,7 @@ class RayAgentServer:
             runtime_metrics_provider=self._runtime_metrics,
             show_metric_table=show_metric_table,
             progress_reporter=self._progress_reporter,
+            stop_requested=self._lifecycle.stop_event.is_set,
         )
 
         self._total_connections = 0
@@ -246,6 +247,7 @@ class RayAgentServer:
                 info = feedback_msg.data.info
 
                 async with self._model_lock:
+                    self._ensure_collect_progress_started()
                     prev_node, step, log_dict = self._algorithm.feedback(
                         obs=obs,
                         runtime_state=runtime_state,
@@ -260,8 +262,11 @@ class RayAgentServer:
                         prev_node=prev_node,
                     )
                     await asyncio.to_thread(self._training.log, log_dict, step=step)
-                    self._ensure_collect_progress_started()
-                    self._progress_reporter.update_phase("collect", advance=1)
+                self._progress_reporter.update_phase(
+                    "collect",
+                    completed=self._algorithm.get_collect_progress_completed(),
+                    advance=0,
+                )
 
                 terminated, truncated = next_terminated, next_truncated
 

@@ -8,7 +8,7 @@ import ray
 # Ray-based distributed training support is maintained only for minimal compatibility.
 # Real distributed redesign/debugging is postponed until a true multi-rank environment is available.
 
-from plugrl_server.algorithm.base_algorithm import BaseAlgorithm
+from plugrl_server.algorithm.base_algorithm import BaseAlgorithm, LearnInterrupted
 from plugrl_server.algorithm.distributed import DDPAlgorithm
 from plugrl_server.common.checkpoint_manager import CheckpointManager, Checkpoint
 from plugrl_server.common.logging_utils import get_logger
@@ -34,6 +34,7 @@ class LocalTrainingBackend:
         runtime_metrics_provider: Callable[[], MetricDict] | None = None,
         show_metric_table: bool = True,
         progress_reporter: ProgressReporter | None = None,
+        stop_requested: Callable[[], bool] | None = None,
     ) -> None:
         self._algorithm = algorithm
         self._checkpoint_manager = checkpoint_manager
@@ -41,6 +42,7 @@ class LocalTrainingBackend:
         self._runtime_metrics_provider = runtime_metrics_provider or (lambda: dict())
         self._show_metric_table = show_metric_table
         self._progress_reporter = progress_reporter
+        self._stop_requested = stop_requested or (lambda: False)
         self._progress_tracker = ProgressTracker(
             global_steps=algorithm.get_total_training_steps()
         )
@@ -62,12 +64,18 @@ class LocalTrainingBackend:
                 "learn", total=learn_total, description="learn"
             )
         self._algorithm.set_learn_progress_callback(self._on_learn_progress)
+        self._algorithm.set_stop_requested_callback(self._stop_requested)
         try:
             self._algorithm.pre_learn()
-            step, log_dict = await asyncio.to_thread(self._algorithm.learn)
+            try:
+                step, log_dict = await asyncio.to_thread(self._algorithm.learn)
+            except LearnInterrupted:
+                logger.info("Learn interrupted by shutdown request.")
+                return
             self._algorithm.post_learn()
         finally:
             self._algorithm.set_learn_progress_callback(None)
+            self._algorithm.set_stop_requested_callback(None)
             if self._progress_reporter is not None:
                 self._progress_reporter.finish_phase("learn")
         self.log(
@@ -118,6 +126,7 @@ class RayTrainingBackend:
         runtime_metrics_provider: Callable[[], MetricDict] | None = None,
         show_metric_table: bool = True,
         progress_reporter: ProgressReporter | None = None,
+        stop_requested: Callable[[], bool] | None = None,
     ) -> None:
         self._algorithm = algorithm
         self._checkpoint_manager = checkpoint_manager
@@ -126,6 +135,7 @@ class RayTrainingBackend:
         self._runtime_metrics_provider = runtime_metrics_provider or (lambda: dict())
         self._show_metric_table = show_metric_table
         self._progress_reporter = progress_reporter
+        self._stop_requested = stop_requested or (lambda: False)
         self._progress_tracker = ProgressTracker(
             global_steps=algorithm.get_total_training_steps()
         )
@@ -147,6 +157,7 @@ class RayTrainingBackend:
             self._progress_reporter.start_phase(
                 "learn", total=learn_total, description="learn"
             )
+        self._algorithm.set_stop_requested_callback(self._stop_requested)
         self._algorithm.pre_learn()
         global_step, meta_info, serializable_buffer_data = (
             self._algorithm.get_server_data()
@@ -161,6 +172,7 @@ class RayTrainingBackend:
         await self._update_inference_policy(checkpoint)
         if self._progress_reporter is not None:
             self._progress_reporter.finish_phase("learn")
+        self._algorithm.set_stop_requested_callback(None)
         await asyncio.to_thread(
             self.log,
             train_info,

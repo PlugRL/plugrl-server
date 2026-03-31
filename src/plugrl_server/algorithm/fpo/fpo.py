@@ -97,7 +97,7 @@ class FPOAlgorithm(BaseAlgorithm):
         )
         self.rollout_buffer.add_next_obs_value_request(obs=next_obs, end_node=current_node)
         if next_terminated or next_truncated:
-            if "episode" in info:
+            if "episode" in info and bool(info["episode"].get("mask", True)):
                 self.record_episode_metrics(info["episode"])
             self.rollout_buffer.finish_rollout(info=info)
         self.global_step += 1
@@ -119,6 +119,9 @@ class FPOAlgorithm(BaseAlgorithm):
             return self.config.buffer_size
         remaining = max(0, total_steps - self.global_step)
         return min(self.config.buffer_size, remaining)
+
+    def get_collect_progress_completed(self) -> int | None:
+        return len(self.rollout_buffer)
 
     def get_learn_progress_total(self) -> int | None:
         return self.config.num_updates_per_batch * math.ceil(
@@ -261,7 +264,6 @@ class FPOAlgorithm(BaseAlgorithm):
 
         self.curr_train_itrs += 1
         self.rollout_buffer.reset()
-        self.reset_episode_metrics()
         return self.global_step, dict(
             train=dict(train_itrs=float(self.curr_train_itrs)),
             losses=dict(
@@ -276,3 +278,6 @@ class FPOAlgorithm(BaseAlgorithm):
                 advantages_std=float(np.mean(metric_history["advantages_std"])),
             ),
         )
+
+    def post_learn(self) -> None:
+        self.reset_episode_metrics()

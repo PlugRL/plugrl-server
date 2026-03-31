@@ -84,6 +84,7 @@ class WebSocketAgentServer:
             runtime_metrics_provider=self._runtime_metrics,
             show_metric_table=show_metric_table,
             progress_reporter=self._progress_reporter,
+            stop_requested=self._lifecycle.stop_event.is_set,
         )
 
         self._total_connections = 0
@@ -272,6 +273,7 @@ class WebSocketAgentServer:
                 assert len(info_list) == len(next_obs_list) or len(info_list) == 0
                 # process each env's feedback individually
                 async with self._model_lock:
+                    self._ensure_collect_progress_started()
                     for idx, eid in enumerate(fb_env_ids):
                         n_obs = next_obs_list[idx]
                         rew = reward_list[idx]
@@ -309,8 +311,11 @@ class WebSocketAgentServer:
                         truncated_map[eid] = bool(n_trunc)
 
                         self._metric_sink.log_scalars(log_dict, step=step)
-                        self._ensure_collect_progress_started()
-                        self._progress_reporter.update_phase("collect", advance=1)
+                    self._progress_reporter.update_phase(
+                        "collect",
+                        completed=self._algorithm.get_collect_progress_completed(),
+                        advance=0,
+                    )
 
         except websockets.ConnectionClosed:
             pass

@@ -18,6 +18,10 @@ from plugrl_server.common.checkpoint_manager import Checkpoint
 logger = get_logger(__name__)
 
 
+class LearnInterrupted(RuntimeError):
+    pass
+
+
 @dataclasses.dataclass
 class BaseAlgoConfig:
     global_steps: int | None = None
@@ -58,6 +62,7 @@ class BaseAlgorithm(abc.ABC):
         self.policy = policy
         self._episode_metric_window = EpisodeMetricWindow()
         self._learn_progress_callback: Callable[[int, int | None], None] | None = None
+        self._stop_requested_callback: Callable[[], bool] | None = None
         logger.debug(
             "Initialized algorithm %s with policy %s",
             self.__class__.__name__,
@@ -122,6 +127,9 @@ class BaseAlgorithm(abc.ABC):
     def get_collect_progress_total(self) -> int | None:
         return None
 
+    def get_collect_progress_completed(self) -> int | None:
+        return None
+
     def get_learn_progress_total(self) -> int | None:
         return None
 
@@ -131,8 +139,15 @@ class BaseAlgorithm(abc.ABC):
         self._learn_progress_callback = callback
 
     def report_learn_progress(self, current: int, total: int | None = None) -> None:
+        if self._stop_requested_callback is not None and self._stop_requested_callback():
+            raise LearnInterrupted("Learn interrupted by shutdown request.")
         if self._learn_progress_callback is not None:
             self._learn_progress_callback(current, total)
+
+    def set_stop_requested_callback(
+        self, callback: Callable[[], bool] | None
+    ) -> None:
+        self._stop_requested_callback = callback
 
     def build_train_info(self, *metric_groups: MetricDict) -> MetricDict:
         return merge_metric_groups(

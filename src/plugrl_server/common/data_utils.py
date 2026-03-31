@@ -108,10 +108,20 @@ def unbatch_aggregate(
             nested_unbatched = unbatch_aggregate(dict(value), aggregate_method)
             for i, nested_dict in enumerate(nested_unbatched):
                 result[i][key] = nested_dict
-        else:
+        elif isinstance(value, Sequence) and not isinstance(
+            value, str | bytes | bytearray
+        ):
             value_seq = cast(Sequence[Any], value)
             for i in range(batch_size):
                 result[i][key] = value_seq[i]
+        else:
+            logger.debug(
+                "Broadcasting scalar-like unbatched field key=%s type=%s",
+                key,
+                type(value).__name__,
+            )
+            for i in range(batch_size):
+                result[i][key] = value
 
     return result
 

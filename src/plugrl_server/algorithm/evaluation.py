@@ -67,7 +67,7 @@ class Evaluation(BaseAlgorithm):
         self.counter += 1
         log_dict = {}
         if next_terminated or next_truncated:
-            if "episode" in info:
+            if "episode" in info and bool(info["episode"].get("mask", True)):
                 log_dict = dict(
                     episode=dict(
                         reward=info["episode"]["r"],

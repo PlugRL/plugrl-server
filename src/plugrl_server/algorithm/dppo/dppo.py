@@ -126,7 +126,7 @@ class DPPOAlgorithm(BaseAlgorithm):
         )
         log_dict = {}
         if next_terminated or next_truncated:
-            if "episode" in info:
+            if "episode" in info and bool(info["episode"].get("mask", True)):
                 self.record_episode_metrics(info["episode"])
             self.rollout_buffer.finish_rollout(info=info)
         self.global_step += 1
@@ -139,6 +139,9 @@ class DPPOAlgorithm(BaseAlgorithm):
 
     def get_collect_progress_total(self) -> int | None:
         return self.config.buffer_size
+
+    def get_collect_progress_completed(self) -> int | None:
+        return len(self.rollout_buffer)
 
     def get_learn_progress_total(self) -> int | None:
         return self.config.update_epochs * math.ceil(
