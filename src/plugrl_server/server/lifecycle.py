@@ -8,6 +8,8 @@ import websockets.frames
 from plugrl_server.common.logging_utils import get_logger
 
 logger = get_logger(__name__)
+CONNECTION_CLOSE_TIMEOUT = 2.0
+SERVER_CLOSE_TIMEOUT = 2.0
 
 
 class ServerLifecycle:
@@ -67,22 +69,32 @@ class ServerLifecycle:
         extra_cleanup: Callable[[], Awaitable[None]] | None = None,
     ) -> None:
         self.stop_event.set()
+        logger.info("Shutdown started: aborting pending infer requests.")
         await abort_pending_infer_requests(self.shutdown_reason)
 
         if server is not None:
-            if self.close_reason:
-                await asyncio.gather(
-                    *(
-                        connection.close(
-                            websockets.frames.CloseCode.GOING_AWAY,
-                            self.close_reason,
-                        )
-                        for connection in server.connections
-                    ),
-                    return_exceptions=True,
-                )
+            close_reason = self.close_reason or "Server shutdown"
+            logger.info("Shutdown closing %s websocket connection(s).", len(server.connections))
+            await asyncio.gather(
+                *(
+                    _close_connection_with_timeout(
+                        connection,
+                        code=websockets.frames.CloseCode.GOING_AWAY,
+                        reason=close_reason,
+                    )
+                    for connection in list(server.connections)
+                ),
+                return_exceptions=True,
+            )
+            for connection in list(server.connections):
+                transport = getattr(connection, "transport", None)
+                if transport is not None:
+                    transport.abort()
             server.close()
-            await server.wait_closed()
+            try:
+                await asyncio.wait_for(server.wait_closed(), timeout=SERVER_CLOSE_TIMEOUT)
+            except asyncio.TimeoutError:
+                logger.warning("Timed out waiting for websocket server to close.")
             logger.info("WebSocket server closed.")
 
         scheduler_task.cancel()
@@ -91,3 +103,16 @@ class ServerLifecycle:
 
         if extra_cleanup is not None:
             await extra_cleanup()
+
+
+async def _close_connection_with_timeout(connection: Any, *, code: int, reason: str) -> None:
+    try:
+        await asyncio.wait_for(
+            connection.close(code, reason),
+            timeout=CONNECTION_CLOSE_TIMEOUT,
+        )
+    except asyncio.TimeoutError:
+        logger.warning("Timed out closing websocket connection; aborting transport.")
+        transport = getattr(connection, "transport", None)
+        if transport is not None:
+            transport.abort()

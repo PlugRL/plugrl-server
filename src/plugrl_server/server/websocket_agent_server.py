@@ -29,6 +29,7 @@ from plugrl_server.server.protocol import (
     parse_feedback_request,
     parse_infer_request,
 )
+from plugrl_server.server.runtime_metrics import RuntimeMetricTracker
 from plugrl_server.server.runtime_scheduler import RuntimeScheduler
 from plugrl_server.server.training_backend import LocalTrainingBackend
 
@@ -90,6 +91,7 @@ class WebSocketAgentServer:
         self._total_connections = 0
         self._infer_wait_start: float | None = None
         self._collect_progress_started = False
+        self._runtime_metric_tracker = RuntimeMetricTracker()
 
         self._mini_infer_batch_size = mini_infer_batch_size
 
@@ -271,6 +273,7 @@ class WebSocketAgentServer:
                 )
                 info_list = unbatch_aggregate(info_batch, aggregate_method="stack")
                 assert len(info_list) == len(next_obs_list) or len(info_list) == 0
+                feedback_started_at = time.perf_counter()
                 # process each env's feedback individually
                 async with self._model_lock:
                     self._ensure_collect_progress_started()
@@ -316,6 +319,10 @@ class WebSocketAgentServer:
                         completed=self._algorithm.get_collect_progress_completed(),
                         advance=0,
                     )
+                self._runtime_metric_tracker.observe_feedback(
+                    duration=time.perf_counter() - feedback_started_at,
+                    batch_size=len(fb_env_ids),
+                )
 
         except websockets.ConnectionClosed:
             pass
@@ -333,7 +340,10 @@ class WebSocketAgentServer:
                 self._total_connections = max(0, self._total_connections - 1)
 
     def _runtime_metrics(self) -> dict:
-        return dict(server=dict(total_connections=self._total_connections))
+        return dict(
+            server=dict(total_connections=self._total_connections),
+            **self._runtime_metric_tracker.as_metrics(),
+        )
 
     def _start_collect_progress(self) -> None:
         self._collect_progress_started = True
@@ -379,6 +389,7 @@ class WebSocketAgentServer:
 
     async def _process_infer(self):
         batch = await self._inference.drain_batch()
+        started_at = time.perf_counter()
         try:
             obs = batch_aggregate(
                 [req["obs"] for req in batch], aggregate_method="concat"
@@ -442,6 +453,10 @@ class WebSocketAgentServer:
 
             for _ in batch:
                 self._inference.queue.task_done()
+            self._runtime_metric_tracker.observe_infer(
+                duration=time.perf_counter() - started_at,
+                batch_size=len(batch),
+            )
         except Exception as exc:
             for req in batch:
                 future = self._inference.get_future(req["id"])

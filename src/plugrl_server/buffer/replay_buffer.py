@@ -9,6 +9,7 @@ from plugrl_server.common.data_utils import (
     NumpyTree,
     TorchTree,
     numpy_tree_to_torch,
+    torch_tree_to_device,
 )
 from plugrl_server.buffer.schema_migration import migrate_buffer_payload
 
@@ -26,8 +27,8 @@ class ReplayBufferSamples:
 
     def to(self, device: torch.device) -> "ReplayBufferSamples":
         return ReplayBufferSamples(
-            state=_torch_tree_to_device(self.state, device),
-            next_state=_torch_tree_to_device(self.next_state, device),
+            state=torch_tree_to_device(self.state, device),
+            next_state=torch_tree_to_device(self.next_state, device),
             actions=self.actions.to(device),
             rewards=self.rewards.to(device),
             dones=self.dones.to(device),
@@ -151,9 +152,3 @@ class ReplayBuffer(torch.utils.data.Dataset):
         self.rewards[:upper] = data["rewards"]
         self.dones[:upper] = data["dones"]
         self.timeouts[:upper] = data["timeouts"]
-
-
-def _torch_tree_to_device(tree: TorchTree, device: torch.device) -> TorchTree:
-    if isinstance(tree, torch.Tensor):
-        return tree.to(device)
-    return dict((key, _torch_tree_to_device(value, device)) for key, value in tree.items())

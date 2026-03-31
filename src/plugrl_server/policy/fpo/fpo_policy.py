@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import dataclasses
-import torch
-import numpy as np
-import torch.nn as nn
 from typing import Any
+
+import numpy as np
+import torch
+import torch.nn as nn
 
 from ..base_policy_gradient_flow_policy import (
     BasePolicyGradientFlowPolicy,
@@ -138,8 +139,18 @@ class FPOPolicy(BasePolicyGradientFlowPolicy):
             dtype=torch.float32,
         )
 
+    def _normalize_state_tensor(
+        self, state: torch.Tensor
+    ) -> torch.Tensor:
+        if not self.config.normalize_observations:
+            return state
+        return _normalize_tensor(state, self.obs_stats_mean, self.obs_stats_std)
+
     @torch.no_grad()
-    def _update_obs_stats(self, state: torch.Tensor) -> None:
+    def update_obs_stats(self, state: TorchTree) -> None:
+        if not self.config.normalize_observations:
+            return
+        assert isinstance(state, torch.Tensor)
         (
             self.obs_stats_count,
             self.obs_stats_mean,
@@ -151,22 +162,6 @@ class FPOPolicy(BasePolicyGradientFlowPolicy):
             mean=self.obs_stats_mean,
             var_sum=self.obs_stats_var_sum,
         )
-
-    def _normalize_state_tensor(
-        self, state: torch.Tensor, *, update_stats: bool
-    ) -> torch.Tensor:
-        if not self.config.normalize_observations:
-            return state
-        if update_stats:
-            self._update_obs_stats(state)
-        return _normalize_tensor(state, self.obs_stats_mean, self.obs_stats_std)
-
-    def _normalize_state_numpy(
-        self, state: np.ndarray, *, update_stats: bool
-    ) -> np.ndarray:
-        state_tensor = torch.from_numpy(state).to(self.device)
-        normalized = self._normalize_state_tensor(state_tensor, update_stats=update_stats)
-        return normalized.detach().cpu().numpy().astype(np.float32)
 
     def embed_timestep(self, t: torch.Tensor) -> torch.Tensor:
         if t.shape[-1] != 1:
@@ -184,14 +179,16 @@ class FPOPolicy(BasePolicyGradientFlowPolicy):
             batch_size, self.action_horizon, self.action_dim, device=self.device
         )
 
-    def prepare_observation(self, _obs: dict[str, Any]) -> dict[str, np.ndarray]:
-        state = _extract_state_array(_obs)
-        if not isinstance(state, np.ndarray):
-            state = np.asarray(state, dtype=np.float32)
-        state = state.astype(np.float32)
-        if self.config.normalize_observations:
-            state = self._normalize_state_numpy(state, update_stats=True)
-        return dict(state=state)
+    def extract_model_obs_tensor(self, _obs: dict[str, Any]) -> TorchTree:
+        return torch.as_tensor(
+            _obs["states"]["obs"],
+            dtype=torch.float32,
+            device=self.device,
+        )
+
+    def build_obs_cache(self, obs: TorchTree) -> Any:
+        assert isinstance(obs, torch.Tensor)
+        return self._normalize_state_tensor(obs)
 
     def get_action_and_runtime_state(
         self, _obs: dict[str, Any], sampling_noise_level: float | None = None
@@ -212,7 +209,7 @@ class FPOPolicy(BasePolicyGradientFlowPolicy):
         )
 
     def fake_diffusion_cond(self, batch_size: int) -> TorchTree:
-        return dict(state=torch.zeros(batch_size, self.config.obs_dim))
+        return torch.zeros(batch_size, self.config.obs_dim, device=self.device)
 
     def _iterative_process_action(self, action: torch.Tensor) -> torch.Tensor:
         return action
@@ -226,12 +223,13 @@ class FPOPolicy(BasePolicyGradientFlowPolicy):
         t: torch.Tensor,
         cond: TorchTree | None,
         *,
-        processed_cond: Any = None,
+        cond_cache: Any = None,
     ) -> torch.Tensor:
-        state = processed_cond
-        if state is None:
-            assert isinstance(cond, dict)
-            state = cond["state"].to(self.device)
+        if isinstance(cond_cache, torch.Tensor):
+            state = cond_cache.to(self.device)
+        else:
+            assert isinstance(cond, torch.Tensor)
+            state = self.build_obs_cache(cond)
         if state.shape[0] != x.shape[0]:
             if x.shape[0] % state.shape[0] != 0:
                 raise ValueError(
@@ -241,27 +239,13 @@ class FPOPolicy(BasePolicyGradientFlowPolicy):
         t_embed = self.embed_timestep(t[:, None])
         return self.actor(state, x, t_embed) * self.policy_mlp_output_scale
 
-    def preprocess_observation(self, obs: TorchTree) -> Any:
-        assert isinstance(obs, dict)
-        return obs["state"].to(self.device)
-
-    def _get_value(self, obs: TorchTree, processed_obs: Any = None) -> torch.Tensor:
-        state = processed_obs
-        if state is None:
-            assert isinstance(obs, dict)
-            state = obs["state"].to(self.device)
+    def _get_value(self, obs: TorchTree, obs_cache: Any = None) -> torch.Tensor:
+        if isinstance(obs_cache, torch.Tensor):
+            state = obs_cache.to(self.device)
+        else:
+            assert isinstance(obs, torch.Tensor)
+            state = self.build_obs_cache(obs)
         return self.critic(state)
-
-
-def _extract_state_array(obs: dict[str, Any]) -> Any:
-    if "state" in obs:
-        return obs["state"]
-    if "states" in obs:
-        states = obs["states"]
-        if isinstance(states, dict) and "obs" in states:
-            return states["obs"]
-        return states
-    raise KeyError("FPOPolicy expects observation to contain 'state' or 'states'.")
 
 
 @torch.no_grad()

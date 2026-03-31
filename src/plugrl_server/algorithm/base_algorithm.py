@@ -76,7 +76,7 @@ class BaseAlgorithm(abc.ABC):
         return None
 
     def example_train_state(self, batch_size: int) -> PolicyTrainState:
-        return None
+        return self.derive_train_state(self.policy.fake_runtime_state(batch_size))
 
     def example_train_state_spec(self) -> TrainStateSpec | None:
         logger.debug("Inferring train_state_spec for %s", self.__class__.__name__)
@@ -203,3 +203,4 @@ class BaseAlgorithm(abc.ABC):
 
     def post_learn(self) -> None:
         logger.debug("post_learn called for %s", self.__class__.__name__)
+        self.reset_episode_metrics()

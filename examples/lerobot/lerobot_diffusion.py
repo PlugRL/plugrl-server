@@ -13,6 +13,7 @@ from lerobot.policies.diffusion.configuration_diffusion import (
 from lerobot.policies.diffusion.modeling_diffusion import DiffusionPolicy
 from lerobot.constants import OBS_STATE, OBS_IMAGES, ACTION
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
+from plugrl_server.common.data_utils import torch_tree_batch_size, torch_tree_to_device
 from plugrl_server.policy.base_policy_gradient_diffusion_policy import (
     BasePolicyGradientDiffusionPolicyConfig,
     BasePolicyGradientDiffusionPolicy,
@@ -156,12 +157,12 @@ class LeRobotDiffusionPolicy(BasePolicyGradientDiffusionPolicy):
         )
         return cond
 
-    def preprocess_observation(self, obs: TorchTree) -> Any:
+    def build_obs_cache(self, obs: TorchTree) -> Any:
         assert isinstance(obs, Mapping), "LeRobot expects mapping-like observations."
-        processed_cond = self.actor.diffusion._prepare_global_conditioning(
-            _torch_tree_to_device(obs, self.device)
+        cond_cache = self.actor.diffusion._prepare_global_conditioning(
+            torch_tree_to_device(obs, self.device)
         )
-        return processed_cond
+        return cond_cache
 
     def previous_timestep(
         self, noise_scheduler: DDPMScheduler, t: torch.Tensor
@@ -233,7 +234,7 @@ class LeRobotDiffusionPolicy(BasePolicyGradientDiffusionPolicy):
         cond: TorchTree,
         x_next: torch.Tensor | None = None,
         *,
-        processed_cond: Any = None,
+        cond_cache: Any = None,
         sampling_noise_level: float | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         b = x.shape[0]
@@ -246,15 +247,15 @@ class LeRobotDiffusionPolicy(BasePolicyGradientDiffusionPolicy):
         t = t.to(device).long()
         x = x.to(device)
 
-        b_cond = _torch_tree_batch_size(cond)
-        if processed_cond is None:
-            cond = _torch_tree_to_device(cond, device)
-            processed_cond = self.preprocess_observation(cond)
+        b_cond = torch_tree_batch_size(cond)
+        if cond_cache is None:
+            cond = torch_tree_to_device(cond, device)
+            cond_cache = self.build_obs_cache(cond)
 
-        global_cond = processed_cond
+        global_cond = cond_cache
         if b_cond * self.num_denoising_steps == b:
             global_cond = torch.repeat_interleave(
-                processed_cond, self.num_denoising_steps, dim=0
+                cond_cache, self.num_denoising_steps, dim=0
             )
 
         model_output = self.actor.diffusion.unet(x, t, global_cond=global_cond)
@@ -351,10 +352,10 @@ class LeRobotDiffusionPolicy(BasePolicyGradientDiffusionPolicy):
     def _iterative_process_action(self, action: torch.Tensor) -> torch.Tensor:
         return action
 
-    def _get_value(self, obs: TorchTree, processed_obs: Any = None) -> torch.Tensor:
-        if processed_obs is None:
-            processed_obs = self.preprocess_observation(obs)
-        global_cond = processed_obs
+    def _get_value(self, obs: TorchTree, obs_cache: Any = None) -> torch.Tensor:
+        if obs_cache is None:
+            obs_cache = self.build_obs_cache(obs)
+        global_cond = obs_cache
         value = self.critic(global_cond).squeeze(-1)
         return value
 
@@ -376,9 +377,3 @@ if __name__ == "__main__":
     from plugrl_server.cli import main
 
     main()
-
-
-def _torch_tree_to_device(value: TorchTree, device: torch.device) -> TorchTree:
-    if isinstance(value, torch.Tensor):
-        return value.to(device)
-    return dict((key, _torch_tree_to_device(item, device)) for key, item in value.items())

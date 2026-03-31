@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-from typing import Any
-
 import torch
 
-from plugrl_server.policy.base_policy_gradient_diffusion_policy import TorchTree
 from plugrl_server.policy.base_policy_gradient_flow_policy import (
     BasePolicyGradientFlowPolicy,
 )
@@ -12,11 +9,12 @@ from plugrl_server.policy.base_policy_gradient_flow_policy import (
 
 def compute_cfm_loss(
     policy: BasePolicyGradientFlowPolicy,
+    obs,
     action: torch.Tensor,
     *,
     loss_eps: torch.Tensor,
     loss_t: torch.Tensor,
-    processed_obs: Any,
+    obs_cache=None,
 ) -> torch.Tensor:
     batch_size = action.shape[0]
     action_shape = action.shape[1:]
@@ -31,8 +29,8 @@ def compute_cfm_loss(
     v = policy._predict_v(
         x_t_flat,
         t_flat,
-        None,
-        processed_cond=processed_obs,
+        obs,
+        cond_cache=obs_cache,
     ).reshape_as(x_t)
 
     if getattr(policy, "output_mode", None) == "u":

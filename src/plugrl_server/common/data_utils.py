@@ -217,6 +217,33 @@ def numpy_tree_to_torch(tree: NumpyTree) -> TorchTree:
     return dict((key, numpy_tree_to_torch(value)) for key, value in tree_mapping.items())
 
 
+def numpy_state_to_torch_tree(tree: Any) -> Any:
+    if isinstance(tree, torch.Tensor):
+        return tree
+    if isinstance(tree, np.ndarray):
+        return torch.from_numpy(tree)
+    if isinstance(tree, Mapping):
+        return dict((key, numpy_state_to_torch_tree(value)) for key, value in tree.items())
+    raise TypeError(f"Unsupported model observation type: {type(tree)!r}")
+
+
+def first_tensor_in_tree(value: TorchTree) -> torch.Tensor | None:
+    if isinstance(value, torch.Tensor):
+        return value
+    for item in value.values():
+        tensor = first_tensor_in_tree(item)
+        if tensor is not None:
+            return tensor
+    return None
+
+
+def torch_tree_batch_size(value: TorchTree) -> int:
+    tensor = first_tensor_in_tree(value)
+    if tensor is not None:
+        return int(tensor.shape[0])
+    raise TypeError("TorchTree observation must expose a batch dimension.")
+
+
 def torch_tree_to_device(tree: TorchTree, device: torch.device) -> TorchTree:
     if isinstance(tree, torch.Tensor):
         tensor_tree = cast(torch.Tensor, tree)

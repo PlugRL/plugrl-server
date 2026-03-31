@@ -1,9 +1,10 @@
 import dataclasses
-from typing import Literal
+from typing import Any, Literal
 
 import torch
 import torch.nn as nn
 
+from plugrl_server.common.data_utils import numpy_state_to_torch_tree
 from plugrl_server.common.logging_utils import get_logger
 from .base_policy import BasePolicy, BasePolicyConfig
 
@@ -29,6 +30,9 @@ class BaseTorchPolicy(BasePolicy, nn.Module):
             self.__class__.__name__,
             self.device,
         )
+
+    def extract_model_obs_tensor(self, _obs: dict[str, Any]) -> Any:
+        return numpy_state_to_torch_tree(self.prepare_observation(_obs))
 
 
 __all__ = [

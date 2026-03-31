@@ -103,14 +103,15 @@ class FPOBuffer(GAEBuffer):
             j = min(i + batch_size, self.idx)
             obs = self.train_state_storage.get_item(slice(i, j))
             obs_torch = torch_tree_to_device(numpy_tree_to_torch(obs), policy.device)
-            processed_obs = policy.preprocess_observation(obs_torch)
+            obs_cache = policy.build_obs_cache(obs_torch)
             actions = torch.from_numpy(self.actions[i:j]).to(policy.device)
             initial_cfm_loss = compute_cfm_loss(
                 policy,
+                obs_torch,
                 actions,
                 loss_eps=loss_eps[i:j],
                 loss_t=loss_t[i:j],
-                processed_obs=processed_obs,
+                obs_cache=obs_cache,
             )
             self.initial_cfm_loss[i:j] = initial_cfm_loss.detach().cpu().numpy()
 

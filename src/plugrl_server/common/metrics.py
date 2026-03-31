@@ -135,7 +135,16 @@ def render_metrics_table(
 def _build_single_column_metric_rows(
     metrics: Mapping[str, MetricValue],
 ) -> list[tuple[str, str]]:
-    group_names = ("rollout", "train", "losses", "models", "server", "progress")
+    group_names = (
+        "rollout",
+        "train",
+        "losses",
+        "models",
+        "server",
+        "runtime",
+        "learn_runtime",
+        "progress",
+    )
     return _flatten_metric_groups(metrics, group_names)
 
 

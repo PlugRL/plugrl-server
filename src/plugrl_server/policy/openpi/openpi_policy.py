@@ -14,9 +14,14 @@ import numpy as np
 import jax
 from typing import Any
 
-from plugrl_server.common.data_utils import batch_aggregate, unbatch_aggregate
+from plugrl_server.common.data_utils import (
+    batch_aggregate,
+    torch_tree_to_device,
+    torch_tree_batch_size,
+    unbatch_aggregate,
+)
 from .openpi_transforming import get_transform
-from ..base_policy_gradient_diffusion_policy import TorchTree, _torch_tree_batch_size
+from ..base_policy_gradient_diffusion_policy import TorchTree
 from ..base_policy_gradient_flow_policy import (
     BasePolicyGradientFlowPolicy,
     BasePolicyGradientFlowPolicyConfig,
@@ -127,8 +132,8 @@ class Pi0Policy(BasePolicyGradientFlowPolicy):
         batch_obs = batch_aggregate(obs_list)
         return jax.tree.map(lambda x: np.array(x), batch_obs)
 
-    def preprocess_observation(self, obs: TorchTree) -> Any:
-        obs_dict = _torch_tree_to_device(obs, self.device)
+    def build_obs_cache(self, obs: TorchTree) -> Any:
+        obs_dict = torch_tree_to_device(obs, self.device)
         observation = _model.Observation.from_dict(obs_dict)
         images, img_masks, lang_tokens, lang_masks, state = (
             self.actor._preprocess_observation(observation, train=False)
@@ -197,7 +202,7 @@ class Pi0Policy(BasePolicyGradientFlowPolicy):
         t: torch.Tensor,
         cond: TorchTree | None,
         *,
-        processed_cond: Any = None,
+        cond_cache: Any = None,
     ) -> torch.Tensor:
         b = x.shape[0]
         assert t.shape == (b,)
@@ -207,15 +212,15 @@ class Pi0Policy(BasePolicyGradientFlowPolicy):
         t = t.to(device)
         x = x.to(device)
 
-        if processed_cond is None:
+        if cond_cache is None:
             assert cond is not None
-            b_cond = _torch_tree_batch_size(cond)
-            cond = _torch_tree_to_device(cond, device)
-            processed_cond = self.preprocess_observation(cond)
+            b_cond = torch_tree_batch_size(cond)
+            cond = torch_tree_to_device(cond, device)
+            cond_cache = self.build_obs_cache(cond)
         else:
-            state, _, _, _ = processed_cond
+            state, _, _, _ = cond_cache
             b_cond = state.shape[0]
-        state, prefix_pad_masks, outputs, past_key_values = processed_cond
+        state, prefix_pad_masks, outputs, past_key_values = cond_cache
 
         if b_cond != b:
             if b % b_cond != 0:
@@ -231,10 +236,10 @@ class Pi0Policy(BasePolicyGradientFlowPolicy):
 
         return self.actor.denoise_step(state, prefix_pad_masks, past_key_values, x, t)
 
-    def _get_value(self, obs: TorchTree, processed_obs: Any = None) -> torch.Tensor:
-        if processed_obs is None:
-            processed_obs = self.preprocess_observation(obs)
-        _, _, outputs, _ = processed_obs
+    def _get_value(self, obs: TorchTree, obs_cache: Any = None) -> torch.Tensor:
+        if obs_cache is None:
+            obs_cache = self.build_obs_cache(obs)
+        _, _, outputs, _ = obs_cache
         mean_hidden_state = outputs[0].mean(dim=1)
         value = self.critic(mean_hidden_state).squeeze(-1)
         return value
@@ -244,9 +249,3 @@ class Pi0Policy(BasePolicyGradientFlowPolicy):
             self.actor.paligemma_with_expert.paligemma.eval()
             for params in self.actor.paligemma_with_expert.paligemma.parameters():
                 params.requires_grad = False
-
-
-def _torch_tree_to_device(value: TorchTree, device: torch.device) -> TorchTree:
-    if isinstance(value, torch.Tensor):
-        return value.to(device)
-    return dict((key, _torch_tree_to_device(item, device)) for key, item in value.items())

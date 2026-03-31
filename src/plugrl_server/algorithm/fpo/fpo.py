@@ -1,24 +1,35 @@
 import dataclasses
 import math
+import time
 
 import numpy as np
 import torch
 
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm
 from plugrl_server.algorithm.registration import register_algo
-from plugrl_server.algorithm.train_utils import move_batch_to_device
 from plugrl_server.common.checkpoint_manager import Checkpoint
+from plugrl_server.common.data_utils import (
+    numpy_tree_to_torch,
+    torch_tree_get_item,
+    torch_tree_to_device,
+)
 from plugrl_server.policy.base_policy_gradient_diffusion_policy import (
     DiffusionRuntimeState,
 )
 from plugrl_server.policy.base_policy_gradient_flow_policy import (
     BasePolicyGradientFlowPolicy,
 )
+from plugrl_server.policy.fpo.fpo_policy import FPOPolicy
 from plugrl_server.policy.state import PolicyRuntimeState, PolicyTrainState, to_numpy_state
 
 from .fpo_buffer import FPOBuffer
 from .fpo_config import FPOAlgoConfig, UID
 from .utils import compute_cfm_loss
+
+
+def _sync_cuda_if_needed(device: torch.device) -> None:
+    if device.type == "cuda":
+        torch.cuda.synchronize(device)
 
 
 @register_algo(UID)
@@ -61,14 +72,11 @@ class FPOAlgorithm(BaseAlgorithm):
         final_action = action_array[:, -1]
         value = value_array.reshape(-1, 1)
         return dict(
-            obs=numpy_state["obs"]["cond"],
+            obs=np.asarray(numpy_state["obs"]["cond"], dtype=np.float32),
             action=final_action,
             logprob=np.zeros_like(final_action, dtype=np.float32),
             value=value,
         )
-
-    def example_train_state(self, batch_size: int) -> PolicyTrainState:
-        return self.derive_train_state(self.policy.fake_runtime_state(batch_size))
 
     def feedback(
         self,
@@ -104,6 +112,10 @@ class FPOAlgorithm(BaseAlgorithm):
         return current_node, self.global_step, dict()
 
     def pre_learn(self) -> None:
+        if isinstance(self.policy, FPOPolicy):
+            obs = self.rollout_buffer.train_state_storage.get_item(slice(None))
+            obs_torch = torch_tree_to_device(numpy_tree_to_torch(obs), self.policy.device)
+            self.policy.update_obs_stats_from_model_obs(obs_torch)
         self.rollout_buffer.compute_advantages_and_returns(
             policy=self.policy,
             batch_size=self.config.batch_size,
@@ -161,15 +173,33 @@ class FPOAlgorithm(BaseAlgorithm):
         self.curr_train_itrs = int(checkpoint.meta.get("curr_train_itrs", 0))
         self.last_saved_itr = self.curr_train_itrs
 
-    def create_dataloader(self) -> torch.utils.data.DataLoader:
-        return torch.utils.data.DataLoader(
-            self.rollout_buffer,
-            batch_size=self.config.batch_size,
-            shuffle=True,
-            drop_last=False,
-            pin_memory=True,
-            num_workers=0,
-            collate_fn=self.rollout_buffer.collate_fn,
+    def _build_train_batch_cache(self) -> tuple:
+        idx = len(self.rollout_buffer)
+        obs = self.rollout_buffer.train_state_storage.get_item(slice(None, idx))
+        obs_torch = torch_tree_to_device(numpy_tree_to_torch(obs), self.policy.device)
+        action = torch.from_numpy(self.rollout_buffer.actions[:idx]).to(self.policy.device)
+        value = torch.from_numpy(self.rollout_buffer.values[:idx]).to(self.policy.device)
+        advantage = torch.from_numpy(self.rollout_buffer.advantages[:idx]).to(
+            self.policy.device
+        )
+        ret = torch.from_numpy(self.rollout_buffer.returns[:idx]).to(self.policy.device)
+        loss_eps = torch.from_numpy(self.rollout_buffer.loss_eps[:idx]).to(
+            self.policy.device
+        )
+        loss_t = torch.from_numpy(self.rollout_buffer.loss_t[:idx]).to(self.policy.device)
+        initial_cfm_loss = torch.from_numpy(
+            self.rollout_buffer.initial_cfm_loss[:idx]
+        ).to(self.policy.device)
+        _sync_cuda_if_needed(self.policy.device)
+        return (
+            obs_torch,
+            action,
+            value,
+            advantage,
+            ret,
+            loss_eps,
+            loss_t,
+            initial_cfm_loss,
         )
 
     def _compute_loss(
@@ -185,13 +215,15 @@ class FPOAlgorithm(BaseAlgorithm):
     ) -> tuple[torch.Tensor, dict[str, float]]:
         if self.config.normalize_advantage:
             advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
+        obs_cache = self.policy.build_obs_cache(obs)
 
         cfm_loss = compute_cfm_loss(
             self.policy,
+            obs,
             action,
             loss_eps=loss_eps,
             loss_t=loss_t,
-            processed_obs=self.policy.preprocess_observation(obs),
+            obs_cache=obs_cache,
         )
         if self.config.average_losses_before_exp:
             rho_s = torch.exp(initial_cfm_loss.mean(dim=-1) - cfm_loss.mean(dim=-1))
@@ -214,7 +246,7 @@ class FPOAlgorithm(BaseAlgorithm):
         )
         policy_loss = -torch.minimum(surrogate_loss1, surrogate_loss2).mean()
 
-        new_value = self.policy._get_value(obs).view(-1)
+        new_value = self.policy._get_value(obs, obs_cache).view(-1)
         value_loss = ((ret.reshape(-1) - new_value) ** 2).mean() * self.config.value_loss_coeff
         total_loss = policy_loss + value_loss
         clipped_ratio_mean = (
@@ -234,7 +266,6 @@ class FPOAlgorithm(BaseAlgorithm):
         return total_loss, metrics
 
     def learn_impl(self) -> tuple[int, dict]:
-        dataloader = self.create_dataloader()
         learn_progress_total = self.get_learn_progress_total()
         learn_progress_current = 0
         metric_history = dict(
@@ -246,14 +277,50 @@ class FPOAlgorithm(BaseAlgorithm):
             advantages_mean=[],
             advantages_std=[],
         )
+        batch_to_device_total = 0.0
+        compute_loss_total = 0.0
+        backward_step_total = 0.0
+        dataloader_total = 0.0
+        learn_started_at = time.perf_counter()
+        dataloader_started_at = time.perf_counter()
+        batch_cache = self._build_train_batch_cache()
+        dataloader_total += time.perf_counter() - dataloader_started_at
+        obs_all, action_all, value_all, advantage_all, ret_all, loss_eps_all, loss_t_all, initial_cfm_loss_all = batch_cache
+        num_items = action_all.shape[0]
+        if num_items == 0:
+            raise RuntimeError("FPO learn_impl received an empty rollout buffer.")
 
         for _ in range(self.config.num_updates_per_batch):
-            for batch in dataloader:
-                batch = move_batch_to_device(batch, device=self.policy.device)
+            dataloader_started_at = time.perf_counter()
+            indices = torch.randperm(num_items, device=self.policy.device)
+            dataloader_total += time.perf_counter() - dataloader_started_at
+            for i in range(0, num_items, self.config.batch_size):
+                batch_indices = indices[i : i + self.config.batch_size]
+
+                batch_to_device_started_at = time.perf_counter()
+                batch = (
+                    torch_tree_get_item(obs_all, batch_indices),
+                    action_all[batch_indices],
+                    value_all[batch_indices],
+                    advantage_all[batch_indices],
+                    ret_all[batch_indices],
+                    loss_eps_all[batch_indices],
+                    loss_t_all[batch_indices],
+                    initial_cfm_loss_all[batch_indices],
+                )
+                batch_to_device_total += time.perf_counter() - batch_to_device_started_at
+
+                compute_loss_started_at = time.perf_counter()
                 total_loss, batch_metrics = self._compute_loss(*batch)
+                _sync_cuda_if_needed(self.policy.device)
+                compute_loss_total += time.perf_counter() - compute_loss_started_at
+
+                backward_step_started_at = time.perf_counter()
                 self.optimizer.zero_grad(set_to_none=True)
                 total_loss.backward()
                 self.optimizer.step()
+                _sync_cuda_if_needed(self.policy.device)
+                backward_step_total += time.perf_counter() - backward_step_started_at
                 learn_progress_current += 1
                 self.report_learn_progress(learn_progress_current, learn_progress_total)
                 for key, value in batch_metrics.items():
@@ -264,6 +331,7 @@ class FPOAlgorithm(BaseAlgorithm):
 
         self.curr_train_itrs += 1
         self.rollout_buffer.reset()
+        learn_loop_time = time.perf_counter() - learn_started_at
         return self.global_step, dict(
             train=dict(train_itrs=float(self.curr_train_itrs)),
             losses=dict(
@@ -277,7 +345,21 @@ class FPOAlgorithm(BaseAlgorithm):
                 advantages_mean=float(np.mean(metric_history["advantages_mean"])),
                 advantages_std=float(np.mean(metric_history["advantages_std"])),
             ),
+            learn_runtime=dict(
+                dataloader_time=dataloader_total,
+                batch_to_device_time=batch_to_device_total,
+                compute_loss_time=compute_loss_total,
+                backward_step_time=backward_step_total,
+                learn_loop_time=learn_loop_time,
+                dataloader_ratio=0.0 if learn_loop_time <= 0 else dataloader_total / learn_loop_time,
+                batch_to_device_ratio=0.0
+                if learn_loop_time <= 0
+                else batch_to_device_total / learn_loop_time,
+                compute_loss_ratio=0.0
+                if learn_loop_time <= 0
+                else compute_loss_total / learn_loop_time,
+                backward_step_ratio=0.0
+                if learn_loop_time <= 0
+                else backward_step_total / learn_loop_time,
+            ),
         )
-
-    def post_learn(self) -> None:
-        self.reset_episode_metrics()

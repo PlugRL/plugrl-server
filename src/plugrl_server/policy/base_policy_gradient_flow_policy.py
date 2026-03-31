@@ -24,7 +24,7 @@ class BasePolicyGradientFlowPolicy(BasePolicyGradientDiffusionPolicy):
         t: torch.Tensor,
         cond: TorchTree | None,
         *,
-        processed_cond: Any = None,
+        cond_cache: Any = None,
     ) -> torch.Tensor: ...
 
     def _denoising_step(
@@ -34,7 +34,7 @@ class BasePolicyGradientFlowPolicy(BasePolicyGradientDiffusionPolicy):
         cond: TorchTree,
         x_next: torch.Tensor | None = None,
         *,
-        processed_cond: Any = None,
+        cond_cache: Any = None,
         sampling_noise_level: float | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         b = x.shape[0]
@@ -43,7 +43,7 @@ class BasePolicyGradientFlowPolicy(BasePolicyGradientDiffusionPolicy):
         device = self.device
         x = x.to(device)
         t = t.to(device)
-        v = self._predict_v(x, t, cond, processed_cond=processed_cond)
+        v = self._predict_v(x, t, cond, cond_cache=cond_cache)
 
         if sampling_noise_level is None:
             mean, std = x + self.dt * v, torch.zeros_like(x)

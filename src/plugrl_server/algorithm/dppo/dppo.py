@@ -94,9 +94,6 @@ class DPPOAlgorithm(BaseAlgorithm):
         assert runtime_state.obs is not None
         return numpy_state
 
-    def example_train_state(self, batch_size: int) -> PolicyTrainState:
-        return self.derive_train_state(self.policy.fake_runtime_state(batch_size))
-
     def feedback(
         self,
         *,
@@ -388,7 +385,7 @@ class DPPOAlgorithm(BaseAlgorithm):
 
     def post_learn(self) -> None:
         self.rollout_buffer.reset()
-        self.reset_episode_metrics()
+        super().post_learn()
 
     def should_learn(self) -> bool:
         return self.rollout_buffer.full()

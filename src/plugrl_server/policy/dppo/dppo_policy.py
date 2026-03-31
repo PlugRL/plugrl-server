@@ -172,9 +172,10 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         cond: TorchTree,
         x_next: torch.Tensor | None = None,
         *,
-        processed_cond: Any = None,
+        cond_cache: Any = None,
         sampling_noise_level: float | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        _ = cond_cache
         b = x.shape[0]
         assert t.shape == (b,)
         assert x.shape == (b, self.action_horizon, self.action_dim)
@@ -220,8 +221,9 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         return x_next, logprob, entropy
 
     def _get_value(
-        self, obs: TorchTree, processed_obs=None
+        self, obs: TorchTree, obs_cache=None
     ) -> torch.Tensor:
+        _ = obs_cache
         cond = {key: value.to(self.device) for key, value in obs.items()}
         batch_size = next(iter(cond.values())).shape[0]
         value = self.critic(cond).squeeze(-1)

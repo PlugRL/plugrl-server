@@ -8,7 +8,7 @@ from plugrl_server.policy.state import ArraySpec, NumpyState, TrainStateSpec, in
 
 
 class NumpyTreeStorage:
-    def __init__(self, spec: TrainStateSpec, capacity: int):
+    def __init__(self, spec: TrainStateSpec | ArraySpec, capacity: int):
         self.spec = spec
         self.capacity = capacity
         self.data = _allocate_from_spec(spec, capacity)
@@ -16,8 +16,6 @@ class NumpyTreeStorage:
     @classmethod
     def from_example(cls, example: NumpyState, capacity: int) -> "NumpyTreeStorage":
         spec = infer_numpy_state_spec(example)
-        if isinstance(spec, ArraySpec):
-            raise TypeError("NumpyTreeStorage root spec must be a mapping.")
         return cls(spec=spec, capacity=capacity)
 
     def set_item(self, index: int | slice, value: NumpyState) -> None:

@@ -34,6 +34,7 @@ from plugrl_server.server.protocol import (
     parse_feedback_request,
     parse_infer_request,
 )
+from plugrl_server.server.runtime_metrics import RuntimeMetricTracker
 from plugrl_server.server.runtime_scheduler import RuntimeScheduler
 from plugrl_server.server.training_backend import RayTrainingBackend
 
@@ -93,6 +94,7 @@ class RayAgentServer:
 
         self._total_connections = 0
         self._collect_progress_started = False
+        self._runtime_metric_tracker = RuntimeMetricTracker()
 
     def serve_forever(self) -> None:
         asyncio.run(self.run())
@@ -246,6 +248,7 @@ class RayAgentServer:
                 next_truncated = feedback_msg.data.truncated
                 info = feedback_msg.data.info
 
+                feedback_started_at = asyncio.get_running_loop().time()
                 async with self._model_lock:
                     self._ensure_collect_progress_started()
                     prev_node, step, log_dict = self._algorithm.feedback(
@@ -267,6 +270,10 @@ class RayAgentServer:
                     completed=self._algorithm.get_collect_progress_completed(),
                     advance=0,
                 )
+                self._runtime_metric_tracker.observe_feedback(
+                    duration=asyncio.get_running_loop().time() - feedback_started_at,
+                    batch_size=1,
+                )
 
                 terminated, truncated = next_terminated, next_truncated
 
@@ -286,7 +293,10 @@ class RayAgentServer:
                 self._total_connections = max(0, self._total_connections - 1)
 
     def _runtime_metrics(self) -> dict:
-        return dict(server=dict(total_connections=self._total_connections))
+        return dict(
+            server=dict(total_connections=self._total_connections),
+            **self._runtime_metric_tracker.as_metrics(),
+        )
 
     def _start_collect_progress(self) -> None:
         self._collect_progress_started = True
@@ -314,6 +324,7 @@ class RayAgentServer:
         batch = await self._inference.drain_batch()
         if not batch:
             return
+        started_at = asyncio.get_running_loop().time()
         try:
             obs = batch_aggregate([req["obs"] for req in batch])
             logger.debug(f"Processing inference for batch size {len(batch)}")
@@ -332,6 +343,10 @@ class RayAgentServer:
                         slice_policy_step_state(step_state, slice(i, i + 1)),
                     ),
                 )
+            self._runtime_metric_tracker.observe_infer(
+                duration=asyncio.get_running_loop().time() - started_at,
+                batch_size=len(batch),
+            )
         except Exception as exc:
             self._inference.fail_batch(batch, exc)
             raise
