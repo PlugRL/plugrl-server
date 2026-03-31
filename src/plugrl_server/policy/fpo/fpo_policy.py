@@ -79,8 +79,8 @@ class ValueFunction(nn.Module):
 @register_policy_config(UID)
 @dataclasses.dataclass
 class FPOPolicyConfig(BasePolicyGradientFlowPolicyConfig):
-    obs_dim: int = 11
-    action_dim: int = 3
+    obs_dim: int = 17
+    action_dim: int = 6
     flow_steps: int = 10
     timestep_embed_dim: int = 8
     action_horizon: int = 1

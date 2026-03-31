@@ -122,7 +122,7 @@ class FPOAlgorithm(BaseAlgorithm):
 
     def get_learn_progress_total(self) -> int | None:
         return self.config.num_updates_per_batch * math.ceil(
-            self.config.buffer_size / self.config.batch_size
+            len(self.rollout_buffer) / self.config.batch_size
         )
 
     def should_learn(self) -> bool:

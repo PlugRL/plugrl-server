@@ -291,7 +291,7 @@ class GAEBuffer(RolloutBuffer):
                     next_observations[i : i + batch_size], aggregate_method="concat"
                 )
                 with torch.inference_mode():
-                    batch_values = policy.get_value(batch_obs).cpu().numpy()
+                    batch_values = policy.get_value(batch_obs).cpu().numpy().reshape(-1, 1)
                 self.last_values[next_ids[i : i + batch_size]] = batch_values
 
         for step in reversed(range(self.idx)):

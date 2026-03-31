@@ -10,12 +10,12 @@ UID = "fpo"
 @dataclasses.dataclass
 class FPOAlgoConfig(BaseAlgoConfig):
     global_steps: int | None = 60_000_000
-    buffer_size: int = 2048
+    buffer_size: int = 983_040
     discounting: float = 0.995
     reward_scaling: float = 10.0
     gae_lambda: float = 0.95
-    batch_size: int = 256
-    num_updates_per_batch: int = 4
+    batch_size: int = 1024
+    num_updates_per_batch: int = 16
     learning_rate: float = 3e-4
     value_loss_coeff: float = 0.25
     clipping_epsilon: float = 0.05
