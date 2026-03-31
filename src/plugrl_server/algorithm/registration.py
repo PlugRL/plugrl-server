@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Type, Dict, TypeVar, Callable
+from typing import Type, Dict, TypeVar, Callable, cast
 from plugrl_server.policy.base_policy import BasePolicy
 
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm, BaseAlgoConfig
@@ -22,16 +22,17 @@ class AlgoSpec:
 REGISTERED_ALGO_CONFIGS: Dict[str, Dict[str, BaseAlgoConfig]] = defaultdict(dict)
 REGISTERED_ALGORITHMS: Dict[str, AlgoSpec] = {}
 
-T = TypeVar("T")
+AlgoT = TypeVar("AlgoT", bound=type[BaseAlgorithm])
+AlgoConfigT = TypeVar("AlgoConfigT", bound=type[BaseAlgoConfig])
 
 
 def register_algo(
     uid: str, override: bool = False, **default_kwargs
-) -> Callable[[T], T]:
-    def _register_algo(cls: T) -> T:
+) -> Callable[[AlgoT], AlgoT]:
+    def _register_algo(cls: AlgoT) -> AlgoT:
         if uid in REGISTERED_ALGORITHMS and not override:
             raise KeyError(f"Algorithm {uid} is already registered.")
-        if not issubclass(cls, BaseAlgorithm):  # type: ignore
+        if not issubclass(cls, BaseAlgorithm):
             raise TypeError(f"Algorithm {uid} must inherit from BaseAlgorithm")
         REGISTERED_ALGORITHMS[uid] = AlgoSpec(
             uid,
@@ -50,12 +51,12 @@ def make_algo(uid: str, policy: BasePolicy, **kwargs) -> BaseAlgorithm:
 
 
 def register_algo_config(uid: str, variant: str = "default"):
-    def _register_algo_config(cls):
+    def _register_algo_config(cls: AlgoConfigT) -> AlgoConfigT:
         if uid in REGISTERED_ALGO_CONFIGS and variant in REGISTERED_ALGO_CONFIGS[uid]:
             raise KeyError(
                 f"Algo config {uid} with variant {variant} is already registered."
             )
-        REGISTERED_ALGO_CONFIGS[uid][variant] = cls()
+        REGISTERED_ALGO_CONFIGS[uid][variant] = cast(BaseAlgoConfig, cls())
         return cls
 
     return _register_algo_config

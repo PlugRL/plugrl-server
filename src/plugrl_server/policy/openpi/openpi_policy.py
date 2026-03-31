@@ -16,11 +16,10 @@ from typing import Any
 
 from plugrl_server.common.data_utils import batch_aggregate, unbatch_aggregate
 from .openpi_transforming import get_transform
-from ..base_policy_gradient_diffusion_policy import (
-    BasePolicyGradientDiffusionPolicy,
-    BasePolicyGradientDiffusionPolicyConfig,
-    TorchTree,
-    _torch_tree_batch_size,
+from ..base_policy_gradient_diffusion_policy import TorchTree, _torch_tree_batch_size
+from ..base_policy_gradient_flow_policy import (
+    BasePolicyGradientFlowPolicy,
+    BasePolicyGradientFlowPolicyConfig,
 )
 from ..registration import register_policy, register_policy_config
 from .value_head import ValueHead
@@ -30,7 +29,7 @@ UID = "pi0-policy"
 
 @register_policy_config(UID)
 @dataclasses.dataclass
-class Pi0PolicyConfig(BasePolicyGradientDiffusionPolicyConfig):
+class Pi0PolicyConfig(BasePolicyGradientFlowPolicyConfig):
     name: str = "pi05_tiny_libero"
     checkpoint_path: pathlib.Path | None = None
     default_prompt: str | None = None
@@ -39,7 +38,7 @@ class Pi0PolicyConfig(BasePolicyGradientDiffusionPolicyConfig):
 
 
 @register_policy(UID)
-class Pi0Policy(BasePolicyGradientDiffusionPolicy):
+class Pi0Policy(BasePolicyGradientFlowPolicy):
     actor: _model.pi0_pytorch.PI0Pytorch
     config: Pi0PolicyConfig
 
@@ -111,8 +110,7 @@ class Pi0Policy(BasePolicyGradientDiffusionPolicy):
         )
         return timestep
 
-    def _initialize_x(self, obs: TorchTree) -> torch.Tensor:
-        batch_size = _torch_tree_batch_size(obs)
+    def _initialize_x(self, batch_size: int) -> torch.Tensor:
         x = torch.randn(
             batch_size, self.action_horizon, self.action_dim, device=self.device
         )
@@ -193,16 +191,14 @@ class Pi0Policy(BasePolicyGradientDiffusionPolicy):
             actions.append(transformed_out["actions"])
         return np.stack(actions, axis=0)
 
-    def _denoising_step(
+    def _predict_v(
         self,
         x: torch.Tensor,
         t: torch.Tensor,
-        cond: TorchTree,
-        x_next: torch.Tensor | None = None,
+        cond: TorchTree | None,
         *,
         processed_cond: Any = None,
-        sampling_noise_level: float | None = None,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> torch.Tensor:
         b = x.shape[0]
         assert t.shape == (b,)
         assert x.shape == (b, self.action_horizon, self.action_dim)
@@ -211,48 +207,29 @@ class Pi0Policy(BasePolicyGradientDiffusionPolicy):
         t = t.to(device)
         x = x.to(device)
 
-        b_cond = _torch_tree_batch_size(cond)
         if processed_cond is None:
+            assert cond is not None
+            b_cond = _torch_tree_batch_size(cond)
             cond = _torch_tree_to_device(cond, device)
             processed_cond = self.preprocess_observation(cond)
+        else:
+            state, _, _, _ = processed_cond
+            b_cond = state.shape[0]
         state, prefix_pad_masks, outputs, past_key_values = processed_cond
 
-        if b_cond * self.num_denoising_steps == b:
-            state = torch.repeat_interleave(state, self.num_denoising_steps, dim=0)
+        if b_cond != b:
+            if b % b_cond != 0:
+                raise ValueError(
+                    f"Cannot repeat OpenPI cond batch {b_cond} to match x batch {b}."
+                )
+            repeat_factor = b // b_cond
+            state = torch.repeat_interleave(state, repeat_factor, dim=0)
             prefix_pad_masks = torch.repeat_interleave(
-                prefix_pad_masks, self.num_denoising_steps, dim=0
+                prefix_pad_masks, repeat_factor, dim=0
             )
-            past_key_values.batch_repeat_interleave(self.num_denoising_steps)
+            past_key_values.batch_repeat_interleave(repeat_factor)
 
-        vt = self.actor.denoise_step(state, prefix_pad_masks, past_key_values, x, t)
-
-        if sampling_noise_level is None:
-            mean, std = x + self.dt * vt, torch.zeros_like(x)
-        else:
-            t_expanded = t[:, None, None]
-            sigma_t = sampling_noise_level * torch.sqrt(
-                t_expanded / (1 - t_expanded).clamp(min=abs(self.dt))
-            )
-            mean = (
-                x
-                + (vt + sigma_t**2 / (2 * t_expanded) * (x + (1 - t_expanded) * vt))
-                * self.dt
-            )
-            std = sigma_t * np.sqrt(abs(self.dt))
-
-        dist = torch.distributions.Normal(mean, std)
-
-        if x_next is None:
-            noise = torch.randn_like(x)
-            x_next = mean + std * noise
-
-        if sampling_noise_level is not None:
-            logprob = dist.log_prob(x_next)
-        else:
-            logprob = torch.zeros_like(x_next)
-        entropy = dist.entropy()
-
-        return x_next, logprob, entropy
+        return self.actor.denoise_step(state, prefix_pad_masks, past_key_values, x, t)
 
     def _get_value(self, obs: TorchTree, processed_obs: Any = None) -> torch.Tensor:
         if processed_obs is None:

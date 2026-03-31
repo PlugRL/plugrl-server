@@ -1,4 +1,4 @@
-from typing import Dict, Type
+from typing import Callable, Dict, Type, TypeVar, cast
 from collections import defaultdict
 from plugrl_server.policy.base_policy import BasePolicy, BasePolicyConfig
 
@@ -19,10 +19,14 @@ class PolicySpec:
 
 REGISTERED_POLICY_CONFIGS: Dict[str, Dict[str, BasePolicyConfig]] = defaultdict(dict)
 REGISTERED_POLICIES: Dict[str, PolicySpec] = {}
+PolicyT = TypeVar("PolicyT", bound=type[BasePolicy])
+PolicyConfigT = TypeVar("PolicyConfigT", bound=type[BasePolicyConfig])
 
 
-def register_policy(uid: str, override: bool = False, **default_kwargs):
-    def _register_policy(cls):
+def register_policy(
+    uid: str, override: bool = False, **default_kwargs
+) -> Callable[[PolicyT], PolicyT]:
+    def _register_policy(cls: PolicyT) -> PolicyT:
         if uid in REGISTERED_POLICIES and not override:
             raise KeyError(f"Policy {uid} is already registered.")
         if not issubclass(cls, BasePolicy):
@@ -37,8 +41,10 @@ def register_policy(uid: str, override: bool = False, **default_kwargs):
     return _register_policy
 
 
-def register_policy_config(uid: str, variant: str = "default"):
-    def _register_policy_config(cls):
+def register_policy_config(
+    uid: str, variant: str = "default"
+) -> Callable[[PolicyConfigT], PolicyConfigT]:
+    def _register_policy_config(cls: PolicyConfigT) -> PolicyConfigT:
         if (
             uid in REGISTERED_POLICY_CONFIGS
             and variant in REGISTERED_POLICY_CONFIGS[uid]
@@ -46,7 +52,7 @@ def register_policy_config(uid: str, variant: str = "default"):
             raise KeyError(
                 f"Policy config {uid} with variant {variant} is already registered."
             )
-        REGISTERED_POLICY_CONFIGS[uid][variant] = cls()
+        REGISTERED_POLICY_CONFIGS[uid][variant] = cast(BasePolicyConfig, cls())
         return cls
 
     return _register_policy_config

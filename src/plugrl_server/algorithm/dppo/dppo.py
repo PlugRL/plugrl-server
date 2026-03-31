@@ -3,11 +3,13 @@ import torch
 import math
 
 from plugrl_server.common.checkpoint_manager import Checkpoint
-from plugrl_server.common.data_utils import torch_tree_to_device
 from plugrl_server.common.logging_utils import get_logger
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm
 from plugrl_server.algorithm.registration import register_algo
-from plugrl_server.algorithm.train_utils import optimizer_step_if_ready
+from plugrl_server.algorithm.train_utils import (
+    move_batch_to_device,
+    optimizer_step_if_ready,
+)
 from plugrl_server.policy.state import PolicyRuntimeState, PolicyTrainState, to_numpy_state
 from plugrl_server.policy.base_policy_gradient_diffusion_policy import (
     BasePolicyGradientDiffusionPolicy,
@@ -156,13 +158,6 @@ class DPPOAlgorithm(BaseAlgorithm):
             collate_fn=self.rollout_buffer.collate_fn,
         )
 
-    def _move_batch_to_device(self, batch: tuple):
-        obs, action, oldlogprob, reward, value, advantage, ret = batch
-        return (
-            torch_tree_to_device(obs, self.policy.device),
-            *(tensor.to(self.policy.device) for tensor in (action, oldlogprob, reward, value, advantage, ret)),
-        )
-
     def _compute_loss(self, obs, action, oldlogprob, value, advantage, ret):
         """Compute policy loss, value loss, and entropy for a batch."""
         batch_size, ft_denoising_steps = action.shape[:2]
@@ -298,7 +293,7 @@ class DPPOAlgorithm(BaseAlgorithm):
 
             for batch in dataloader:
                 obs, action, oldlogprob, _reward, value, advantage, ret = (
-                    self._move_batch_to_device(batch)
+                    move_batch_to_device(batch, device=self.policy.device)
                 )
                 pg_loss, v_loss, entropy_loss, logratio, ratio = self._compute_loss(
                     obs, action, oldlogprob, value, advantage, ret

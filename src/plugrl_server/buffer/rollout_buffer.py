@@ -1,16 +1,19 @@
 import uuid
+from collections import deque
 from typing import Any
 
 import torch
 import numpy as np
 
 from plugrl_server.common.data_utils import (
+    batch_aggregate,
     numpy_tree_to_torch,
     stack_numpy_tree,
 )
 from plugrl_server.common.logging_utils import get_logger
 from plugrl_server.buffer.numpy_tree_storage import NumpyTreeStorage
 from plugrl_server.buffer.schema_migration import migrate_buffer_payload
+from plugrl_server.policy.base_policy import BasePolicy
 from plugrl_server.policy.state import PolicyTrainState
 
 logger = get_logger(__name__)
@@ -248,8 +251,49 @@ class GAEBuffer(RolloutBuffer):
         super().__init__(buffer_size, example_train_state)
         self.gamma = gamma
         self.gae_lambda = gae_lambda
+        self.next_obs_value_requests: deque[tuple[dict, tuple[int, uuid.UUID]]] = deque()
 
-    def compute_advantages_and_returns(self):
+    def add_next_obs_value_request(
+        self, *, obs: dict, end_node: tuple[int, uuid.UUID]
+    ) -> None:
+        if end_node[0] != -1:
+            self.next_obs_value_requests.append((obs, end_node))
+            assert self.next_indices[end_node[0]] == 0, (
+                "Next index for end_node should be unset."
+            )
+            while (
+                self.next_obs_value_requests
+                and self.next_indices[self.next_obs_value_requests[0][1][0]] != 0
+            ):
+                self.next_obs_value_requests.popleft()
+
+    def reset(self):
+        super().reset()
+        self.next_obs_value_requests.clear()
+
+    def compute_advantages_and_returns(
+        self, policy: BasePolicy | None = None, batch_size: int = 1
+    ):
+        next_ids = []
+        next_observations = []
+        for obs, node in self.next_obs_value_requests:
+            idx, signature = node
+            if signature == self.buffer_signature and self.next_indices[idx] == 0:
+                next_ids.append(int(idx))
+                next_observations.append(obs)
+        self.next_obs_value_requests.clear()
+        if next_observations:
+            assert policy is not None, (
+                "Policy must be provided to compute values for next observations."
+            )
+            for i in range(0, len(next_observations), batch_size):
+                batch_obs = batch_aggregate(
+                    next_observations[i : i + batch_size], aggregate_method="concat"
+                )
+                with torch.inference_mode():
+                    batch_values = policy.get_value(batch_obs).cpu().numpy()
+                self.last_values[next_ids[i : i + batch_size]] = batch_values
+
         for step in reversed(range(self.idx)):
             next_idx = self.next_indices[step]
             next_gae_lam = self.advantages[next_idx] if next_idx != 0 else 0

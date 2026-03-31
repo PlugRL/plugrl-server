@@ -4,6 +4,8 @@ logger = get_logger(__name__)
 
 import plugrl_server.algorithm.dummy_algorithm
 import plugrl_server.algorithm.evaluation
+import plugrl_server.algorithm.fpo.fpo_config  # noqa: F401
+import plugrl_server.algorithm.fpo.fpo  # noqa: F401
 
 try:
     import plugrl_server.algorithm.dppo.dppo_config  # noqa: F401

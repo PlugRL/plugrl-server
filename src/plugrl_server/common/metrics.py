@@ -13,26 +13,27 @@ logger = get_logger(__name__)
 _TABLE_CONSOLE = Console(highlight=False)
 
 MetricScalar: TypeAlias = float | int
-MetricValue: TypeAlias = MetricScalar | dict[str, "MetricValue"]
-MetricDict: TypeAlias = dict[str, MetricValue]
+MetricValue: TypeAlias = MetricScalar | Mapping[str, "MetricValue"]
+MetricDict: TypeAlias = Mapping[str, MetricValue]
+MutableMetricDict: TypeAlias = dict[str, MetricValue]
 
 
 def merge_metric_groups(*metric_groups: Mapping[str, MetricValue]) -> MetricDict:
-    merged: MetricDict = dict()
+    merged: MutableMetricDict = dict()
     for metric_group in metric_groups:
         _merge_metric_group_into(merged, metric_group)
     return merged
 
 
 def _merge_metric_group_into(
-    target: MetricDict, source: Mapping[str, MetricValue]
+    target: MutableMetricDict, source: Mapping[str, MetricValue]
 ) -> None:
     for key, value in source.items():
         existing = target.get(key)
         if isinstance(existing, dict) and isinstance(value, Mapping):
             _merge_metric_group_into(existing, value)
         elif isinstance(value, Mapping):
-            nested: MetricDict = dict()
+            nested: MutableMetricDict = dict()
             _merge_metric_group_into(nested, value)
             target[key] = nested
         else:

@@ -17,7 +17,6 @@ from plugrl_server.policy.base_policy_gradient_diffusion_policy import (
     BasePolicyGradientDiffusionPolicyConfig,
     BasePolicyGradientDiffusionPolicy,
     TorchTree,
-    _torch_tree_batch_size,
 )
 from plugrl_server.policy.registration import register_policy, register_policy_config
 
@@ -96,8 +95,7 @@ class LeRobotDiffusionPolicy(BasePolicyGradientDiffusionPolicy):
         self.actor.diffusion.noise_scheduler.set_timesteps(self.num_denoising_steps)
         return self.actor.diffusion.noise_scheduler.timesteps
 
-    def _initialize_x(self, obs: TorchTree) -> torch.Tensor:
-        batch_size = _torch_tree_batch_size(obs)
+    def _initialize_x(self, batch_size: int) -> torch.Tensor:
         x = torch.randn(
             batch_size, self.action_horizon, self.action_dim, device=self.device
         )

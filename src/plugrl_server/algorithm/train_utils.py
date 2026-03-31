@@ -2,6 +2,20 @@ from collections.abc import Iterable
 
 import torch
 
+from plugrl_server.common.data_utils import torch_tree_to_device
+
+
+def move_batch_to_device(
+    batch: tuple,
+    *,
+    device: torch.device,
+) -> tuple:
+    obs, *rest = batch
+    return (
+        torch_tree_to_device(obs, device),
+        *(tensor.to(device) for tensor in rest),
+    )
+
 
 def optimizer_step_if_ready(
     *,

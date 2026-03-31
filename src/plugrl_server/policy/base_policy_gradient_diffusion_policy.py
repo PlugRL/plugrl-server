@@ -65,7 +65,7 @@ class BasePolicyGradientDiffusionPolicy(BaseTorchPolicy):
     ) -> Any: ...
 
     @abc.abstractmethod
-    def _initialize_x(self, obs: TorchTree) -> torch.Tensor: ...
+    def _initialize_x(self, batch_size: int) -> torch.Tensor: ...
 
     def preprocess_observation(self, obs: TorchTree) -> Any: ...
 
@@ -80,7 +80,7 @@ class BasePolicyGradientDiffusionPolicy(BaseTorchPolicy):
         processed_obs = self.preprocess_observation(model_obs)
         timesteps = self._get_timesteps()
         b = _torch_tree_batch_size(model_obs)
-        x = self._initialize_x(model_obs)
+        x = self._initialize_x(b)
 
         runtime_state: DiffusionRuntimeState = self.fake_runtime_state(b)
         for i, t in enumerate(timesteps):

@@ -119,8 +119,7 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         timesteps = list(reversed(range(self.actor.denoising_steps)))
         return torch.tensor(timesteps)
 
-    def _initialize_x(self, obs: TorchTree) -> torch.Tensor:
-        batch_size = next(iter(obs.values())).shape[0]
+    def _initialize_x(self, batch_size: int) -> torch.Tensor:
         x = torch.randn(
             batch_size, self.action_horizon, self.action_dim, device=self.device
         )
