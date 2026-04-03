@@ -141,7 +141,9 @@ def create_empty_torch_tree(template: TorchTree, buffer_size: int) -> TorchTree:
     )
 
 
-def torch_tree_get_item(tree: TorchTree, index: int | slice | torch.Tensor) -> TorchTree:
+def torch_tree_get_item(
+    tree: TorchTree, index: int | slice | torch.Tensor
+) -> TorchTree:
     if isinstance(tree, torch.Tensor):
         tensor_tree = cast(torch.Tensor, tree)
         return tensor_tree[index]
@@ -206,7 +208,9 @@ def torch_tree_to_numpy(tree: TorchTree) -> NumpyTree:
         tensor_tree = cast(torch.Tensor, tree)
         return tensor_tree.cpu().numpy()
     tree_mapping = cast(Mapping[str, TorchTree], tree)
-    return dict((key, torch_tree_to_numpy(value)) for key, value in tree_mapping.items())
+    return dict(
+        (key, torch_tree_to_numpy(value)) for key, value in tree_mapping.items()
+    )
 
 
 def numpy_tree_to_torch(tree: NumpyTree) -> TorchTree:
@@ -214,7 +218,9 @@ def numpy_tree_to_torch(tree: NumpyTree) -> TorchTree:
         array_tree = cast(np.ndarray, tree)
         return torch.from_numpy(array_tree)
     tree_mapping = cast(Mapping[str, NumpyTree], tree)
-    return dict((key, numpy_tree_to_torch(value)) for key, value in tree_mapping.items())
+    return dict(
+        (key, numpy_tree_to_torch(value)) for key, value in tree_mapping.items()
+    )
 
 
 def numpy_state_to_torch_tree(tree: Any) -> Any:
@@ -223,7 +229,9 @@ def numpy_state_to_torch_tree(tree: Any) -> Any:
     if isinstance(tree, np.ndarray):
         return torch.from_numpy(tree)
     if isinstance(tree, Mapping):
-        return dict((key, numpy_state_to_torch_tree(value)) for key, value in tree.items())
+        return dict(
+            (key, numpy_state_to_torch_tree(value)) for key, value in tree.items()
+        )
     raise TypeError(f"Unsupported model observation type: {type(tree)!r}")
 
 
@@ -250,5 +258,6 @@ def torch_tree_to_device(tree: TorchTree, device: torch.device) -> TorchTree:
         return tensor_tree.to(device)
     tree_mapping = cast(Mapping[str, TorchTree], tree)
     return dict(
-        (key, torch_tree_to_device(value, device)) for key, value in tree_mapping.items()
+        (key, torch_tree_to_device(value, device))
+        for key, value in tree_mapping.items()
     )

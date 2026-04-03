@@ -167,7 +167,9 @@ class RayTrainingBackend:
         learn_ref = self._learner_actor.learn.remote(
             global_step, meta_info, buffer_data_ref
         )
-        checkpoint, global_step, train_info = await asyncio.to_thread(ray.get, learn_ref)
+        checkpoint, global_step, train_info = await asyncio.to_thread(
+            ray.get, learn_ref
+        )
 
         await self._update_inference_policy(checkpoint)
         if self._progress_reporter is not None:

@@ -74,7 +74,9 @@ class ServerLifecycle:
 
         if server is not None:
             close_reason = self.close_reason or "Server shutdown"
-            logger.info("Shutdown closing %s websocket connection(s).", len(server.connections))
+            logger.info(
+                "Shutdown closing %s websocket connection(s).", len(server.connections)
+            )
             await asyncio.gather(
                 *(
                     _close_connection_with_timeout(
@@ -92,7 +94,9 @@ class ServerLifecycle:
                     transport.abort()
             server.close()
             try:
-                await asyncio.wait_for(server.wait_closed(), timeout=SERVER_CLOSE_TIMEOUT)
+                await asyncio.wait_for(
+                    server.wait_closed(), timeout=SERVER_CLOSE_TIMEOUT
+                )
             except asyncio.TimeoutError:
                 logger.warning("Timed out waiting for websocket server to close.")
             logger.info("WebSocket server closed.")
@@ -105,7 +109,9 @@ class ServerLifecycle:
             await extra_cleanup()
 
 
-async def _close_connection_with_timeout(connection: Any, *, code: int, reason: str) -> None:
+async def _close_connection_with_timeout(
+    connection: Any, *, code: int, reason: str
+) -> None:
     try:
         await asyncio.wait_for(
             connection.close(code, reason),

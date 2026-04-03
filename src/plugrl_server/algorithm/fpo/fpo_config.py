@@ -11,6 +11,9 @@ UID = "fpo"
 class FPOAlgoConfig(BaseAlgoConfig):
     global_steps: int | None = 60_000_000
     buffer_size: int = 983_040
+    output_mode: str = "u_but_supervise_as_eps"
+    fpo_playground_trick: bool = True
+    treat_truncated_as_done: bool = False
     discounting: float = 0.995
     reward_scaling: float = 10.0
     gae_lambda: float = 0.95

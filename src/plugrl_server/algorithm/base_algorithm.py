@@ -139,14 +139,15 @@ class BaseAlgorithm(abc.ABC):
         self._learn_progress_callback = callback
 
     def report_learn_progress(self, current: int, total: int | None = None) -> None:
-        if self._stop_requested_callback is not None and self._stop_requested_callback():
+        if (
+            self._stop_requested_callback is not None
+            and self._stop_requested_callback()
+        ):
             raise LearnInterrupted("Learn interrupted by shutdown request.")
         if self._learn_progress_callback is not None:
             self._learn_progress_callback(current, total)
 
-    def set_stop_requested_callback(
-        self, callback: Callable[[], bool] | None
-    ) -> None:
+    def set_stop_requested_callback(self, callback: Callable[[], bool] | None) -> None:
         self._stop_requested_callback = callback
 
     def build_train_info(self, *metric_groups: MetricDict) -> MetricDict:

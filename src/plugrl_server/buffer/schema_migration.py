@@ -24,9 +24,24 @@ def _migrate_replay_v1_to_v2(payload: dict) -> dict:
     return migrated
 
 
+def _migrate_rollout_v2_to_v3(payload: dict) -> dict:
+    migrated = payload.copy()
+    dones = migrated["dones"]
+    next_done = migrated["next_done"]
+    migrated["buffer_schema_version"] = 3
+    migrated["terminated"] = dones.copy()
+    migrated["truncated"] = dones.copy()
+    migrated["truncated"].fill(False)
+    migrated["next_terminated"] = next_done.copy()
+    migrated["next_truncated"] = next_done.copy()
+    migrated["next_truncated"].fill(False)
+    return migrated
+
+
 BUFFER_MIGRATORS: dict[tuple[BufferKind, int, int], MigrationFn] = dict(
     [
         (("rollout", 1, 2), _migrate_rollout_v1_to_v2),
+        (("rollout", 2, 3), _migrate_rollout_v2_to_v3),
         (("replay", 1, 2), _migrate_replay_v1_to_v2),
     ]
 )
@@ -62,6 +77,8 @@ def migrate_buffer_payload(
         migrated = migrator(migrated)
         current_version = migrated.get("buffer_schema_version")
         if current_version is None:
-            raise ValueError("Migrated buffer payload is missing 'buffer_schema_version'.")
+            raise ValueError(
+                "Migrated buffer payload is missing 'buffer_schema_version'."
+            )
 
     return migrated

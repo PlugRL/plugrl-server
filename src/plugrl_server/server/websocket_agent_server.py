@@ -8,7 +8,6 @@ import uuid
 
 from plugrl_protocol import msgpack_numpy
 from plugrl_protocol.websocket_protocol import (
-    MessageType,
     SERVER_RESYNC_REASON,
     SERVER_STOP_REASON,
 )
@@ -19,7 +18,7 @@ from plugrl_server.common.data_utils import batch_aggregate, unbatch_aggregate
 from plugrl_server.common.logging_utils import get_logger
 from plugrl_server.common.metrics import MetricSink
 from plugrl_server.common.progress import ProgressReporter
-from plugrl_server.policy.state import PolicyStepState, slice_policy_step_state
+from plugrl_server.policy.state import slice_policy_step_state
 from plugrl_server.server.inference_coordinator import InferenceCoordinator
 from plugrl_server.server.lifecycle import ServerLifecycle
 from plugrl_server.server.protocol import (
@@ -67,9 +66,6 @@ class WebSocketAgentServer:
         self._inference = InferenceCoordinator(
             stopping_error_factory=ServerStoppingError,
         )
-        # Accumulate partial inference outputs per req_id; only fulfill the
-        # corresponding future once all sub-indices for that req_id arrive.
-        self._pending_infer_results: dict[str, dict[str, Any]] = {}
         self._model_lock = asyncio.Lock()
         self._server: Any = None
         self._lifecycle = ServerLifecycle()
@@ -108,11 +104,10 @@ class WebSocketAgentServer:
         await self._lifecycle.handle_fatal(context, exc)
 
     async def _abort_pending_infer_requests(self, reason: str) -> None:
-        # pending accumulators are only used to group results; drop them on shutdown
-        self._pending_infer_results.clear()
-        pending_futures, drained_requests = (
-            await self._inference.abort_pending_requests(reason)
-        )
+        (
+            pending_futures,
+            drained_requests,
+        ) = await self._inference.abort_pending_requests(reason)
 
         if pending_futures > 0 or drained_requests > 0:
             logger.info(
@@ -188,30 +183,23 @@ class WebSocketAgentServer:
                     break
 
                 obs, env_ids = infer_msg.data, infer_msg.env_indices
-                obs_list = unbatch_aggregate(obs, aggregate_method="concat")
 
                 req_id = f"{session_id}-{uuid.uuid4()}"
                 response_future = await self._inference.register_request(req_id)
 
-                # put one queue entry per env; include expected_count to support
-                # partial batching without completing the request early
-                expected_count = len(env_ids)
-                for i, (obs, eid) in enumerate(zip(obs_list, env_ids)):
-                    infer_request = dict(
-                        id=req_id,
-                        obs=obs,
-                        sub_index=i,
-                        env_id=eid,
-                        expected_count=expected_count,
-                    )
-                    await self._inference.queue.put(infer_request)
+                infer_request = dict(
+                    id=req_id,
+                    obs=obs,
+                    env_ids=np.asarray(env_ids),
+                )
+                await self._inference.enqueue_request(infer_request)
 
                 try:
                     # response now may include env_ids and obs_list for per-env mapping
                     # response is expected to be a tuple:
                     # (action_arr, step_state_arr, resp_env_ids, resp_obs_list)
                     response = await response_future
-                    action_arr, step_state_arr, resp_env_ids, resp_obs_list = response
+                    action_arr, step_state_arr, resp_env_ids, resp_obs = response
                     assert np.array_equal(
                         np.asarray(resp_env_ids), np.asarray(env_ids)
                     ), "Response env_ids do not match request env_ids"
@@ -233,6 +221,7 @@ class WebSocketAgentServer:
                 else:
                     await self._inference.pop_request(req_id)
                 # register per-env step states and last observations
+                resp_obs_list = unbatch_aggregate(resp_obs, aggregate_method="concat")
                 for i, eid in enumerate(resp_env_ids):
                     step_state_map[eid] = step_state_arr[i]
                     last_obs_map[eid] = resp_obs_list[i]
@@ -363,14 +352,18 @@ class WebSocketAgentServer:
 
     def should_infer(self) -> bool:
         current_qsize = self._inference.queue.qsize()
+        current_env_count = self._inference.queued_env_count()
         now = time.monotonic()
 
         # allow queue size to be >= total connections to support per-connection
         # multi-env requests that expand into multiple queue entries
 
-        infer_thereshold = self._mini_infer_batch_size or self._total_connections
+        infer_threshold = self._mini_infer_batch_size or self._total_connections
 
-        if (current_qsize >= infer_thereshold) and self._total_connections > 0:
+        ready_count = (
+            current_env_count if self._mini_infer_batch_size else current_qsize
+        )
+        if (ready_count >= infer_threshold) and self._total_connections > 0:
             self._infer_wait_start = None
             return True
 
@@ -379,7 +372,9 @@ class WebSocketAgentServer:
                 self._infer_wait_start = now
             elif now - self._infer_wait_start > INFER_READY_TIMEOUT:
                 logger.warning(
-                    f"Infer queue has been waiting {now - self._infer_wait_start:.1f}s for {current_qsize}/{self._total_connections} environments"
+                    f"Infer queue has been waiting {now - self._infer_wait_start:.1f}s "
+                    f"for {ready_count}/{infer_threshold} ready units "
+                    f"(requests={current_qsize}, envs={current_env_count})"
                 )
                 self._infer_wait_start = now
         else:
@@ -389,6 +384,8 @@ class WebSocketAgentServer:
 
     async def _process_infer(self):
         batch = await self._inference.drain_batch()
+        if not batch:
+            return
         started_at = time.perf_counter()
         try:
             obs = batch_aggregate(
@@ -402,68 +399,29 @@ class WebSocketAgentServer:
                     include_train_state=True,
                 )
             logger.debug(f"Inference done for batch size {len(batch)}")
-            # action/runtime_state correspond to rows matching batch order
-            # group indices by original request id so we can set a single
-            # future.result per original request (which may have contained
-            # multiple envs)
-            indices_by_req = {}
-            for idx, req in enumerate(batch):
-                indices_by_req.setdefault(req["id"], []).append(idx)
-
-            for req_id, indices in indices_by_req.items():
-                first_req = batch[indices[0]]
-                expected_count = int(first_req.get("expected_count", len(indices)))
-
-                pending = self._pending_infer_results.get(req_id)
-                if pending is None:
-                    pending = {"expected_count": expected_count, "items": {}}
-                    self._pending_infer_results[req_id] = pending
-                elif int(pending["expected_count"]) != expected_count:
-                    logger.warning(
-                        f"Mismatched expected_count for req_id={req_id}: "
-                        f"pending={pending['expected_count']}, incoming={expected_count}"
-                    )
-
-                # stash partial results keyed by sub_index
-                for i in indices:
-                    req = batch[i]
-                    sub_index = int(req.get("sub_index"))
-                    pending["items"][sub_index] = (
-                        action[i],
-                        slice_policy_step_state(step_state, slice(i, i + 1)),
-                        req.get("env_id"),
+            start = 0
+            for req in batch:
+                req_size = len(req["env_ids"])
+                end = start + req_size
+                self._inference.resolve_request(
+                    req,
+                    result=(
+                        action[start:end],
+                        [
+                            slice_policy_step_state(step_state, slice(i, i + 1))
+                            for i in range(start, end)
+                        ],
+                        req["env_ids"],
                         req["obs"],
-                    )
-
-                exp = int(pending["expected_count"])
-                if all(k in pending["items"] for k in range(exp)):
-                    ordered = [pending["items"][k] for k in range(exp)]
-                    act_result = np.stack([item[0] for item in ordered])
-                    step_state_result = [item[1] for item in ordered]
-                    # make this a numpy array so existing `(resp_env_ids == env_ids).all()` works reliably
-                    env_id_list = np.asarray([item[2] for item in ordered])
-                    obs_list = [item[3] for item in ordered]
-
-                    future = self._inference.get_future(req_id)
-                    if future and not future.done():
-                        future.set_result(
-                            (act_result, step_state_result, env_id_list, obs_list)
-                        )
-                    self._pending_infer_results.pop(req_id, None)
-
-            for _ in batch:
-                self._inference.queue.task_done()
+                    ),
+                )
+                start = end
             self._runtime_metric_tracker.observe_infer(
                 duration=time.perf_counter() - started_at,
-                batch_size=len(batch),
+                batch_size=sum(len(req["env_ids"]) for req in batch),
             )
         except Exception as exc:
-            for req in batch:
-                future = self._inference.get_future(req["id"])
-                if future and not future.done():
-                    future.set_exception(
-                        RuntimeError(f"Inference processing error: {exc}")
-                    )
+            self._inference.fail_batch(batch, exc)
             raise
 
     async def _run_control_cycle(self) -> None:

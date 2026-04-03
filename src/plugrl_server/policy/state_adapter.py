@@ -42,4 +42,3 @@ def _to_torch_tensor(value: NumpyTree) -> torch.Tensor:
     if not isinstance(tensor, torch.Tensor):
         raise TypeError(f"Expected tensor leaf, got {type(tensor)!r}.")
     return tensor
-

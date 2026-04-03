@@ -8,6 +8,15 @@ class InferenceCoordinator:
         self.response_futures: dict[str, asyncio.Future] = {}
         self.lock = asyncio.Lock()
         self._stopping_error_factory = stopping_error_factory
+        self._queued_env_count = 0
+
+    async def enqueue_request(self, request: dict[str, Any]) -> None:
+        await self.queue.put(request)
+        env_ids = request.get("env_ids")
+        if env_ids is None:
+            self._queued_env_count += 1
+        else:
+            self._queued_env_count += len(env_ids)
 
     async def register_request(self, request_id: str) -> asyncio.Future:
         response_future = asyncio.Future()
@@ -31,10 +40,17 @@ class InferenceCoordinator:
         drained_requests = 0
         while True:
             try:
-                self.queue.get_nowait()
+                request = self.queue.get_nowait()
             except asyncio.QueueEmpty:
                 break
             else:
+                env_ids = request.get("env_ids")
+                if env_ids is None:
+                    self._queued_env_count = max(0, self._queued_env_count - 1)
+                else:
+                    self._queued_env_count = max(
+                        0, self._queued_env_count - len(env_ids)
+                    )
                 self.queue.task_done()
                 drained_requests += 1
 
@@ -43,11 +59,20 @@ class InferenceCoordinator:
     async def drain_batch(self) -> list[dict[str, Any]]:
         batch = []
         for _ in range(self.queue.qsize()):
-            batch.append(await self.queue.get())
+            request = await self.queue.get()
+            env_ids = request.get("env_ids")
+            if env_ids is None:
+                self._queued_env_count = max(0, self._queued_env_count - 1)
+            else:
+                self._queued_env_count = max(0, self._queued_env_count - len(env_ids))
+            batch.append(request)
         return batch
 
     def get_future(self, request_id: str) -> asyncio.Future | None:
         return self.response_futures.get(request_id)
+
+    def queued_env_count(self) -> int:
+        return self._queued_env_count
 
     def resolve_request(
         self,

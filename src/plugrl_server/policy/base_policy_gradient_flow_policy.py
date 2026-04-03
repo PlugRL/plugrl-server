@@ -9,9 +9,7 @@ from .base_policy_gradient_diffusion_policy import (
 )
 
 
-class BasePolicyGradientFlowPolicyConfig(
-    BasePolicyGradientDiffusionPolicyConfig
-): ...
+class BasePolicyGradientFlowPolicyConfig(BasePolicyGradientDiffusionPolicyConfig): ...
 
 
 class BasePolicyGradientFlowPolicy(BasePolicyGradientDiffusionPolicy):

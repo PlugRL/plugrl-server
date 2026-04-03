@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import Any, TypeAlias
+from typing import TypeAlias
 
 import numpy as np
 import torch
@@ -36,12 +35,14 @@ class FPOBuffer(GAEBuffer):
         discretize_t_for_training: bool = True,
         gamma: float = 0.99,
         gae_lambda: float = 0.95,
+        treat_truncated_as_done: bool = True,
     ):
         super().__init__(
             buffer_size=buffer_size,
             example_train_state=example_train_state,
             gamma=gamma,
             gae_lambda=gae_lambda,
+            treat_truncated_as_done=treat_truncated_as_done,
         )
         self.n_samples_per_action = n_samples_per_action
         self.discretize_t_for_training = discretize_t_for_training
@@ -90,7 +91,11 @@ class FPOBuffer(GAEBuffer):
         )
 
     def prepare_fpo_fields(
-        self, policy: BasePolicyGradientFlowPolicy, *, batch_size: int
+        self,
+        policy: BasePolicyGradientFlowPolicy,
+        *,
+        batch_size: int,
+        output_mode: str,
     ) -> None:
         if self.idx == 0:
             return
@@ -109,6 +114,7 @@ class FPOBuffer(GAEBuffer):
                 policy,
                 obs_torch,
                 actions,
+                output_mode=output_mode,
                 loss_eps=loss_eps[i:j],
                 loss_t=loss_t[i:j],
                 obs_cache=obs_cache,
@@ -117,7 +123,9 @@ class FPOBuffer(GAEBuffer):
 
     def _sample_loss_eps(self, policy: BasePolicyGradientFlowPolicy) -> torch.Tensor:
         samples = policy._initialize_x(self.idx * self.n_samples_per_action)
-        return samples.reshape(self.idx, self.n_samples_per_action, *self.actions.shape[1:])
+        return samples.reshape(
+            self.idx, self.n_samples_per_action, *self.actions.shape[1:]
+        )
 
     def _sample_loss_t(
         self, policy: BasePolicyGradientFlowPolicy, *, batch_size: int

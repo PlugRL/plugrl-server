@@ -1,6 +1,5 @@
 import uuid
 import numpy as np
-import torch
 from dppo.util.reward_scaling import RunningMeanStd
 
 from plugrl_server.buffer.rollout_buffer import GAEBuffer
@@ -35,9 +34,11 @@ class DPPOBuffer(GAEBuffer):
         prev_node: tuple[int, uuid.UUID],
         train_state: PolicyTrainState,
         reward: float,
-        done: bool,
+        terminated: bool,
+        truncated: bool,
         last_value: np.ndarray | None,
-        next_done: bool,
+        next_terminated: bool,
+        next_truncated: bool,
     ) -> tuple[int, uuid.UUID]:
         dppo_train_state = as_dppo_train_state(train_state)
         if self.idx >= self.buffer_size:
@@ -63,10 +64,14 @@ class DPPOBuffer(GAEBuffer):
         self.logprobs[current_idx] = dppo_train_state.logprob[0]
         self.values[current_idx] = dppo_train_state.value[0]
         self.rewards[current_idx] = float(reward)
-        self.dones[current_idx] = bool(done)
+        self.terminated[current_idx] = bool(terminated)
+        self.truncated[current_idx] = bool(truncated)
+        self.dones[current_idx] = bool(terminated or truncated)
         if last_value is not None:
             self.last_values[current_idx] = last_value
-        self.next_done[current_idx] = bool(next_done)
+        self.next_terminated[current_idx] = bool(next_terminated)
+        self.next_truncated[current_idx] = bool(next_truncated)
+        self.next_done[current_idx] = bool(next_terminated or next_truncated)
         self.idx += 1
         return (current_idx, self.buffer_signature)
 
@@ -84,4 +89,6 @@ class DPPOBuffer(GAEBuffer):
                 self.cliprew,
             )
 
-        return super().compute_advantages_and_returns(policy=policy, batch_size=batch_size)
+        return super().compute_advantages_and_returns(
+            policy=policy, batch_size=batch_size
+        )

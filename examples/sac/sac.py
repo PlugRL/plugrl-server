@@ -80,11 +80,11 @@ class SACAlgorithm(BaseAlgorithm):
             list(self.policy.qf1.parameters()) + list(self.policy.qf2.parameters()),
             lr=config.q_lr,
         )
-        actor_optimizer = torch.optim.Adam(self.policy.actor.parameters(), lr=config.policy_lr)
+        actor_optimizer = torch.optim.Adam(
+            self.policy.actor.parameters(), lr=config.policy_lr
+        )
         if self.policy.autotune:
-            a_optimizer = torch.optim.Adam(
-                [self.policy.log_alpha], lr=config.q_lr
-            )
+            a_optimizer = torch.optim.Adam([self.policy.log_alpha], lr=config.q_lr)
         else:
             a_optimizer = None
 

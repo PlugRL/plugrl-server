@@ -1,5 +1,4 @@
 import dataclasses
-import sys
 from typing import Literal, TypeVar
 import pathlib
 import tyro

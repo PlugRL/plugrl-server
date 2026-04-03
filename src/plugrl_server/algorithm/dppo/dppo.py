@@ -10,7 +10,11 @@ from plugrl_server.algorithm.train_utils import (
     move_batch_to_device,
     optimizer_step_if_ready,
 )
-from plugrl_server.policy.state import PolicyRuntimeState, PolicyTrainState, to_numpy_state
+from plugrl_server.policy.state import (
+    PolicyRuntimeState,
+    PolicyTrainState,
+    to_numpy_state,
+)
 from plugrl_server.policy.base_policy_gradient_diffusion_policy import (
     BasePolicyGradientDiffusionPolicy,
     DiffusionRuntimeState,
@@ -22,6 +26,7 @@ from .dppo_optimizer import build_adamw, build_scheduler
 from plugrl_server.buffer.rollout_buffer import ROLLOUT_BUFFER_SCHEMA_VERSION
 
 logger = get_logger(__name__)
+
 
 @register_algo(UID)
 class DPPOAlgorithm(BaseAlgorithm):
@@ -114,9 +119,11 @@ class DPPOAlgorithm(BaseAlgorithm):
             prev_node=prev_node,
             train_state=train_state,
             reward=reward,
-            done=truncated or terminated,
+            terminated=terminated,
+            truncated=truncated,
             last_value=None,
-            next_done=next_truncated or next_terminated,
+            next_terminated=next_terminated,
+            next_truncated=next_truncated,
         )
         self.rollout_buffer.add_next_obs_value_request(
             obs=next_obs, end_node=current_node

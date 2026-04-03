@@ -147,20 +147,30 @@ def test_rollout_buffer_round_trip_restores_full_state() -> None:
         restored.obs_storage.get_item(slice(None, restored.idx)),
         buffer.obs_storage.get_item(slice(None, buffer.idx)),
     )
-    np.testing.assert_array_equal(restored.actions[: restored.idx], buffer.actions[: buffer.idx])
+    np.testing.assert_array_equal(
+        restored.actions[: restored.idx], buffer.actions[: buffer.idx]
+    )
     np.testing.assert_array_equal(
         restored.logprobs[: restored.idx], buffer.logprobs[: buffer.idx]
     )
-    np.testing.assert_array_equal(restored.rewards[: restored.idx], buffer.rewards[: buffer.idx])
-    np.testing.assert_array_equal(restored.values[: restored.idx], buffer.values[: buffer.idx])
+    np.testing.assert_array_equal(
+        restored.rewards[: restored.idx], buffer.rewards[: buffer.idx]
+    )
+    np.testing.assert_array_equal(
+        restored.values[: restored.idx], buffer.values[: buffer.idx]
+    )
     np.testing.assert_array_equal(
         restored.last_values[: restored.idx], buffer.last_values[: buffer.idx]
     )
     np.testing.assert_array_equal(
         restored.advantages[: restored.idx], buffer.advantages[: buffer.idx]
     )
-    np.testing.assert_array_equal(restored.returns[: restored.idx], buffer.returns[: buffer.idx])
-    np.testing.assert_array_equal(restored.dones[: restored.idx], buffer.dones[: buffer.idx])
+    np.testing.assert_array_equal(
+        restored.returns[: restored.idx], buffer.returns[: buffer.idx]
+    )
+    np.testing.assert_array_equal(
+        restored.dones[: restored.idx], buffer.dones[: buffer.idx]
+    )
     np.testing.assert_array_equal(
         restored.next_done[: restored.idx], buffer.next_done[: buffer.idx]
     )

@@ -114,12 +114,9 @@ class LeRobotDiffusionPolicy(BasePolicyGradientDiffusionPolicy):
 
         obs = dict()
         for i, key in enumerate(state_map):
-            obs[state_map[key]] = (
-                np.stack(
-                    [_obs["states"][f"{key}_{j}"] for j in range(n_obs_steps)], axis=1
-                )
-                .astype(np.float32)
-            )
+            obs[state_map[key]] = np.stack(
+                [_obs["states"][f"{key}_{j}"] for j in range(n_obs_steps)], axis=1
+            ).astype(np.float32)
         for i, key in enumerate(image_map):
             obs[image_map[key]] = (
                 np.stack(
@@ -131,7 +128,10 @@ class LeRobotDiffusionPolicy(BasePolicyGradientDiffusionPolicy):
                 / 255.0
             )  # B, T, C, H, W
         obs_normalized = self.actor.normalize_inputs(
-            dict((key, torch.from_numpy(value).to(self.device)) for key, value in obs.items())
+            dict(
+                (key, torch.from_numpy(value).to(self.device))
+                for key, value in obs.items()
+            )
         )
         obs_normalized[OBS_IMAGES] = torch.stack(
             [obs_normalized[key] for key in self.actor.config.image_features], dim=-4

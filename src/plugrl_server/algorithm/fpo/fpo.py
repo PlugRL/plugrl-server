@@ -1,4 +1,3 @@
-import dataclasses
 import math
 import time
 
@@ -20,7 +19,11 @@ from plugrl_server.policy.base_policy_gradient_flow_policy import (
     BasePolicyGradientFlowPolicy,
 )
 from plugrl_server.policy.fpo.fpo_policy import FPOPolicy
-from plugrl_server.policy.state import PolicyRuntimeState, PolicyTrainState, to_numpy_state
+from plugrl_server.policy.state import (
+    PolicyRuntimeState,
+    PolicyTrainState,
+    to_numpy_state,
+)
 
 from .fpo_buffer import FPOBuffer
 from .fpo_config import FPOAlgoConfig, UID
@@ -49,9 +52,11 @@ class FPOAlgorithm(BaseAlgorithm):
             discretize_t_for_training=config.discretize_t_for_training,
             gamma=config.discounting,
             gae_lambda=config.gae_lambda,
+            treat_truncated_as_done=config.treat_truncated_as_done,
         )
         self.optimizer = torch.optim.Adam(
-            list(self.policy.actor.parameters()) + list(self.policy.critic.parameters()),
+            list(self.policy.actor.parameters())
+            + list(self.policy.critic.parameters()),
             lr=config.learning_rate,
         )
         self.global_step = 0
@@ -99,11 +104,15 @@ class FPOAlgorithm(BaseAlgorithm):
             prev_node=prev_node,
             train_state=train_state,
             reward=reward_value * self.config.reward_scaling,
-            done=terminated or truncated,
+            terminated=terminated,
+            truncated=truncated,
             last_value=None,
-            next_done=next_terminated or next_truncated,
+            next_terminated=next_terminated,
+            next_truncated=next_truncated,
         )
-        self.rollout_buffer.add_next_obs_value_request(obs=next_obs, end_node=current_node)
+        self.rollout_buffer.add_next_obs_value_request(
+            obs=next_obs, end_node=current_node
+        )
         if next_terminated or next_truncated:
             if "episode" in info and bool(info["episode"].get("mask", True)):
                 self.record_episode_metrics(info["episode"])
@@ -112,18 +121,22 @@ class FPOAlgorithm(BaseAlgorithm):
         return current_node, self.global_step, dict()
 
     def pre_learn(self) -> None:
-        if isinstance(self.policy, FPOPolicy):
-            obs = self.rollout_buffer.train_state_storage.get_item(slice(None))
-            obs_torch = torch_tree_to_device(numpy_tree_to_torch(obs), self.policy.device)
-            self.policy.update_obs_stats_from_model_obs(obs_torch)
-        self.rollout_buffer.compute_advantages_and_returns(
-            policy=self.policy,
-            batch_size=self.config.batch_size,
-        )
         self.rollout_buffer.prepare_fpo_fields(
             self.policy,
             batch_size=self.config.batch_size,
+            output_mode=self.config.output_mode,
         )
+        if not self.config.fpo_playground_trick:
+            self.rollout_buffer.compute_advantages_and_returns(
+                policy=self.policy,
+                batch_size=self.config.batch_size,
+            )
+        if isinstance(self.policy, FPOPolicy):
+            obs = self.rollout_buffer.train_state_storage.get_item(slice(None))
+            obs_torch = torch_tree_to_device(
+                numpy_tree_to_torch(obs), self.policy.device
+            )
+            self.policy.update_obs_stats(obs_torch)
 
     def get_collect_progress_total(self) -> int | None:
         total_steps = self.get_total_training_steps()
@@ -177,16 +190,18 @@ class FPOAlgorithm(BaseAlgorithm):
         idx = len(self.rollout_buffer)
         obs = self.rollout_buffer.train_state_storage.get_item(slice(None, idx))
         obs_torch = torch_tree_to_device(numpy_tree_to_torch(obs), self.policy.device)
-        action = torch.from_numpy(self.rollout_buffer.actions[:idx]).to(self.policy.device)
-        value = torch.from_numpy(self.rollout_buffer.values[:idx]).to(self.policy.device)
-        advantage = torch.from_numpy(self.rollout_buffer.advantages[:idx]).to(
+        action = torch.from_numpy(self.rollout_buffer.actions[:idx]).to(
             self.policy.device
         )
-        ret = torch.from_numpy(self.rollout_buffer.returns[:idx]).to(self.policy.device)
+        truncated = torch.from_numpy(
+            self.rollout_buffer.truncated[:idx].astype(np.float32)
+        ).to(self.policy.device)
         loss_eps = torch.from_numpy(self.rollout_buffer.loss_eps[:idx]).to(
             self.policy.device
         )
-        loss_t = torch.from_numpy(self.rollout_buffer.loss_t[:idx]).to(self.policy.device)
+        loss_t = torch.from_numpy(self.rollout_buffer.loss_t[:idx]).to(
+            self.policy.device
+        )
         initial_cfm_loss = torch.from_numpy(
             self.rollout_buffer.initial_cfm_loss[:idx]
         ).to(self.policy.device)
@@ -194,65 +209,103 @@ class FPOAlgorithm(BaseAlgorithm):
         return (
             obs_torch,
             action,
-            value,
-            advantage,
-            ret,
+            truncated,
             loss_eps,
             loss_t,
             initial_cfm_loss,
         )
 
+    def _refresh_epoch_value_targets(
+        self, obs_all: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        idx = len(self.rollout_buffer)
+        value_batches: list[np.ndarray] = []
+        with torch.inference_mode():
+            for i in range(0, idx, self.config.batch_size):
+                j = min(i + self.config.batch_size, idx)
+                obs_batch = obs_all[i:j]
+                obs_cache_batch = self.policy.build_obs_cache(obs_batch)
+                value_batch = self.policy._get_value(obs_batch, obs_cache_batch)
+                value_batches.append(value_batch.detach().cpu().numpy().reshape(-1, 1))
+        self.rollout_buffer.values[:idx] = np.concatenate(value_batches, axis=0)
+        self.rollout_buffer.compute_advantages_and_returns(
+            policy=self.policy,
+            batch_size=self.config.batch_size,
+        )
+        value = torch.from_numpy(self.rollout_buffer.values[:idx]).to(
+            self.policy.device
+        )
+        advantage = torch.from_numpy(self.rollout_buffer.advantages[:idx]).to(
+            self.policy.device
+        )
+        ret = torch.from_numpy(self.rollout_buffer.returns[:idx]).to(self.policy.device)
+        return value, advantage, ret
+
     def _compute_loss(
         self,
         obs,
         action,
+        truncated,
         value,
         advantage,
         ret,
         loss_eps,
         loss_t,
         initial_cfm_loss,
-    ) -> tuple[torch.Tensor, dict[str, float]]:
+    ) -> tuple[torch.Tensor, dict[str, float], dict[str, float]]:
         if self.config.normalize_advantage:
             advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
+        obs_cache_started_at = time.perf_counter()
         obs_cache = self.policy.build_obs_cache(obs)
+        _sync_cuda_if_needed(self.policy.device)
+        obs_cache_time = time.perf_counter() - obs_cache_started_at
 
+        cfm_loss_started_at = time.perf_counter()
         cfm_loss = compute_cfm_loss(
             self.policy,
             obs,
             action,
+            output_mode=self.config.output_mode,
             loss_eps=loss_eps,
             loss_t=loss_t,
             obs_cache=obs_cache,
         )
+        _sync_cuda_if_needed(self.policy.device)
+        cfm_loss_time = time.perf_counter() - cfm_loss_started_at
+        loss_delta = (initial_cfm_loss - cfm_loss).clamp(-3, 3)
+
+        ratio_policy_loss_started_at = time.perf_counter()
         if self.config.average_losses_before_exp:
-            rho_s = torch.exp(initial_cfm_loss.mean(dim=-1) - cfm_loss.mean(dim=-1))
+            rho_s = torch.exp(loss_delta.mean(dim=-1))
         else:
             rho_s = torch.exp(
                 torch.clamp(
-                    initial_cfm_loss - cfm_loss,
+                    loss_delta,
                     -3.0,
                     3.0,
                 )
             ).mean(dim=-1)
         surrogate_loss1 = rho_s * advantage.reshape(-1)
-        surrogate_loss2 = (
-            torch.clamp(
-                rho_s,
-                1 - self.config.clipping_epsilon,
-                1 + self.config.clipping_epsilon,
-            )
-            * advantage.reshape(-1)
-        )
+        surrogate_loss2 = torch.clamp(
+            rho_s,
+            1 - self.config.clipping_epsilon,
+            1 + self.config.clipping_epsilon,
+        ) * advantage.reshape(-1)
         policy_loss = -torch.minimum(surrogate_loss1, surrogate_loss2).mean()
+        _sync_cuda_if_needed(self.policy.device)
+        ratio_policy_loss_time = time.perf_counter() - ratio_policy_loss_started_at
 
+        value_forward_started_at = time.perf_counter()
         new_value = self.policy._get_value(obs, obs_cache).view(-1)
-        value_loss = ((ret.reshape(-1) - new_value) ** 2).mean() * self.config.value_loss_coeff
+        v_error = ret.reshape(-1) - new_value
+        if self.config.fpo_playground_trick:
+            v_error = v_error * (1.0 - truncated.reshape(-1))
+        value_loss = (v_error**2).mean() * self.config.value_loss_coeff
         total_loss = policy_loss + value_loss
+        _sync_cuda_if_needed(self.policy.device)
+        value_forward_time = time.perf_counter() - value_forward_started_at
         clipped_ratio_mean = (
-            (rho_s.sub(1.0).abs() > self.config.clipping_epsilon)
-            .float()
-            .mean()
+            (rho_s.sub(1.0).abs() > self.config.clipping_epsilon).float().mean()
         )
         metrics = dict(
             policy_loss=float(policy_loss.detach().cpu()),
@@ -262,8 +315,19 @@ class FPOAlgorithm(BaseAlgorithm):
             clipped_ratio_mean=float(clipped_ratio_mean.detach().cpu()),
             advantages_mean=float(advantage.mean().detach().cpu()),
             advantages_std=float(advantage.std().detach().cpu()),
+            initial_cfm_loss_mean=float(initial_cfm_loss.mean().detach().cpu()),
+            cfm_loss_mean=float(cfm_loss.mean().detach().cpu()),
+            loss_delta_mean=float(loss_delta.mean().detach().cpu()),
+            loss_delta_min=float(loss_delta.min().detach().cpu()),
+            loss_delta_max=float(loss_delta.max().detach().cpu()),
         )
-        return total_loss, metrics
+        loss_runtime = dict(
+            obs_cache_time=obs_cache_time,
+            cfm_loss_time=cfm_loss_time,
+            ratio_policy_loss_time=ratio_policy_loss_time,
+            value_forward_time=value_forward_time,
+        )
+        return total_loss, metrics, loss_runtime
 
     def learn_impl(self) -> tuple[int, dict]:
         learn_progress_total = self.get_learn_progress_total()
@@ -276,21 +340,54 @@ class FPOAlgorithm(BaseAlgorithm):
             clipped_ratio_mean=[],
             advantages_mean=[],
             advantages_std=[],
+            initial_cfm_loss_mean=[],
+            cfm_loss_mean=[],
+            loss_delta_mean=[],
+            loss_delta_min=[],
+            loss_delta_max=[],
         )
         batch_to_device_total = 0.0
         compute_loss_total = 0.0
         backward_step_total = 0.0
         dataloader_total = 0.0
+        obs_cache_total = 0.0
+        cfm_loss_total = 0.0
+        ratio_policy_loss_total = 0.0
+        value_forward_total = 0.0
         learn_started_at = time.perf_counter()
         dataloader_started_at = time.perf_counter()
         batch_cache = self._build_train_batch_cache()
         dataloader_total += time.perf_counter() - dataloader_started_at
-        obs_all, action_all, value_all, advantage_all, ret_all, loss_eps_all, loss_t_all, initial_cfm_loss_all = batch_cache
+        (
+            obs_all,
+            action_all,
+            truncated_all,
+            loss_eps_all,
+            loss_t_all,
+            initial_cfm_loss_all,
+        ) = batch_cache
         num_items = action_all.shape[0]
         if num_items == 0:
             raise RuntimeError("FPO learn_impl received an empty rollout buffer.")
 
+        if not self.config.fpo_playground_trick:
+            value_all = torch.from_numpy(self.rollout_buffer.values[:num_items]).to(
+                self.policy.device
+            )
+            advantage_all = torch.from_numpy(
+                self.rollout_buffer.advantages[:num_items]
+            ).to(self.policy.device)
+            ret_all = torch.from_numpy(self.rollout_buffer.returns[:num_items]).to(
+                self.policy.device
+            )
+
         for _ in range(self.config.num_updates_per_batch):
+            if self.config.fpo_playground_trick:
+                dataloader_started_at = time.perf_counter()
+                value_all, advantage_all, ret_all = self._refresh_epoch_value_targets(
+                    obs_all
+                )
+                dataloader_total += time.perf_counter() - dataloader_started_at
             dataloader_started_at = time.perf_counter()
             indices = torch.randperm(num_items, device=self.policy.device)
             dataloader_total += time.perf_counter() - dataloader_started_at
@@ -301,6 +398,7 @@ class FPOAlgorithm(BaseAlgorithm):
                 batch = (
                     torch_tree_get_item(obs_all, batch_indices),
                     action_all[batch_indices],
+                    truncated_all[batch_indices],
                     value_all[batch_indices],
                     advantage_all[batch_indices],
                     ret_all[batch_indices],
@@ -308,12 +406,18 @@ class FPOAlgorithm(BaseAlgorithm):
                     loss_t_all[batch_indices],
                     initial_cfm_loss_all[batch_indices],
                 )
-                batch_to_device_total += time.perf_counter() - batch_to_device_started_at
+                batch_to_device_total += (
+                    time.perf_counter() - batch_to_device_started_at
+                )
 
                 compute_loss_started_at = time.perf_counter()
-                total_loss, batch_metrics = self._compute_loss(*batch)
+                total_loss, batch_metrics, loss_runtime = self._compute_loss(*batch)
                 _sync_cuda_if_needed(self.policy.device)
                 compute_loss_total += time.perf_counter() - compute_loss_started_at
+                obs_cache_total += loss_runtime["obs_cache_time"]
+                cfm_loss_total += loss_runtime["cfm_loss_time"]
+                ratio_policy_loss_total += loss_runtime["ratio_policy_loss_time"]
+                value_forward_total += loss_runtime["value_forward_time"]
 
                 backward_step_started_at = time.perf_counter()
                 self.optimizer.zero_grad(set_to_none=True)
@@ -344,6 +448,13 @@ class FPOAlgorithm(BaseAlgorithm):
                 clipped_ratio_mean=float(np.mean(metric_history["clipped_ratio_mean"])),
                 advantages_mean=float(np.mean(metric_history["advantages_mean"])),
                 advantages_std=float(np.mean(metric_history["advantages_std"])),
+                initial_cfm_loss_mean=float(
+                    np.mean(metric_history["initial_cfm_loss_mean"])
+                ),
+                cfm_loss_mean=float(np.mean(metric_history["cfm_loss_mean"])),
+                loss_delta_mean=float(np.mean(metric_history["loss_delta_mean"])),
+                loss_delta_min=float(np.min(metric_history["loss_delta_min"])),
+                loss_delta_max=float(np.max(metric_history["loss_delta_max"])),
             ),
             learn_runtime=dict(
                 dataloader_time=dataloader_total,
@@ -351,7 +462,13 @@ class FPOAlgorithm(BaseAlgorithm):
                 compute_loss_time=compute_loss_total,
                 backward_step_time=backward_step_total,
                 learn_loop_time=learn_loop_time,
-                dataloader_ratio=0.0 if learn_loop_time <= 0 else dataloader_total / learn_loop_time,
+                obs_cache_time=obs_cache_total,
+                cfm_loss_time=cfm_loss_total,
+                ratio_policy_loss_time=ratio_policy_loss_total,
+                value_forward_time=value_forward_total,
+                dataloader_ratio=0.0
+                if learn_loop_time <= 0
+                else dataloader_total / learn_loop_time,
                 batch_to_device_ratio=0.0
                 if learn_loop_time <= 0
                 else batch_to_device_total / learn_loop_time,
@@ -361,5 +478,17 @@ class FPOAlgorithm(BaseAlgorithm):
                 backward_step_ratio=0.0
                 if learn_loop_time <= 0
                 else backward_step_total / learn_loop_time,
+                obs_cache_ratio=0.0
+                if learn_loop_time <= 0
+                else obs_cache_total / learn_loop_time,
+                cfm_loss_ratio=0.0
+                if learn_loop_time <= 0
+                else cfm_loss_total / learn_loop_time,
+                ratio_policy_loss_ratio=0.0
+                if learn_loop_time <= 0
+                else ratio_policy_loss_total / learn_loop_time,
+                value_forward_ratio=0.0
+                if learn_loop_time <= 0
+                else value_forward_total / learn_loop_time,
             ),
         )

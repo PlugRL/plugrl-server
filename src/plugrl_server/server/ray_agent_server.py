@@ -9,7 +9,6 @@ import ray
 
 from plugrl_protocol import msgpack_numpy
 from plugrl_protocol.websocket_protocol import (
-    MessageType,
     SERVER_RESYNC_REASON,
     SERVER_STOP_REASON,
 )
@@ -24,7 +23,7 @@ from plugrl_server.common.data_utils import batch_aggregate
 from plugrl_server.common.logging_utils import get_logger
 from plugrl_server.common.metrics import MetricSink
 from plugrl_server.common.progress import ProgressReporter
-from plugrl_server.policy.state import PolicyStepState, slice_policy_step_state
+from plugrl_server.policy.state import slice_policy_step_state
 from plugrl_server.server.inference_coordinator import InferenceCoordinator
 from plugrl_server.server.lifecycle import ServerLifecycle
 from plugrl_server.server.protocol import (
@@ -113,9 +112,10 @@ class RayAgentServer:
         )
 
     async def _abort_pending_infer_requests(self, reason: str) -> None:
-        pending_futures, drained_requests = (
-            await self._inference.abort_pending_requests(reason)
-        )
+        (
+            pending_futures,
+            drained_requests,
+        ) = await self._inference.abort_pending_requests(reason)
 
         if pending_futures > 0 or drained_requests > 0:
             logger.info(
@@ -196,7 +196,7 @@ class RayAgentServer:
                     response_future = await self._inference.register_request(req_id)
 
                     infer_request = dict(id=req_id, obs=obs)
-                    await self._inference.queue.put(infer_request)
+                    await self._inference.enqueue_request(infer_request)
 
                     try:
                         action, step_state = await response_future
@@ -219,7 +219,9 @@ class RayAgentServer:
                         await self._inference.pop_request(req_id)
 
                     action_buffer.extend(action.swapaxes(1, 0))
-                runtime_state = step_state.runtime_state if step_state is not None else None
+                runtime_state = (
+                    step_state.runtime_state if step_state is not None else None
+                )
                 train_state = step_state.train_state if step_state is not None else None
 
                 if self._algorithm.break_action_chunk:
@@ -229,9 +231,7 @@ class RayAgentServer:
                         [action_buffer.popleft() for _ in range(len(action_buffer))]
                     )
 
-                action_response = ActionMessage(
-                    data=dict(action=action)
-                )
+                action_response = ActionMessage(data=dict(action=action))
                 await websocket.send(packer.pack(action_response.to_payload()))
 
                 packed_feedback_msg = await websocket.recv()

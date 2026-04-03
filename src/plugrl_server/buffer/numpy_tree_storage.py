@@ -4,7 +4,12 @@ from collections.abc import Mapping
 
 import numpy as np
 
-from plugrl_server.policy.state import ArraySpec, NumpyState, TrainStateSpec, infer_numpy_state_spec
+from plugrl_server.policy.state import (
+    ArraySpec,
+    NumpyState,
+    TrainStateSpec,
+    infer_numpy_state_spec,
+)
 
 
 class NumpyTreeStorage:
@@ -35,7 +40,9 @@ class NumpyTreeStorage:
 def _allocate_from_spec(spec: TrainStateSpec | ArraySpec, capacity: int) -> NumpyState:
     if isinstance(spec, ArraySpec):
         return np.empty((capacity,) + spec.shape, dtype=np.dtype(spec.dtype))
-    return dict((key, _allocate_from_spec(value, capacity)) for key, value in spec.items())
+    return dict(
+        (key, _allocate_from_spec(value, capacity)) for key, value in spec.items()
+    )
 
 
 def _set_tree_item(tree: NumpyState, index: int | slice, value: NumpyState) -> None:

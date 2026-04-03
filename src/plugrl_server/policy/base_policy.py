@@ -33,6 +33,7 @@ class BasePolicy(abc.ABC):
 
     def _get_value(self, obs: Any) -> Any: ...
 
+
 __all__ = [
     "BasePolicy",
     "BasePolicyConfig",

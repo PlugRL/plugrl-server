@@ -108,9 +108,7 @@ def _require_numpy_state(value: NumpyState | None, field_name: str) -> NumpyStat
 def infer_numpy_state_spec(value: NumpyState) -> TrainStateSpec | ArraySpec:
     if isinstance(value, np.ndarray):
         array_value = cast(np.ndarray, value)
-        sample_shape = (
-            tuple(array_value.shape[1:]) if array_value.ndim > 0 else tuple()
-        )
+        sample_shape = tuple(array_value.shape[1:]) if array_value.ndim > 0 else tuple()
         return ArraySpec(shape=sample_shape, dtype=str(array_value.dtype))
     assert isinstance(value, Mapping), (
         f"Unsupported train_state leaf for spec inference: {type(value)!r}"

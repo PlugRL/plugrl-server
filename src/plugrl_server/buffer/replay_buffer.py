@@ -48,11 +48,15 @@ class ReplayBuffer(torch.utils.data.Dataset):
     _full: bool
     buffer_signature: uuid.UUID
 
-    def __init__(self, buffer_size: int, example_state: NumpyTree, example_action: np.ndarray):
+    def __init__(
+        self, buffer_size: int, example_state: NumpyTree, example_action: np.ndarray
+    ):
         super().__init__()
         self.buffer_size = buffer_size
         self.state_storage = NumpyTreeStorage.from_example(example_state, buffer_size)
-        self.next_state_storage = NumpyTreeStorage.from_example(example_state, buffer_size)
+        self.next_state_storage = NumpyTreeStorage.from_example(
+            example_state, buffer_size
+        )
 
         self.actions = np.empty(
             (buffer_size,) + tuple(example_action.shape),
@@ -99,7 +103,9 @@ class ReplayBuffer(torch.utils.data.Dataset):
     def _get_samples(self, batch_inds: np.ndarray) -> ReplayBufferSamples:
         return ReplayBufferSamples(
             state=numpy_tree_to_torch(self.state_storage.get_item(batch_inds)),
-            next_state=numpy_tree_to_torch(self.next_state_storage.get_item(batch_inds)),
+            next_state=numpy_tree_to_torch(
+                self.next_state_storage.get_item(batch_inds)
+            ),
             actions=torch.from_numpy(self.actions[batch_inds]),
             rewards=torch.from_numpy(self.rewards[batch_inds]),
             dones=torch.from_numpy(self.dones[batch_inds]),

@@ -67,9 +67,7 @@ class FlowPolicyNet(nn.Module):
 
 
 class ValueFunction(nn.Module):
-    def __init__(
-        self, obs_dim: int, *, hidden_dims: tuple[int, ...]
-    ) -> None:
+    def __init__(self, obs_dim: int, *, hidden_dims: tuple[int, ...]) -> None:
         super().__init__()
         self.mlp = Mlp((obs_dim, *hidden_dims, 1))
 
@@ -85,7 +83,6 @@ class FPOPolicyConfig(BasePolicyGradientFlowPolicyConfig):
     flow_steps: int = 10
     timestep_embed_dim: int = 8
     action_horizon: int = 1
-    output_mode: str = "u_but_supervise_as_eps"
     feather_std: float = 0.0
     policy_mlp_output_scale: float = 0.25
     normalize_observations: bool = True
@@ -96,7 +93,6 @@ class FPOPolicyConfig(BasePolicyGradientFlowPolicyConfig):
 @register_policy(UID)
 class FPOPolicy(BasePolicyGradientFlowPolicy):
     config: FPOPolicyConfig
-    output_mode: str
     policy_mlp_output_scale: float
 
     def __init__(self, config: FPOPolicyConfig):
@@ -116,7 +112,6 @@ class FPOPolicy(BasePolicyGradientFlowPolicy):
         self.action_horizon = config.action_horizon
         self.num_denoising_steps = config.flow_steps
         self.dt = -1.0 / float(config.flow_steps)
-        self.output_mode = config.output_mode
         self.policy_mlp_output_scale = config.policy_mlp_output_scale
         self.register_buffer("obs_stats_count", torch.zeros((), dtype=torch.float32))
         self.register_buffer(
@@ -139,9 +134,7 @@ class FPOPolicy(BasePolicyGradientFlowPolicy):
             dtype=torch.float32,
         )
 
-    def _normalize_state_tensor(
-        self, state: torch.Tensor
-    ) -> torch.Tensor:
+    def _normalize_state_tensor(self, state: torch.Tensor) -> torch.Tensor:
         if not self.config.normalize_observations:
             return state
         return _normalize_tensor(state, self.obs_stats_mean, self.obs_stats_std)
@@ -204,7 +197,11 @@ class FPOPolicy(BasePolicyGradientFlowPolicy):
         )
         runtime_state.action[:, -1] = runtime_state.action[:, -1] + feather_noise
         return (
-            action + feather_noise.detach().cpu().numpy().astype(np.float32),
+            torch.tanh(runtime_state.action[:, -1])
+            .detach()
+            .cpu()
+            .numpy()
+            .astype(np.float32),
             runtime_state,
         )
 
@@ -215,7 +212,7 @@ class FPOPolicy(BasePolicyGradientFlowPolicy):
         return action
 
     def _postprocess_action(self, action: torch.Tensor, obs: TorchTree) -> np.ndarray:
-        return action.detach().cpu().numpy()
+        return torch.tanh(action).detach().cpu().numpy().astype(np.float32)
 
     def _predict_v(
         self,

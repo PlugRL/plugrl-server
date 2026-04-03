@@ -18,7 +18,7 @@ from plugrl_server.policy.state import PolicyTrainState
 
 logger = get_logger(__name__)
 
-ROLLOUT_BUFFER_SCHEMA_VERSION = 2
+ROLLOUT_BUFFER_SCHEMA_VERSION = 3
 
 
 def _require_array(value: Any, name: str) -> np.ndarray:
@@ -34,6 +34,10 @@ class RolloutBuffer(torch.utils.data.Dataset):
     rewards: np.ndarray
     values: np.ndarray
     last_values: np.ndarray
+    terminated: np.ndarray
+    truncated: np.ndarray
+    next_terminated: np.ndarray
+    next_truncated: np.ndarray
     next_done: np.ndarray
     advantages: np.ndarray
     returns: np.ndarray
@@ -58,9 +62,15 @@ class RolloutBuffer(torch.utils.data.Dataset):
             example_train_state["obs"], buffer_size
         )
 
-        example_action = _require_array(example_train_state["action"], "train_state['action']")
-        example_value = _require_array(example_train_state["value"], "train_state['value']")
-        example_logprob = _require_array(example_train_state["logprob"], "train_state['logprob']")
+        example_action = _require_array(
+            example_train_state["action"], "train_state['action']"
+        )
+        example_value = _require_array(
+            example_train_state["value"], "train_state['value']"
+        )
+        example_logprob = _require_array(
+            example_train_state["logprob"], "train_state['logprob']"
+        )
 
         action_shape = example_action.shape[1:]
         value_shape = example_value.shape[1:]
@@ -73,20 +83,20 @@ class RolloutBuffer(torch.utils.data.Dataset):
             (buffer_size,) + logprob_shape, dtype=example_logprob.dtype
         )
 
-        self.values = np.empty(
-            (buffer_size,) + value_shape, dtype=example_value.dtype
-        )
+        self.values = np.empty((buffer_size,) + value_shape, dtype=example_value.dtype)
         self.last_values = np.empty(
             (buffer_size,) + value_shape, dtype=example_value.dtype
         )
         self.advantages = np.empty(
             (buffer_size,) + value_shape, dtype=example_value.dtype
         )
-        self.returns = np.empty(
-            (buffer_size,) + value_shape, dtype=example_value.dtype
-        )
+        self.returns = np.empty((buffer_size,) + value_shape, dtype=example_value.dtype)
 
         self.rewards = np.zeros(buffer_size, dtype=np.float32)
+        self.terminated = np.zeros(buffer_size, dtype=np.bool_)
+        self.truncated = np.zeros(buffer_size, dtype=np.bool_)
+        self.next_terminated = np.zeros(buffer_size, dtype=np.bool_)
+        self.next_truncated = np.zeros(buffer_size, dtype=np.bool_)
         self.next_done = np.zeros(buffer_size, dtype=np.bool_)
         self.dones = np.zeros(buffer_size, dtype=np.bool_)
         self.next_indices = np.zeros(buffer_size, dtype=np.int32)
@@ -116,9 +126,11 @@ class RolloutBuffer(torch.utils.data.Dataset):
         prev_node: tuple[int, uuid.UUID],
         train_state: PolicyTrainState,
         reward: float,
-        done: bool,
+        terminated: bool,
+        truncated: bool,
         last_value: np.ndarray | None,
-        next_done: bool,
+        next_terminated: bool,
+        next_truncated: bool,
     ) -> tuple[int, uuid.UUID]:
         if train_state is None:
             raise ValueError("train_state must not be None")
@@ -131,14 +143,24 @@ class RolloutBuffer(torch.utils.data.Dataset):
         if prev_idx != -1:
             self.next_indices[prev_idx] = current_idx
         self.train_state_storage.set_item(current_idx, train_state["obs"])
-        self.actions[current_idx] = _require_array(train_state["action"], "train_state['action']")[0]
-        self.logprobs[current_idx] = _require_array(train_state["logprob"], "train_state['logprob']")[0]
-        self.values[current_idx] = _require_array(train_state["value"], "train_state['value']")[0]
+        self.actions[current_idx] = _require_array(
+            train_state["action"], "train_state['action']"
+        )[0]
+        self.logprobs[current_idx] = _require_array(
+            train_state["logprob"], "train_state['logprob']"
+        )[0]
+        self.values[current_idx] = _require_array(
+            train_state["value"], "train_state['value']"
+        )[0]
         self.rewards[current_idx] = reward
-        self.dones[current_idx] = done
+        self.terminated[current_idx] = bool(terminated)
+        self.truncated[current_idx] = bool(truncated)
+        self.dones[current_idx] = bool(terminated or truncated)
         if last_value is not None:
             self.last_values[current_idx] = np.asarray(last_value).reshape(-1)[0]
-        self.next_done[current_idx] = next_done
+        self.next_terminated[current_idx] = bool(next_terminated)
+        self.next_truncated[current_idx] = bool(next_truncated)
+        self.next_done[current_idx] = bool(next_terminated or next_truncated)
 
         self.idx += 1
         return (current_idx, self.buffer_signature)
@@ -200,6 +222,10 @@ class RolloutBuffer(torch.utils.data.Dataset):
             last_values=self.last_values[:idx].copy(),
             advantages=self.advantages[:idx].copy(),
             returns=self.returns[:idx].copy(),
+            terminated=self.terminated[:idx].copy(),
+            truncated=self.truncated[:idx].copy(),
+            next_terminated=self.next_terminated[:idx].copy(),
+            next_truncated=self.next_truncated[:idx].copy(),
             dones=self.dones[:idx].copy(),
             next_done=self.next_done[:idx].copy(),
             next_indices=self.next_indices[:idx].copy(),
@@ -228,11 +254,16 @@ class RolloutBuffer(torch.utils.data.Dataset):
         self.last_values[: self.idx] = data["last_values"]
         self.advantages[: self.idx] = data["advantages"]
         self.returns[: self.idx] = data["returns"]
+        self.terminated[: self.idx] = data["terminated"]
+        self.truncated[: self.idx] = data["truncated"]
+        self.next_terminated[: self.idx] = data["next_terminated"]
+        self.next_truncated[: self.idx] = data["next_truncated"]
         self.dones[: self.idx] = data["dones"]
         self.next_done[: self.idx] = data["next_done"]
         self.next_indices[: self.idx] = data["next_indices"]
         self.buffer_signature = data["buffer_signature"]
         self.episode_info_buffer = list(data["episode_info_buffer"])
+
 
 def _describe_tree_shape(value) -> str:
     if isinstance(value, np.ndarray):
@@ -247,11 +278,15 @@ class GAEBuffer(RolloutBuffer):
         example_train_state: PolicyTrainState,
         gamma: float = 0.99,
         gae_lambda: float = 0.95,
+        treat_truncated_as_done: bool = True,
     ):
         super().__init__(buffer_size, example_train_state)
         self.gamma = gamma
         self.gae_lambda = gae_lambda
-        self.next_obs_value_requests: deque[tuple[dict, tuple[int, uuid.UUID]]] = deque()
+        self.treat_truncated_as_done = treat_truncated_as_done
+        self.next_obs_value_requests: deque[tuple[dict, tuple[int, uuid.UUID]]] = (
+            deque()
+        )
 
     def add_next_obs_value_request(
         self, *, obs: dict, end_node: tuple[int, uuid.UUID]
@@ -281,7 +316,6 @@ class GAEBuffer(RolloutBuffer):
             if signature == self.buffer_signature and self.next_indices[idx] == 0:
                 next_ids.append(int(idx))
                 next_observations.append(obs)
-        self.next_obs_value_requests.clear()
         if next_observations:
             assert policy is not None, (
                 "Policy must be provided to compute values for next observations."
@@ -291,29 +325,56 @@ class GAEBuffer(RolloutBuffer):
                     next_observations[i : i + batch_size], aggregate_method="concat"
                 )
                 with torch.inference_mode():
-                    batch_values = policy.get_value(batch_obs).cpu().numpy().reshape(-1, 1)
+                    batch_values = (
+                        policy.get_value(batch_obs).cpu().numpy().reshape(-1, 1)
+                    )
                 self.last_values[next_ids[i : i + batch_size]] = batch_values
 
         for step in reversed(range(self.idx)):
             next_idx = self.next_indices[step]
-            next_gae_lam = self.advantages[next_idx] if next_idx != 0 else 0
             if next_idx == 0:
-                next_non_terminal = 1.0 - float(self.next_done[step])
                 next_values = self.last_values[step]
+                next_gae_lam = 0
+                if self.treat_truncated_as_done:
+                    if self.dones[step]:
+                        terminated = float(self.dones[step])
+                    else:
+                        terminated = float(self.next_done[step])
+                    truncated = 0.0
+                else:
+                    if self.dones[step]:
+                        terminated = float(self.terminated[step])
+                        truncated = float(self.truncated[step])
+                    else:
+                        terminated = float(self.next_terminated[step])
+                        truncated = float(self.next_truncated[step])
                 # check last values not overflow or abs extreme large
                 assert abs(next_values).max() < 1e6, (
                     f"last_values overflow: {next_values}"
                 )
             else:
-                next_non_terminal = 1.0 - float(self.dones[next_idx])
                 next_values = self.values[next_idx]
+                next_gae_lam = self.advantages[next_idx]
+                if self.treat_truncated_as_done:
+                    terminated = float(self.dones[step])
+                    truncated = 0.0
+                else:
+                    terminated = float(self.terminated[step])
+                    truncated = float(self.truncated[step])
+            next_non_terminal = 1.0 - terminated
+            trunc_mask = 1.0 - truncated
             delta = (
                 self.rewards[step]
                 + self.gamma * next_values * next_non_terminal
                 - self.values[step]
-            )
+            ) * trunc_mask
             self.advantages[step] = (
-                delta + self.gamma * self.gae_lambda * next_non_terminal * next_gae_lam
+                delta
+                + self.gamma
+                * self.gae_lambda
+                * next_non_terminal
+                * trunc_mask
+                * next_gae_lam
             )
 
         self.returns = self.advantages + self.values

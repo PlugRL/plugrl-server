@@ -142,9 +142,7 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
     def _iterative_process_action(self, action: torch.Tensor) -> torch.Tensor:
         return action
 
-    def _postprocess_action(
-        self, action: torch.Tensor, obs: TorchTree
-    ) -> np.ndarray:
+    def _postprocess_action(self, action: torch.Tensor, obs: TorchTree) -> np.ndarray:
         if self.actor.final_action_clip_value is not None:
             action = torch.clamp(
                 action,
@@ -220,9 +218,7 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
 
         return x_next, logprob, entropy
 
-    def _get_value(
-        self, obs: TorchTree, obs_cache=None
-    ) -> torch.Tensor:
+    def _get_value(self, obs: TorchTree, obs_cache=None) -> torch.Tensor:
         _ = obs_cache
         cond = {key: value.to(self.device) for key, value in obs.items()}
         batch_size = next(iter(cond.values())).shape[0]
