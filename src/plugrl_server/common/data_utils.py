@@ -261,3 +261,14 @@ def torch_tree_to_device(tree: TorchTree, device: torch.device) -> TorchTree:
         (key, torch_tree_to_device(value, device))
         for key, value in tree_mapping.items()
     )
+
+
+def torch_tree_repeat_interleave(tree: TorchTree, repeats: int, dim: int = 0) -> TorchTree:
+    if isinstance(tree, torch.Tensor):
+        tensor_tree = cast(torch.Tensor, tree)
+        return torch.repeat_interleave(tensor_tree, repeats, dim=dim)
+    tree_mapping = cast(Mapping[str, TorchTree], tree)
+    return dict(
+        (key, torch_tree_repeat_interleave(value, repeats, dim=dim))
+        for key, value in tree_mapping.items()
+    )

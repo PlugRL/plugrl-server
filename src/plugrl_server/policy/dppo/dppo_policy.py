@@ -13,6 +13,11 @@ import torch
 import numpy as np
 from typing import Tuple, Any
 from plugrl_server.paths import PACKAGE_DIR
+from plugrl_server.common.data_utils import (
+    torch_tree_batch_size,
+    torch_tree_repeat_interleave,
+    torch_tree_to_device,
+)
 from plugrl_server.common.logging_utils import get_logger
 from ..base_policy_gradient_diffusion_policy import (
     BasePolicyGradientDiffusionPolicy,
@@ -178,20 +183,19 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         assert t.shape == (b,)
         assert x.shape == (b, self.action_horizon, self.action_dim)
 
-        b_cond = next(iter(cond.values())).shape[0]
+        b_cond = torch_tree_batch_size(cond)
 
         device = self.actor.betas.device
         t = t.to(device)
         if b_cond != b:
             assert b == b_cond * self.actor.denoising_steps
-            cond = {
-                key: value.to(device).repeat_interleave(
-                    self.actor.denoising_steps, dim=0
-                )
-                for key, value in cond.items()
-            }
+            cond = torch_tree_repeat_interleave(
+                torch_tree_to_device(cond, device),
+                self.actor.denoising_steps,
+                dim=0,
+            )
         else:
-            cond = {key: value.to(device) for key, value in cond.items()}
+            cond = torch_tree_to_device(cond, device)
         x = x.to(device)
 
         mean_logvar: Tuple[torch.Tensor, torch.Tensor] = self.actor.p_mean_var(
@@ -220,8 +224,8 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
 
     def _get_value(self, obs: TorchTree, obs_cache=None) -> torch.Tensor:
         _ = obs_cache
-        cond = {key: value.to(self.device) for key, value in obs.items()}
-        batch_size = next(iter(cond.values())).shape[0]
+        cond = torch_tree_to_device(obs, self.device)
+        batch_size = torch_tree_batch_size(cond)
         value = self.critic(cond).squeeze(-1)
         assert value.shape == (batch_size,)
         return value

@@ -57,7 +57,7 @@ class DPPOBuffer(GAEBuffer):
             dict(
                 x=dppo_train_state.obs.x,
                 t=dppo_train_state.obs.t,
-                cond=dict(state=dppo_train_state.obs.cond.state),
+                cond=dppo_train_state.obs.cond,
             ),
         )
         self.actions[current_idx] = dppo_train_state.action[0]

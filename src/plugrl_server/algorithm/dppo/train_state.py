@@ -21,15 +21,10 @@ def _require_mapping(value: NumpyState, name: str) -> Mapping[str, NumpyState]:
 
 
 @dataclasses.dataclass(frozen=True)
-class DPPOCondTrainState:
-    state: np.ndarray
-
-
-@dataclasses.dataclass(frozen=True)
 class DPPOObsTrainState:
     x: np.ndarray
     t: np.ndarray
-    cond: DPPOCondTrainState
+    cond: NumpyState
 
 
 @dataclasses.dataclass(frozen=True)
@@ -46,18 +41,17 @@ def as_dppo_train_state(train_state: PolicyTrainState) -> DPPOTrainState:
         raise ValueError("DPPO train_state must not be None.")
 
     obs_mapping = _require_mapping(train_state["obs"], "train_state['obs']")
-    cond_mapping = _require_mapping(obs_mapping["cond"], "train_state['obs']['cond']")
+    cond = obs_mapping["cond"]
+    if not isinstance(cond, (np.ndarray, Mapping)):
+        raise TypeError(
+            f"train_state['obs']['cond'] must be a numpy tree, got {type(cond)!r}."
+        )
 
     return DPPOTrainState(
         obs=DPPOObsTrainState(
             x=_require_array(obs_mapping["x"], "train_state['obs']['x']"),
             t=_require_array(obs_mapping["t"], "train_state['obs']['t']"),
-            cond=DPPOCondTrainState(
-                state=_require_array(
-                    cond_mapping["state"],
-                    "train_state['obs']['cond']['state']",
-                )
-            ),
+            cond=cond,
         ),
         action=_require_array(train_state["action"], "train_state['action']"),
         logprob=_require_array(train_state["logprob"], "train_state['logprob']"),
