@@ -58,3 +58,8 @@ include = ["plugrl_server*"]
 [build-system]
 requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+markers = [
+    "manual: tests that require real RoboCasa/OpenPI environments and should be run manually.",
+]

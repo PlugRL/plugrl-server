@@ -1,6 +1,5 @@
 import pytest
 import numpy as np
-
 from plugrl_server.buffer.replay_buffer import ReplayBuffer
 from plugrl_server.buffer.rollout_buffer import RolloutBuffer
 from plugrl_server.buffer.schema_migration import migrate_buffer_payload
