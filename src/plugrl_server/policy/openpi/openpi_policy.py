@@ -17,6 +17,7 @@ import torch
 
 from plugrl_server.common.data_utils import (
     batch_aggregate,
+    torch_tensor_to_numpy,
     torch_tree_to_device,
     torch_tree_batch_size,
     unbatch_aggregate,
@@ -350,7 +351,7 @@ class Pi0Policy(BasePolicyGradientFlowPolicy):
     def _postprocess_action(self, action: torch.Tensor, obs: TorchTree) -> Any:
         assert isinstance(obs, Mapping), "OpenPI expects mapping-like observations."
         outputs = dict(state=obs["state"], actions=action)
-        outputs = jax.tree.map(lambda x: x.detach().cpu().numpy(), outputs)
+        outputs = jax.tree.map(torch_tensor_to_numpy, outputs)
         unbatched_outputs = unbatch_aggregate(outputs)
         actions = []
         for out in unbatched_outputs:

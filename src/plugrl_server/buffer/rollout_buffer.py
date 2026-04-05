@@ -9,6 +9,7 @@ from plugrl_server.common.data_utils import (
     batch_aggregate,
     numpy_tree_to_torch,
     stack_numpy_tree,
+    torch_tensor_to_numpy,
 )
 from plugrl_server.common.logging_utils import get_logger
 from plugrl_server.buffer.numpy_tree_storage import NumpyTreeStorage
@@ -325,10 +326,10 @@ class GAEBuffer(RolloutBuffer):
                     next_observations[i : i + batch_size], aggregate_method="concat"
                 )
                 with torch.inference_mode():
-                    batch_values = (
-                        policy.get_value(batch_obs).cpu().numpy().reshape(-1, 1)
-                    )
-                self.last_values[next_ids[i : i + batch_size]] = batch_values
+                    batch_values = torch_tensor_to_numpy(policy.get_value(batch_obs))
+                batch_ids = next_ids[i : i + batch_size]
+                target_shape = self.last_values[batch_ids].shape
+                self.last_values[batch_ids] = batch_values.reshape(target_shape)
 
         for step in reversed(range(self.idx)):
             next_idx = self.next_indices[step]

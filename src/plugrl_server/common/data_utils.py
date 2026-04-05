@@ -16,6 +16,10 @@ TorchTree: TypeAlias = torch.Tensor | dict[str, "TorchTree"]
 NumpyTree: TypeAlias = np.ndarray | Mapping[str, "NumpyTree"]
 
 
+def _is_numpy_scalar(value: Any) -> bool:
+    return isinstance(value, np.generic)
+
+
 def batch_aggregate(
     list_of_dicts: list[dict[str, Any]],
     aggregate_method: Literal["stack", "concat"] = "stack",
@@ -191,6 +195,8 @@ def stack_numpy_tree(items: Sequence[NumpyTree], axis: int = 0) -> NumpyTree:
     if isinstance(first_item, np.ndarray):
         array_items = cast(Sequence[np.ndarray], items)
         return np.stack(list(array_items), axis=axis)
+    if _is_numpy_scalar(first_item):
+        return np.stack([np.asarray(item) for item in items], axis=axis)
     first_mapping = cast(Mapping[str, NumpyTree], first_item)
     return dict(
         (
@@ -203,10 +209,17 @@ def stack_numpy_tree(items: Sequence[NumpyTree], axis: int = 0) -> NumpyTree:
     )
 
 
+def torch_tensor_to_numpy(tensor: torch.Tensor) -> np.ndarray:
+    tensor_cpu = tensor.detach().cpu()
+    if tensor_cpu.dtype == torch.bfloat16:
+        tensor_cpu = tensor_cpu.to(torch.float32)
+    return tensor_cpu.numpy()
+
+
 def torch_tree_to_numpy(tree: TorchTree) -> NumpyTree:
     if isinstance(tree, torch.Tensor):
         tensor_tree = cast(torch.Tensor, tree)
-        return tensor_tree.cpu().numpy()
+        return torch_tensor_to_numpy(tensor_tree)
     tree_mapping = cast(Mapping[str, TorchTree], tree)
     return dict(
         (key, torch_tree_to_numpy(value)) for key, value in tree_mapping.items()
@@ -217,6 +230,8 @@ def numpy_tree_to_torch(tree: NumpyTree) -> TorchTree:
     if isinstance(tree, np.ndarray):
         array_tree = cast(np.ndarray, tree)
         return torch.from_numpy(array_tree)
+    if _is_numpy_scalar(tree):
+        return torch.from_numpy(np.asarray(tree))
     tree_mapping = cast(Mapping[str, NumpyTree], tree)
     return dict(
         (key, numpy_tree_to_torch(value)) for key, value in tree_mapping.items()
@@ -228,6 +243,8 @@ def numpy_state_to_torch_tree(tree: Any) -> Any:
         return tree
     if isinstance(tree, np.ndarray):
         return torch.from_numpy(tree)
+    if _is_numpy_scalar(tree):
+        return torch.from_numpy(np.asarray(tree))
     if isinstance(tree, Mapping):
         return dict(
             (key, numpy_state_to_torch_tree(value)) for key, value in tree.items()

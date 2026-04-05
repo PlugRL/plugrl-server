@@ -6,6 +6,8 @@ import numpy as np
 import torch
 import tensordict
 
+from plugrl_server.common.data_utils import torch_tensor_to_numpy
+
 PolicyStateArray: TypeAlias = np.ndarray
 NumpyState: TypeAlias = PolicyStateArray | Mapping[str, "NumpyState"]
 PolicyRuntimeState: TypeAlias = Any | None
@@ -91,7 +93,7 @@ def _to_numpy_leaf(value: Any) -> Any:
     if isinstance(value, np.ndarray):
         return value
     if isinstance(value, torch.Tensor):
-        return value.detach().cpu().numpy()
+        return torch_tensor_to_numpy(value)
     if isinstance(value, tensordict.TensorDict):
         return dict((key, _to_numpy_leaf(item)) for key, item in value.items())
     if isinstance(value, dict):

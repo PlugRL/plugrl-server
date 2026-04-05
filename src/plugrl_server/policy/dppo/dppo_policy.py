@@ -13,6 +13,7 @@ import torch
 import numpy as np
 from typing import Tuple, Any
 from plugrl_server.paths import PACKAGE_DIR
+from plugrl_server.common.data_utils import torch_tensor_to_numpy
 from plugrl_server.common.logging_utils import get_logger
 from ..base_policy_gradient_diffusion_policy import (
     BasePolicyGradientDiffusionPolicy,
@@ -149,7 +150,7 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
                 -self.actor.final_action_clip_value,
                 self.actor.final_action_clip_value,
             )
-        action_numpy = action.cpu().numpy()
+        action_numpy = torch_tensor_to_numpy(action)
         unnormalized_action = (
             0.5
             * (action_numpy + 1)
