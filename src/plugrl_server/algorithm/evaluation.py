@@ -25,6 +25,11 @@ UID = "eval"
 class EvalConfig(BaseAlgoConfig):
     break_action_chunk: bool = False
     policy_checkpoint_path: pathlib.Path | None = None
+    num_episodes: int | None = None
+
+    def __post_init__(self) -> None:
+        if self.num_episodes is not None and self.num_episodes < 0:
+            raise ValueError("num_episodes must be non-negative.")
 
 
 @register_algo(UID)
@@ -34,6 +39,7 @@ class Evaluation(BaseAlgorithm):
     def __init__(self, config: EvalConfig, policy: BasePolicy):
         super().__init__(config, policy)
         self.counter = 0
+        self.completed_episodes = 0
         self.break_action_chunk = config.break_action_chunk
         if config.policy_checkpoint_path is not None:
             logger.info(
@@ -65,8 +71,10 @@ class Evaluation(BaseAlgorithm):
         prev_node: tuple,
     ) -> tuple:
         self.counter += 1
-        log_dict = {}
-        if next_terminated or next_truncated:
+        episode_finished = bool(next_terminated or next_truncated)
+        log_dict = dict()
+        if episode_finished:
+            self.completed_episodes += 1
             if "episode" in info and bool(info["episode"].get("mask", True)):
                 log_dict = dict(
                     episode=dict(
@@ -85,8 +93,16 @@ class Evaluation(BaseAlgorithm):
     def should_learn(self) -> bool:
         return False
 
+    def get_collect_progress_total(self) -> int | None:
+        return self.config.num_episodes
+
+    def get_collect_progress_completed(self) -> int | None:
+        return self.completed_episodes
+
     def should_stop(self) -> bool:
-        return False
+        if self.config.num_episodes is None:
+            return False
+        return self.completed_episodes >= self.config.num_episodes
 
     def should_save(self) -> bool:
         return False
