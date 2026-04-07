@@ -1,4 +1,5 @@
 import asyncio
+import os
 import time
 from typing import Any
 import numpy as np
@@ -30,13 +31,19 @@ from plugrl_server.server.protocol import (
 )
 from plugrl_server.server.runtime_metrics import RuntimeMetricTracker
 from plugrl_server.server.runtime_scheduler import RuntimeScheduler
-from plugrl_server.server.training_backend import LocalTrainingBackend
+from plugrl_server.server.training_backend import (
+    LocalTrainingBackend,
+    RolloutOnlyTrainingBackend,
+)
 
 logger = get_logger(__name__)
 
 SCHEDULER_SLEEP_INTERVAL = 0.001  # seconds
 INFER_READY_TIMEOUT = 5.0  # seconds to wait for full infer batch before warning
 FEEDBACK_WAIT_TIMEOUT = 60.0  # seconds to wait for client feedback before closing
+WS_PING_INTERVAL = float(os.environ.get("PLUGRL_WS_PING_INTERVAL_SECONDS", "60"))
+WS_PING_TIMEOUT = float(os.environ.get("PLUGRL_WS_PING_TIMEOUT_SECONDS", "180"))
+WS_CLOSE_TIMEOUT = float(os.environ.get("PLUGRL_WS_CLOSE_TIMEOUT_SECONDS", "30"))
 
 
 class ServerStoppingError(RuntimeError):
@@ -52,6 +59,7 @@ class WebSocketAgentServer:
         mini_infer_batch_size: int | None = None,
         show_metric_table: bool = True,
         show_progress_bar: bool = True,
+        rollout_only: bool = False,
         host: str = "0.0.0.0",
         port: int = 8000,
         metadata: dict | None = None,
@@ -74,14 +82,18 @@ class WebSocketAgentServer:
             sleep_interval=SCHEDULER_SLEEP_INTERVAL,
         )
         self._progress_reporter = ProgressReporter(enabled=show_progress_bar)
-        self._training = LocalTrainingBackend(
-            algorithm=self._algorithm,
-            checkpoint_manager=self._checkpoint_manager,
-            metric_sink=self._metric_sink,
-            runtime_metrics_provider=self._runtime_metrics,
-            show_metric_table=show_metric_table,
-            progress_reporter=self._progress_reporter,
-            stop_requested=self._lifecycle.stop_event.is_set,
+        self._training = (
+            RolloutOnlyTrainingBackend()
+            if rollout_only
+            else LocalTrainingBackend(
+                algorithm=self._algorithm,
+                checkpoint_manager=self._checkpoint_manager,
+                metric_sink=self._metric_sink,
+                runtime_metrics_provider=self._runtime_metrics,
+                show_metric_table=show_metric_table,
+                progress_reporter=self._progress_reporter,
+                stop_requested=self._lifecycle.stop_event.is_set,
+            )
         )
 
         self._total_connections = 0
@@ -130,9 +142,22 @@ class WebSocketAgentServer:
         self._install_signal_handlers()
         try:
             self._server = await _server.serve(
-                self._handler, self._host, self._port, compression=None, max_size=None
+                self._handler,
+                self._host,
+                self._port,
+                compression=None,
+                max_size=None,
+                ping_interval=WS_PING_INTERVAL,
+                ping_timeout=WS_PING_TIMEOUT,
+                close_timeout=WS_CLOSE_TIMEOUT,
             )
-            logger.info(f"Agent Server is listening on {self._host}:{self._port}")
+            logger.info(
+                "Agent Server is listening on %s:%s, ping_interval=%ss, ping_timeout=%ss",
+                self._host,
+                self._port,
+                WS_PING_INTERVAL,
+                WS_PING_TIMEOUT,
+            )
             await self._lifecycle.stop_event.wait()
         except asyncio.CancelledError:
             self._lifecycle.shutdown_reason = "Server run task was cancelled."

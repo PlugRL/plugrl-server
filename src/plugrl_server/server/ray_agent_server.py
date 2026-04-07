@@ -1,11 +1,12 @@
 import asyncio
-from collections import deque
+import os
+import time
 from typing import Any
 import numpy as np
+import websockets
 import websockets.asyncio.server as _server
 import websockets.frames
 import uuid
-import ray
 
 from plugrl_protocol import msgpack_numpy
 from plugrl_protocol.websocket_protocol import (
@@ -13,17 +14,13 @@ from plugrl_protocol.websocket_protocol import (
     SERVER_STOP_REASON,
 )
 
-# Deferred path:
-# This Ray server path is maintained only for minimal compatibility.
-# Real distributed redesign/debugging is postponed until a true multi-rank environment is available.
-
-from plugrl_server.algorithm.distributed import DDPAlgorithm
+from plugrl_server.algorithm.base_algorithm import BaseAlgorithm
 from plugrl_server.common.checkpoint_manager import CheckpointManager
-from plugrl_server.common.data_utils import batch_aggregate
+from plugrl_server.common.data_utils import unbatch_aggregate
 from plugrl_server.common.logging_utils import get_logger
 from plugrl_server.common.metrics import MetricSink
 from plugrl_server.common.progress import ProgressReporter
-from plugrl_server.policy.state import slice_policy_step_state
+from plugrl_server.server.ray_inference import RayInferenceWorkerGroup
 from plugrl_server.server.inference_coordinator import InferenceCoordinator
 from plugrl_server.server.lifecycle import ServerLifecycle
 from plugrl_server.server.protocol import (
@@ -35,12 +32,19 @@ from plugrl_server.server.protocol import (
 )
 from plugrl_server.server.runtime_metrics import RuntimeMetricTracker
 from plugrl_server.server.runtime_scheduler import RuntimeScheduler
-from plugrl_server.server.training_backend import RayTrainingBackend
+from plugrl_server.server.training_backend import (
+    LocalTrainingBackend,
+    RolloutOnlyTrainingBackend,
+)
 
 logger = get_logger(__name__)
 
-
 SCHEDULER_SLEEP_INTERVAL = 0.001  # seconds
+INFER_READY_TIMEOUT = 5.0  # seconds to wait for full infer batch before warning
+FEEDBACK_WAIT_TIMEOUT = 60.0  # seconds to wait for client feedback before closing
+WS_PING_INTERVAL = float(os.environ.get("PLUGRL_WS_PING_INTERVAL_SECONDS", "60"))
+WS_PING_TIMEOUT = float(os.environ.get("PLUGRL_WS_PING_TIMEOUT_SECONDS", "180"))
+WS_CLOSE_TIMEOUT = float(os.environ.get("PLUGRL_WS_CLOSE_TIMEOUT_SECONDS", "30"))
 
 
 class ServerStoppingError(RuntimeError):
@@ -50,21 +54,22 @@ class ServerStoppingError(RuntimeError):
 class RayAgentServer:
     def __init__(
         self,
-        inference_algorithm: DDPAlgorithm,
+        algorithm: BaseAlgorithm,
         checkpoint_manager: CheckpointManager,
         metric_sink: MetricSink,
-        learner_actor_ref: ray.ObjectRef,
+        inference_workers: RayInferenceWorkerGroup,
+        mini_infer_batch_size: int | None = None,
         show_metric_table: bool = True,
         show_progress_bar: bool = True,
+        rollout_only: bool = False,
         host: str = "0.0.0.0",
         port: int = 8000,
         metadata: dict | None = None,
     ):
-        self._algorithm: DDPAlgorithm = inference_algorithm
-        self._checkpoint_manager: CheckpointManager = checkpoint_manager
+        self._algorithm = algorithm
+        self._checkpoint_manager = checkpoint_manager
         self._metric_sink = metric_sink
-        self._learner_actor: Any = learner_actor_ref
-
+        self._inference_workers = inference_workers
         self._host = host
         self._port = port
         self._metadata = metadata or {}
@@ -80,20 +85,26 @@ class RayAgentServer:
             sleep_interval=SCHEDULER_SLEEP_INTERVAL,
         )
         self._progress_reporter = ProgressReporter(enabled=show_progress_bar)
-        self._training = RayTrainingBackend(
-            algorithm=self._algorithm,
-            checkpoint_manager=self._checkpoint_manager,
-            metric_sink=self._metric_sink,
-            learner_actor_ref=self._learner_actor,
-            runtime_metrics_provider=self._runtime_metrics,
-            show_metric_table=show_metric_table,
-            progress_reporter=self._progress_reporter,
-            stop_requested=self._lifecycle.stop_event.is_set,
+        self._training = (
+            RolloutOnlyTrainingBackend()
+            if rollout_only
+            else LocalTrainingBackend(
+                algorithm=self._algorithm,
+                checkpoint_manager=self._checkpoint_manager,
+                metric_sink=self._metric_sink,
+                runtime_metrics_provider=self._runtime_metrics,
+                show_metric_table=show_metric_table,
+                progress_reporter=self._progress_reporter,
+                stop_requested=self._lifecycle.stop_event.is_set,
+            )
         )
 
         self._total_connections = 0
+        self._infer_wait_start: float | None = None
         self._collect_progress_started = False
         self._runtime_metric_tracker = RuntimeMetricTracker()
+        self._mini_infer_batch_size = mini_infer_batch_size
+        self._logged_route_keys: set[str] = set()
 
     def serve_forever(self) -> None:
         asyncio.run(self.run())
@@ -105,11 +116,7 @@ class RayAgentServer:
         self._lifecycle.install_signal_handlers()
 
     async def _handle_fatal(self, context: str, exc: BaseException) -> None:
-        await self._lifecycle.handle_fatal(
-            context,
-            exc,
-            extra_cleanup=self._training.shutdown,
-        )
+        await self._lifecycle.handle_fatal(context, exc)
 
     async def _abort_pending_infer_requests(self, reason: str) -> None:
         (
@@ -129,7 +136,6 @@ class RayAgentServer:
             scheduler_task=scheduler_task,
             server=self._server,
             abort_pending_infer_requests=self._abort_pending_infer_requests,
-            extra_cleanup=self._training.shutdown,
         )
         self._server = None
         self._progress_reporter.close()
@@ -139,9 +145,23 @@ class RayAgentServer:
         self._install_signal_handlers()
         try:
             self._server = await _server.serve(
-                self._handler, self._host, self._port, compression=None, max_size=None
+                self._handler,
+                self._host,
+                self._port,
+                compression=None,
+                max_size=None,
+                ping_interval=WS_PING_INTERVAL,
+                ping_timeout=WS_PING_TIMEOUT,
+                close_timeout=WS_CLOSE_TIMEOUT,
             )
-            logger.info(f"Agent Server is listening on {self._host}:{self._port}")
+            logger.info(
+                "Ray Agent Server is listening on %s:%s with %s inference worker(s), ping_interval=%ss, ping_timeout=%ss",
+                self._host,
+                self._port,
+                self._inference_workers.num_workers,
+                WS_PING_INTERVAL,
+                WS_PING_TIMEOUT,
+            )
             await self._lifecycle.stop_event.wait()
         except asyncio.CancelledError:
             self._lifecycle.shutdown_reason = "Server run task was cancelled."
@@ -177,9 +197,11 @@ class RayAgentServer:
             )
             self._total_connections += 1
             connection_counted = True
-            prev_node: tuple = (-1, "")
-            terminated, truncated = False, False
-            action_buffer = deque()
+            prev_node_map: dict = {}
+            step_state_map: dict = {}
+            terminated_map: dict = {}
+            truncated_map: dict = {}
+            last_obs_map: dict = {}
             while True:
                 packed_infer_msg = await websocket.recv()
                 infer_payload = msgpack_numpy.unpackb(packed_infer_msg)
@@ -189,52 +211,79 @@ class RayAgentServer:
                     await self._close_for_protocol_error(websocket, exc)
                     break
 
-                obs, step_state = infer_msg.data, None
+                obs, env_ids = infer_msg.data, infer_msg.env_indices
 
-                if not action_buffer:
-                    req_id = f"{session_id}-{uuid.uuid4()}"
-                    response_future = await self._inference.register_request(req_id)
-
-                    infer_request = dict(id=req_id, obs=obs)
-                    await self._inference.enqueue_request(infer_request)
-
-                    try:
-                        action, step_state = await response_future
-                    except ServerStoppingError:
-                        await self._inference.pop_request(req_id)
-                        if self._lifecycle.close_reason:
-                            try:
-                                await websocket.close(
-                                    code=websockets.frames.CloseCode.GOING_AWAY,
-                                    reason=self._lifecycle.close_reason,
-                                )
-                            except Exception:
-                                pass
-                        logger.info(
-                            "Shutdown interrupted an in-flight inference request "
-                            f"from {websocket.remote_address}."
-                        )
-                        break
-                    else:
-                        await self._inference.pop_request(req_id)
-
-                    action_buffer.extend(action.swapaxes(1, 0))
-                runtime_state = (
-                    step_state.runtime_state if step_state is not None else None
-                )
-                train_state = step_state.train_state if step_state is not None else None
-
-                if self._algorithm.break_action_chunk:
-                    action = action_buffer.popleft()
-                else:
-                    action = np.array(
-                        [action_buffer.popleft() for _ in range(len(action_buffer))]
+                req_id = f"{session_id}-{uuid.uuid4()}"
+                response_future = await self._inference.register_request(req_id)
+                await self._inference.enqueue_request(
+                    dict(
+                        id=req_id,
+                        obs=obs,
+                        env_ids=np.asarray(env_ids),
+                        route_key=session_id,
                     )
+                )
+                try:
+                    response = await response_future
+                    action_arr, step_state_arr, resp_env_ids, resp_obs = response
+                    assert np.array_equal(
+                        np.asarray(resp_env_ids), np.asarray(env_ids)
+                    ), "Response env_ids do not match request env_ids"
+                except ServerStoppingError:
+                    await self._inference.pop_request(req_id)
+                    if self._lifecycle.close_reason:
+                        try:
+                            await websocket.close(
+                                code=websockets.frames.CloseCode.GOING_AWAY,
+                                reason=self._lifecycle.close_reason,
+                            )
+                        except Exception:
+                            pass
+                    logger.info(
+                        "Shutdown interrupted an in-flight inference request "
+                        f"from {websocket.remote_address}."
+                    )
+                    break
+                else:
+                    await self._inference.pop_request(req_id)
+                    if session_id not in self._logged_route_keys:
+                        self._logged_route_keys.add(session_id)
+                        logger.info(
+                            "Assigned new inference route session=%s env_ids=%s assignment=%s assignments=%s",
+                            session_id,
+                            np.asarray(env_ids).tolist(),
+                            self._inference_workers.describe_route_assignment(
+                                session_id
+                            ),
+                            self._inference_workers.describe_route_assignments(),
+                        )
 
-                action_response = ActionMessage(data=dict(action=action))
+                resp_obs_list = unbatch_aggregate(resp_obs, aggregate_method="concat")
+                for i, env_id in enumerate(resp_env_ids):
+                    step_state_map[env_id] = step_state_arr[i]
+                    last_obs_map[env_id] = resp_obs_list[i]
+
+                action_response = ActionMessage(
+                    data=dict(env_ids=resp_env_ids, action=action_arr.swapaxes(0, 1))
+                )
                 await websocket.send(packer.pack(action_response.to_payload()))
 
-                packed_feedback_msg = await websocket.recv()
+                try:
+                    packed_feedback_msg = await asyncio.wait_for(
+                        websocket.recv(), timeout=FEEDBACK_WAIT_TIMEOUT
+                    )
+                except asyncio.TimeoutError:
+                    logger.warning(
+                        "Timed out waiting for feedback from %s after %.1fs, closing connection",
+                        websocket.remote_address,
+                        FEEDBACK_WAIT_TIMEOUT,
+                    )
+                    await websocket.close(
+                        code=websockets.frames.CloseCode.GOING_AWAY,
+                        reason="Feedback timeout",
+                    )
+                    break
+
                 feedback_payload = msgpack_numpy.unpackb(packed_feedback_msg)
                 try:
                     feedback_msg = parse_feedback_request(feedback_payload)
@@ -242,40 +291,67 @@ class RayAgentServer:
                     await self._close_for_protocol_error(websocket, exc)
                     break
 
-                next_obs = feedback_msg.data.obs
-                reward = feedback_msg.data.rewards
-                next_terminated = feedback_msg.data.terminated
-                next_truncated = feedback_msg.data.truncated
-                info = feedback_msg.data.info
+                fb_env_ids = feedback_msg.env_indices
+                next_obs_batch = feedback_msg.data.obs
+                reward_list = feedback_msg.data.rewards
+                next_terminated_list = feedback_msg.data.terminated
+                next_truncated_list = feedback_msg.data.truncated
+                info_batch = feedback_msg.data.info
+                next_obs_list = unbatch_aggregate(
+                    next_obs_batch, aggregate_method="concat"
+                )
+                info_list = unbatch_aggregate(info_batch, aggregate_method="stack")
+                assert len(info_list) == len(next_obs_list) or len(info_list) == 0
 
-                feedback_started_at = asyncio.get_running_loop().time()
+                feedback_started_at = time.perf_counter()
                 async with self._model_lock:
                     self._ensure_collect_progress_started()
-                    prev_node, step, log_dict = self._algorithm.feedback(
-                        obs=obs,
-                        runtime_state=runtime_state,
-                        train_state=train_state,
-                        terminated=terminated,
-                        truncated=truncated,
-                        next_obs=next_obs,
-                        reward=reward,
-                        next_terminated=next_terminated,
-                        next_truncated=next_truncated,
-                        info=info,
-                        prev_node=prev_node,
-                    )
-                    await asyncio.to_thread(self._training.log, log_dict, step=step)
-                self._progress_reporter.update_phase(
-                    "collect",
-                    completed=self._algorithm.get_collect_progress_completed(),
-                    advance=0,
-                )
-                self._runtime_metric_tracker.observe_feedback(
-                    duration=asyncio.get_running_loop().time() - feedback_started_at,
-                    batch_size=1,
-                )
+                    for idx, env_id in enumerate(fb_env_ids):
+                        next_obs = next_obs_list[idx]
+                        reward = reward_list[idx]
+                        next_terminated = next_terminated_list[idx]
+                        next_truncated = next_truncated_list[idx]
+                        info = info_list[idx] if len(info_list) > 0 else {}
 
-                terminated, truncated = next_terminated, next_truncated
+                        prev_node = prev_node_map.get(env_id, (-1, ""))
+                        step_state = step_state_map.get(env_id)
+                        runtime_state = (
+                            step_state.runtime_state if step_state is not None else None
+                        )
+                        train_state = (
+                            step_state.train_state if step_state is not None else None
+                        )
+                        terminated = terminated_map.get(env_id, False)
+                        truncated = truncated_map.get(env_id, False)
+                        last_obs = last_obs_map.get(env_id, {})
+
+                        prev_node_res, step, log_dict = self._algorithm.feedback(
+                            obs=last_obs,
+                            runtime_state=runtime_state,
+                            train_state=train_state,
+                            terminated=terminated,
+                            truncated=truncated,
+                            next_obs=next_obs,
+                            reward=reward,
+                            next_terminated=next_terminated,
+                            next_truncated=next_truncated,
+                            info=info,
+                            prev_node=prev_node,
+                        )
+
+                        prev_node_map[env_id] = prev_node_res
+                        terminated_map[env_id] = bool(next_terminated)
+                        truncated_map[env_id] = bool(next_truncated)
+                        self._metric_sink.log_scalars(log_dict, step=step)
+                    self._progress_reporter.update_phase(
+                        "collect",
+                        completed=self._algorithm.get_collect_progress_completed(),
+                        advance=0,
+                    )
+                self._runtime_metric_tracker.observe_feedback(
+                    duration=time.perf_counter() - feedback_started_at,
+                    batch_size=len(fb_env_ids),
+                )
 
         except websockets.ConnectionClosed:
             pass
@@ -296,6 +372,7 @@ class RayAgentServer:
         return dict(
             server=dict(total_connections=self._total_connections),
             **self._runtime_metric_tracker.as_metrics(),
+            **self._inference_workers.as_metrics(),
         )
 
     def _start_collect_progress(self) -> None:
@@ -315,59 +392,97 @@ class RayAgentServer:
             self._start_collect_progress()
 
     def should_infer(self) -> bool:
-        return (
-            self._inference.queue.qsize() >= self._total_connections // 2
-            and self._total_connections > 0
+        current_qsize = self._inference.queue.qsize()
+        current_env_count = self._inference.queued_env_count()
+        now = time.monotonic()
+
+        infer_threshold = self._mini_infer_batch_size or self._total_connections
+        ready_count = (
+            current_env_count if self._mini_infer_batch_size else current_qsize
         )
+        if (ready_count >= infer_threshold) and self._total_connections > 0:
+            self._infer_wait_start = None
+            return True
+
+        if current_qsize > 0 and self._total_connections > 0:
+            if self._infer_wait_start is None:
+                self._infer_wait_start = now
+            elif now - self._infer_wait_start > INFER_READY_TIMEOUT:
+                logger.warning(
+                    "Infer queue has been waiting %.1fs for %s/%s ready units (requests=%s, envs=%s)",
+                    now - self._infer_wait_start,
+                    ready_count,
+                    infer_threshold,
+                    current_qsize,
+                    current_env_count,
+                )
+                self._infer_wait_start = now
+        else:
+            self._infer_wait_start = None
+
+        return False
 
     async def _process_infer(self):
         batch = await self._inference.drain_batch()
         if not batch:
             return
-        started_at = asyncio.get_running_loop().time()
+        started_at = time.perf_counter()
         try:
-            obs = batch_aggregate([req["obs"] for req in batch])
-            logger.debug(f"Processing inference for batch size {len(batch)}")
             async with self._model_lock:
-                action, runtime_state = self._algorithm.infer(obs)
-                step_state = self._algorithm.build_step_state_from_runtime_state(
-                    runtime_state,
-                    include_train_state=True,
+                responses = await self._inference_workers.infer_batch(batch)
+            for request, response in zip(batch, responses, strict=True):
+                logger.info(
+                    "Ray inference served request_id=%s envs=%s worker=%s model_step=%s",
+                    request["id"],
+                    len(request["env_ids"]),
+                    response["worker_index"],
+                    response["model_step"],
                 )
-            logger.debug(f"Inference done for batch size {len(batch)}")
-            for i, req in enumerate(batch):
                 self._inference.resolve_request(
-                    req,
+                    request,
                     result=(
-                        action[i : i + 1],
-                        slice_policy_step_state(step_state, slice(i, i + 1)),
+                        response["action"],
+                        response["step_states"],
+                        response["env_ids"],
+                        response["obs"],
                     ),
                 )
             self._runtime_metric_tracker.observe_infer(
-                duration=asyncio.get_running_loop().time() - started_at,
-                batch_size=len(batch),
+                duration=time.perf_counter() - started_at,
+                batch_size=sum(len(request["env_ids"]) for request in batch),
             )
         except Exception as exc:
             self._inference.fail_batch(batch, exc)
             raise
 
+    async def _sync_inference_workers(self) -> None:
+        checkpoint = self._algorithm.create_checkpoint()
+        await self._inference_workers.sync_checkpoint(checkpoint)
+        await self._inference_workers.refresh_metrics()
+
     async def _run_control_cycle(self) -> None:
+        learned = False
         async with self._model_lock:
             if self._training.should_learn():
                 if self._collect_progress_started:
                     self._progress_reporter.finish_phase("collect")
                     self._collect_progress_started = False
                 await self._training.process_learn()
+                learned = True
 
+        if learned:
+            await self._sync_inference_workers()
+
+        async with self._model_lock:
             stop_requested = self._training.should_stop()
             if self._training.should_save() or stop_requested:
                 await self._training.process_save()
 
-            if stop_requested:
-                self._request_shutdown(
-                    "Stopping server as the algorithm signaled to stop.",
-                    close_reason=SERVER_STOP_REASON,
-                )
+        if stop_requested:
+            self._request_shutdown(
+                "Stopping server as the algorithm signaled to stop.",
+                close_reason=SERVER_STOP_REASON,
+            )
 
     async def _scheduler_loop(self):
         try:
@@ -377,5 +492,5 @@ class RayAgentServer:
                 run_control_cycle=self._run_control_cycle,
             )
         except Exception as exc:
-            await self._handle_fatal("scheduler loop", exc)
+            await self._handle_fatal("main scheduler loop", exc)
             raise

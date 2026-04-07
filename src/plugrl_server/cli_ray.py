@@ -2,16 +2,13 @@ import os
 
 os.environ.setdefault("RAY_DISABLE_METRICS", "1")
 import dataclasses
+import asyncio
+from typing import Literal
 
 import ray
 import torch
 
 import plugrl_server
-
-# Deferred path:
-# This Ray CLI path is maintained only for minimal compatibility.
-# Real distributed redesign/debugging is postponed until a true multi-rank environment is available.
-
 from plugrl_server.cli import (
     Args as BaseArgs,
     build_cli_from_registry,
@@ -25,17 +22,18 @@ from plugrl_server.common.metrics import (
 )
 from plugrl_server.server.ray_agent_server import RayAgentServer
 from plugrl_server.common.checkpoint_manager import CheckpointManager
-from plugrl_server.server.ray_learner import LearnerActor, LearnerAlgoSpec
+from plugrl_server.server.ray_inference import (
+    InferenceWorkerSpec,
+    RayInferenceWorkerGroup,
+)
 
 logger = get_logger(__name__)
 
 
 @dataclasses.dataclass
 class RayArgs(BaseArgs):
-    infer_gpu: int | None = None
-    num_ddp_gpus: int | None = None
-    master_addr: str | None = None
-    master_port: str | None = None
+    num_infer_workers: int | None = None
+    local_policy_device: Literal["cpu", "cuda"] = "cpu"
 
 
 def cli() -> RayArgs:
@@ -52,6 +50,8 @@ def _main(args: RayArgs):
     if not ray.is_initialized():
         ray.init()
         logger.info("Initialized Ray.")
+    logger.info("Ray cluster resources: %s", ray.cluster_resources())
+    logger.info("Ray available resources: %s", ray.available_resources())
 
     checkpoint_manager = CheckpointManager(
         args.checkpoint_dir,
@@ -69,17 +69,23 @@ def _main(args: RayArgs):
 
     policy = make_policy(
         args.policy_uid,
-        config=dataclasses.replace(
-            args.policy,
-            device=torch.device("cuda", args.infer_gpu)
-            if args.infer_gpu is not None
-            else "cuda",
-        ),
+        config=dataclasses.replace(args.policy, device=args.local_policy_device),
     )
+    logger.info(
+        "Local training policy created on device=%s",
+        args.local_policy_device,
+    )
+    if args.local_policy_device == "cuda":
+        logger.warning(
+            "Local training policy is running on CUDA. In Ray mode the main "
+            "process still performs DPPO learning locally, so its GPU memory "
+            "usage adds to the Ray inference workers' GPU usage."
+        )
+
     algo = make_algo(args.algo_uid, config=args.algo, policy=policy)
-    assert isinstance(algo, plugrl_server.algorithm.base_algorithm.DDPAlgorithm), (
-        f"Algorithm {args.algo_uid} is not a DDPAlgorithm."
-    )
+    algo.init_optimizers()
+    logger.info(f"Algorithm created: \n{algo}")
+
     if args.resume:
         checkpoint = checkpoint_manager.load_checkpoint()
         if checkpoint is None:
@@ -87,36 +93,54 @@ def _main(args: RayArgs):
                 f"No checkpoint found in {args.checkpoint_dir} to resume."
             )
         logger.info(f"Resumed from checkpoint at step {checkpoint.step}")
-        algo.load_learner_state(checkpoint)
+        algo.load_checkpoint(checkpoint)
+    else:
+        checkpoint = algo.create_checkpoint()
 
-    learner_spec = LearnerAlgoSpec(
+    available_gpus = torch.cuda.device_count()
+    if available_gpus <= 0:
+        raise RuntimeError("Ray inference mode requires at least one CUDA device.")
+    num_infer_workers = args.num_infer_workers or available_gpus
+    if num_infer_workers > available_gpus:
+        raise ValueError(
+            f"Requested {num_infer_workers} inference workers, but only {available_gpus} CUDA devices are visible."
+        )
+
+    worker_spec = InferenceWorkerSpec(
         algo_uid=args.algo_uid,
         algo_config=args.algo,
         policy_uid=args.policy_uid,
         policy_config=args.policy,
-        initial_checkpoint=algo.create_ddp_checkpoint() if args.resume else None,
+        initial_checkpoint=checkpoint,
     )
-    if args.num_ddp_gpus is None:
-        ddp_gpus = list(range(torch.cuda.device_count()))
-        logger.info(f"No DDP GPUs specified, using all available GPUs: {ddp_gpus}")
-    else:
-        ddp_gpus = list(range(args.num_ddp_gpus))
-    learner_ref = LearnerActor.remote(
-        learner_spec,
-        ddp_gpus=ddp_gpus,
-        master_addr=args.master_addr,
-        master_port=args.master_port,
+    inference_workers = RayInferenceWorkerGroup(
+        spec=worker_spec,
+        num_workers=num_infer_workers,
     )
+    logger.info("Initialized %s Ray inference worker(s).", num_infer_workers)
+    worker_runtimes = asyncio.run(inference_workers.describe_runtimes())
+    for runtime in worker_runtimes:
+        logger.info("Ray inference worker runtime: %s", runtime)
+    if not all(runtime.get("cuda_available") for runtime in worker_runtimes):
+        raise RuntimeError(
+            f"At least one Ray inference worker does not have CUDA available: {worker_runtimes}"
+        )
+    if not all(runtime.get("ray_gpu_ids") for runtime in worker_runtimes):
+        raise RuntimeError(
+            f"At least one Ray inference worker was not assigned a GPU by Ray: {worker_runtimes}"
+        )
 
     server = RayAgentServer(
-        algo,
-        checkpoint_manager,
-        metric_sink,
-        learner_ref,
+        algorithm=algo,
+        checkpoint_manager=checkpoint_manager,
+        metric_sink=metric_sink,
+        inference_workers=inference_workers,
         host=args.host,
         port=args.port,
+        mini_infer_batch_size=args.mini_infer_batch_size,
         show_metric_table=args.show_metric_table,
         show_progress_bar=args.show_progress_bar,
+        rollout_only=args.rollout_only,
     )
     try:
         server.serve_forever()

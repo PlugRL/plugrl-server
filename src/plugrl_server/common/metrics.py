@@ -142,6 +142,7 @@ def _build_single_column_metric_rows(
         "models",
         "server",
         "runtime",
+        "inference_workers",
         "learn_runtime",
         "progress",
     )

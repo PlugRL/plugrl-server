@@ -57,6 +57,7 @@ class Args:
     mini_infer_batch_size: int | None = None
     show_metric_table: bool = True
     show_progress_bar: bool = True
+    rollout_only: bool = False
 
     checkpoint_base_dir: str = "./checkpoints"
 
@@ -170,6 +171,7 @@ def _main(args: Args):
         mini_infer_batch_size=args.mini_infer_batch_size,
         show_metric_table=args.show_metric_table,
         show_progress_bar=args.show_progress_bar,
+        rollout_only=args.rollout_only,
     )
     try:
         server.serve_forever()

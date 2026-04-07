@@ -31,7 +31,7 @@ MANUAL_SERVER_WAIT_SECONDS = float(
     os.environ.get("PLUGRL_ROBOCASA_SERVER_WAIT_SECONDS", "2000")
 )
 MANUAL_CLIENT_TIMEOUT_SECONDS = float(
-    os.environ.get("PLUGRL_ROBOCASA_CLIENT_TIMEOUT_SECONDS", "2000")
+    os.environ.get("PLUGRL_ROBOCASA_CLIENT_TIMEOUT_SECONDS", "7200")
 )
 MANUAL_TASK_NAME = os.environ.get("OPENPI_ROBOCASA_TASK_NAME", "StoreLeftoversInBowl")
 MANUAL_SPLIT = os.environ.get("OPENPI_ROBOCASA_SPLIT", "target")
@@ -162,6 +162,58 @@ def _build_client_env() -> dict[str, str]:
     return env
 
 
+def _run_manual_client(
+    *,
+    exp_name: str,
+    port: int,
+    client_log,
+    num_envs: int,
+    num_procs: int,
+    num_episodes: int,
+) -> subprocess.CompletedProcess[bytes]:
+    return subprocess.run(
+        [
+            str(MANUAL_ENV_CLIENT_PYTHON),
+            "-u",
+            "-m",
+            "plugrl_env_client.cli",
+            "robocasa-v1",
+            "--num-envs",
+            str(num_envs),
+            "--num-procs",
+            str(num_procs),
+            "--num-episodes",
+            str(num_episodes),
+            "--exp-name",
+            exp_name,
+            "--server-host",
+            "127.0.0.1",
+            "--server-port",
+            str(port),
+            "--runner.max_episode_steps",
+            str(MANUAL_MAX_EPISODE_STEPS),
+            "--env.task_name",
+            MANUAL_TASK_NAME,
+            "--env.split",
+            MANUAL_SPLIT,
+            "--env.action_encoding",
+            "passthrough",
+            "--recorder.episode_freq",
+            "1",
+            "--recorder.no-thread0-only",
+            "--recorder.record_video",
+            "--recorder.record_full_rollout",
+            "--recorder.record_debug_packets",
+        ],
+        cwd=ENV_CLIENT_ROOT,
+        env=_build_client_env(),
+        stdout=client_log,
+        stderr=client_log,
+        check=False,
+        timeout=MANUAL_CLIENT_TIMEOUT_SECONDS,
+    )
+
+
 @pytest.mark.manual
 @pytest.mark.skipif(
     not (
@@ -241,46 +293,13 @@ def test_manual_openpi_robocasa_dppo_roundtrip(tmp_path: pathlib.Path):
         client_log = client_log_path.open("wb")
         client_timed_out = False
         try:
-            client = subprocess.run(
-                [
-                    str(MANUAL_ENV_CLIENT_PYTHON),
-                    "-u",
-                    "-m",
-                    "plugrl_env_client.cli",
-                    "robocasa-v1",
-                    "--num-envs",
-                    "1",
-                    "--num-procs",
-                    "1",
-                    "--num-episodes",
-                    "1",
-                    "--exp-name",
-                    exp_name,
-                    "--server-host",
-                    "127.0.0.1",
-                    "--server-port",
-                    str(port),
-                    "--runner.max_episode_steps",
-                    str(MANUAL_MAX_EPISODE_STEPS),
-                    "--env.task_name",
-                    MANUAL_TASK_NAME,
-                    "--env.split",
-                    MANUAL_SPLIT,
-                    "--env.action_encoding",
-                    "passthrough",
-                    "--recorder.episode_freq",
-                    "1",
-                    "--recorder.no-thread0-only",
-                    "--recorder.record_video",
-                    "--recorder.record_full_rollout",
-                    "--recorder.record_debug_packets",
-                ],
-                cwd=ENV_CLIENT_ROOT,
-                env=_build_client_env(),
-                stdout=client_log,
-                stderr=client_log,
-                check=False,
-                timeout=MANUAL_CLIENT_TIMEOUT_SECONDS,
+            client = _run_manual_client(
+                exp_name=exp_name,
+                port=port,
+                client_log=client_log,
+                num_envs=1,
+                num_procs=1,
+                num_episodes=1,
             )
         except subprocess.TimeoutExpired as exc:
             client = exc
@@ -323,5 +342,150 @@ def test_manual_openpi_robocasa_dppo_roundtrip(tmp_path: pathlib.Path):
     assert "OpenPI norm stats source:" in server_log_text
     assert "OpenPI input transform pipeline:" in server_log_text
     assert "Saved OpenPI debug artifacts to" in server_log_text
+    if client_timed_out:
+        assert "Intermediate rollout timing summary" in client_log_text, client_log_text
+
+
+@pytest.mark.manual
+@pytest.mark.skipif(
+    not (
+        _have_manual_inputs()
+        and MANUAL_SERVER_PYTHON.exists()
+        and MANUAL_ENV_CLIENT_PYTHON.exists()
+        and _server_python_has_dppo()
+    ),
+    reason="Manual RoboCasa/OpenPI inputs, python environments, or DPPO dependency are not available.",
+)
+def test_manual_openpi_robocasa_ray_multiworker_multi_env_roundtrip(
+    tmp_path: pathlib.Path,
+):
+    port = _pick_free_port()
+    run_suffix = uuid.uuid4().hex[:8]
+    exp_name = f"manual-openpi-robocasa-ray-{run_suffix}"
+    checkpoint_base_dir = tmp_path / "checkpoints"
+    policy_debug_dir = tmp_path / "policy_debug"
+    server_log_path = tmp_path / "server.log"
+    client_log_path = tmp_path / "client.log"
+
+    server_log = server_log_path.open("wb")
+    server = subprocess.Popen(
+        [
+            str(MANUAL_SERVER_PYTHON),
+            "-u",
+            "-m",
+            "plugrl_server.cli_ray",
+            "pi0-policy",
+            "robocasa",
+            "dppo",
+            "default",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            str(port),
+            "--log_level",
+            "info",
+            "--exp_name",
+            exp_name,
+            "--checkpoint_base_dir",
+            str(checkpoint_base_dir),
+            "--no-show_metric_table",
+            "--no-show_progress_bar",
+            "--rollout_only",
+            "--local_policy_device",
+            "cuda",
+            "--num_infer_workers",
+            "4",
+            "--mini_infer_batch_size",
+            "32",
+            "--algo.buffer_size",
+            "1024",
+            "--algo.train_itrs",
+            "1",
+            "--policy.name",
+            os.environ["OPENPI_ROBOCASA_CONFIG_NAME"],
+            "--policy.checkpoint_path",
+            os.environ["OPENPI_ROBOCASA_CHECKPOINT_DIR"],
+            "--policy.dataset_dir",
+            os.environ["OPENPI_ROBOCASA_DATASET_DIR"],
+            "--policy.export_debug_artifacts",
+            "--policy.debug_artifact_dir",
+            str(policy_debug_dir),
+        ],
+        cwd=REPO_ROOT,
+        env=_build_server_env(),
+        stdout=server_log,
+        stderr=server_log,
+    )
+
+    try:
+        try:
+            _wait_for_port(
+                "127.0.0.1",
+                port,
+                timeout_s=MANUAL_SERVER_WAIT_SECONDS,
+                process=server,
+                log_path=server_log_path,
+            )
+        except (TimeoutError, RuntimeError) as exc:
+            raise type(exc)(
+                f"{exc}. Server log: {_read_log(server_log_path)}"
+            ) from exc
+
+        client_log = client_log_path.open("wb")
+        client_timed_out = False
+        try:
+            client = _run_manual_client(
+                exp_name=exp_name,
+                port=port,
+                client_log=client_log,
+                num_envs=1,
+                num_procs=32,
+                num_episodes=1,
+            )
+        except subprocess.TimeoutExpired as exc:
+            client = exc
+            client_timed_out = True
+        finally:
+            client_log.close()
+
+        if not client_timed_out:
+            assert client.returncode == 0, client_log_path.read_text(
+                encoding="utf-8", errors="replace"
+            )
+    finally:
+        server.terminate()
+        try:
+            server.wait(timeout=20)
+        except subprocess.TimeoutExpired:
+            server.kill()
+            server.wait(timeout=20)
+        server_log.close()
+
+    for proc_index in range(32):
+        rollout_dir = ENV_CLIENT_ROOT / "runs" / exp_name / "rollout" / f"proc_{proc_index:03d}"
+        full_video_dir = rollout_dir / "videos" / "full" / "images"
+        assert full_video_dir.is_dir(), (
+            f"Missing rollout video directory for proc {proc_index}: {full_video_dir}"
+        )
+        assert list(full_video_dir.glob("*.mp4")), (
+            f"No rollout mp4 files found for proc {proc_index} in {full_video_dir}"
+        )
+
+    policy_first_obs_dir = policy_debug_dir / "first_observation"
+    assert policy_first_obs_dir.is_dir(), (
+        f"Missing policy debug artifact directory: {policy_first_obs_dir}"
+    )
+    assert (policy_first_obs_dir / "raw_state.txt").is_file()
+
+    server_log_text = server_log_path.read_text(encoding="utf-8", errors="replace")
+    client_log_text = client_log_path.read_text(encoding="utf-8", errors="replace")
+
+    assert "Initialized 4 Ray inference worker(s)." in server_log_text
+    for worker_index in range(4):
+        assert (
+            f"worker={worker_index}" in server_log_text
+        ), f"Expected worker {worker_index} to serve at least one request. Log: {server_log_text}"
+    assert "envs=1" in server_log_text
+    assert "Ray Agent Server is listening on" in server_log_text
     if client_timed_out:
         assert "Intermediate rollout timing summary" in client_log_text, client_log_text

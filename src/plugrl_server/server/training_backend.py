@@ -115,6 +115,31 @@ class LocalTrainingBackend:
         )
 
 
+class RolloutOnlyTrainingBackend:
+    def __init__(self) -> None:
+        self._logged_learn_skip = False
+
+    def should_learn(self) -> bool:
+        if not self._logged_learn_skip:
+            logger.info(
+                "Rollout-only mode enabled: skipping learning and policy updates."
+            )
+            self._logged_learn_skip = True
+        return False
+
+    def should_save(self) -> bool:
+        return False
+
+    def should_stop(self) -> bool:
+        return False
+
+    async def process_learn(self) -> None:
+        return None
+
+    async def process_save(self) -> None:
+        return None
+
+
 class RayTrainingBackend:
     def __init__(
         self,
