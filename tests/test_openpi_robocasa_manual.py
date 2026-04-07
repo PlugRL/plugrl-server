@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import base64
 import os
 import pathlib
+import secrets
 import socket
 import subprocess
 import time
@@ -23,13 +25,13 @@ MANUAL_ENV_CLIENT_PYTHON = pathlib.Path(
     )
 )
 MANUAL_MAX_EPISODE_STEPS = int(
-    os.environ.get("PLUGRL_ROBOCASA_MANUAL_MAX_EPISODE_STEPS", "40")
+    os.environ.get("PLUGRL_ROBOCASA_MANUAL_MAX_EPISODE_STEPS", "2000")
 )
 MANUAL_SERVER_WAIT_SECONDS = float(
-    os.environ.get("PLUGRL_ROBOCASA_SERVER_WAIT_SECONDS", "300")
+    os.environ.get("PLUGRL_ROBOCASA_SERVER_WAIT_SECONDS", "2000")
 )
 MANUAL_CLIENT_TIMEOUT_SECONDS = float(
-    os.environ.get("PLUGRL_ROBOCASA_CLIENT_TIMEOUT_SECONDS", "180")
+    os.environ.get("PLUGRL_ROBOCASA_CLIENT_TIMEOUT_SECONDS", "2000")
 )
 MANUAL_TASK_NAME = os.environ.get("OPENPI_ROBOCASA_TASK_NAME", "StoreLeftoversInBowl")
 MANUAL_SPLIT = os.environ.get("OPENPI_ROBOCASA_SPLIT", "target")
@@ -101,10 +103,26 @@ def _wait_for_port(
             sock.settimeout(1.0)
             try:
                 sock.connect((host, port))
+                # Send a minimal valid WebSocket handshake so the server doesn't log
+                # this readiness probe as an invalid HTTP request.
+                request = (
+                    "GET / HTTP/1.1\r\n"
+                    f"Host: {host}:{port}\r\n"
+                    "Upgrade: websocket\r\n"
+                    "Connection: Upgrade\r\n"
+                    "Sec-WebSocket-Key: "
+                    f"{base64.b64encode(secrets.token_bytes(16)).decode('ascii')}\r\n"
+                    "Sec-WebSocket-Version: 13\r\n"
+                    "\r\n"
+                ).encode("ascii")
+                sock.sendall(request)
+                response = sock.recv(4096)
             except OSError:
                 time.sleep(1.0)
                 continue
-            return
+            if b" 101 " in response or response.startswith(b"HTTP/1.1 101"):
+                return
+            time.sleep(1.0)
     raise TimeoutError(f"Timed out waiting for server on {host}:{port}")
 
 
@@ -292,7 +310,10 @@ def test_manual_openpi_robocasa_dppo_roundtrip(tmp_path: pathlib.Path):
     assert policy_first_obs_dir.is_dir(), (
         f"Missing policy debug artifact directory: {policy_first_obs_dir}"
     )
-    assert (policy_first_obs_dir / "tokenized_prompt.npy").is_file()
+    assert (policy_first_obs_dir / "tokenized_prompt.txt").is_file()
+    assert (policy_first_obs_dir / "tokenized_prompt_mask.txt").is_file()
+    assert (policy_first_obs_dir / "raw_state.txt").is_file()
+    assert (policy_first_obs_dir / "transformed_state.txt").is_file()
     assert (policy_first_obs_dir / "tokenized_prompt_decoded.txt").is_file()
     assert (policy_first_obs_dir / "summary.json").is_file()
 

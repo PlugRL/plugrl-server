@@ -89,6 +89,37 @@ def _save_image(path: pathlib.Path, image: np.ndarray) -> None:
         np.save(path.with_suffix(".npy"), np.asarray(image), allow_pickle=False)
 
 
+def _format_array_preview(value: np.ndarray, *, max_items: int = 64) -> str:
+    array = np.asarray(value)
+    return np.array2string(
+        array,
+        threshold=max_items,
+        edgeitems=min(8, max_items // 2),
+        max_line_width=120,
+    )
+
+
+def _write_array_text(path: pathlib.Path, value: Any) -> None:
+    array = np.asarray(value)
+    lines = [
+        f"shape: {tuple(array.shape)}",
+        f"dtype: {array.dtype}",
+        "preview:",
+        _format_array_preview(array),
+        "",
+    ]
+    path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def _get_nested(mapping: dict[str, Any], *path: str) -> Any | None:
+    current: Any = mapping
+    for key in path:
+        if not isinstance(current, dict) or key not in current:
+            return None
+        current = current[key]
+    return current
+
+
 def write_debug_artifacts(
     artifact_dir: pathlib.Path,
     *,
@@ -117,9 +148,11 @@ def write_debug_artifacts(
     for key, value in raw_obs.get("images", {}).items():
         _save_image(artifact_dir / "raw_images" / f"{key}.png", np.asarray(value))
 
-    if "state" in raw_obs:
-        with (artifact_dir / "raw_state.npy").open("wb") as file_obj:
-            np.save(file_obj, np.asarray(raw_obs["state"]), allow_pickle=False)
+    raw_state = raw_obs.get("state")
+    if raw_state is None:
+        raw_state = _get_nested(raw_obs, "states", "state")
+    if raw_state is not None:
+        _write_array_text(artifact_dir / "raw_state.txt", raw_state)
 
     for key, value in transformed_obs.get("image", {}).items():
         _save_image(
@@ -127,24 +160,18 @@ def write_debug_artifacts(
         )
 
     if "state" in transformed_obs:
-        with (artifact_dir / "transformed_state.npy").open("wb") as file_obj:
-            np.save(
-                file_obj, np.asarray(transformed_obs["state"]), allow_pickle=False
-            )
+        _write_array_text(artifact_dir / "transformed_state.txt", transformed_obs["state"])
 
     tokenized_prompt = transformed_obs.get("tokenized_prompt")
     tokenized_prompt_mask = transformed_obs.get("tokenized_prompt_mask")
     if tokenized_prompt is not None:
         tokenized_prompt_arr = np.asarray(tokenized_prompt)
-        with (artifact_dir / "tokenized_prompt.npy").open("wb") as file_obj:
-            np.save(file_obj, tokenized_prompt_arr, allow_pickle=False)
+        _write_array_text(artifact_dir / "tokenized_prompt.txt", tokenized_prompt_arr)
         if tokenized_prompt_mask is not None:
-            with (artifact_dir / "tokenized_prompt_mask.npy").open("wb") as file_obj:
-                np.save(
-                    file_obj,
-                    np.asarray(tokenized_prompt_mask, dtype=np.bool_),
-                    allow_pickle=False,
-                )
+            _write_array_text(
+                artifact_dir / "tokenized_prompt_mask.txt",
+                np.asarray(tokenized_prompt_mask, dtype=np.bool_),
+            )
         try:
             decoded = _decode_tokenized_prompt(tokenized_prompt_arr, tokenized_prompt_mask)
         except Exception as exc:

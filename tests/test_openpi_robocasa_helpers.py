@@ -8,11 +8,11 @@ import numpy as np
 from openpi.shared.normalize import NormStats
 
 from plugrl_server.policy.openpi.debug_artifacts import write_debug_artifacts
-from plugrl_server.policy.openpi.openpi_transforming import get_transform
-from plugrl_server.policy.openpi.robocasa_norm_stats import load_robocasa_norm_stats
 
 
 def test_get_transform_maps_plugrl_robocasa_observation():
+    from plugrl_server.policy.openpi.openpi_transforming import get_transform
+
     transform = get_transform("pi05_robocasa_test")[0]
     obs = {
         "images": {
@@ -76,15 +76,69 @@ def test_write_debug_artifacts_exports_prompt_tokens_and_images(
     assert (artifact_dir / "prompt.txt").read_text(encoding="utf-8") == (
         "close the blender lid"
     )
-    assert (artifact_dir / "tokenized_prompt.npy").is_file()
+    token_text = (artifact_dir / "tokenized_prompt.txt").read_text(encoding="utf-8")
+    assert "shape: (4,)" in token_text
+    assert "dtype: int32" in token_text
+    assert "[1 2 3 0]" in token_text
+    mask_text = (artifact_dir / "tokenized_prompt_mask.txt").read_text(
+        encoding="utf-8"
+    )
+    assert "shape: (4,)" in mask_text
+    assert "dtype: bool" in mask_text
     assert (artifact_dir / "tokenized_prompt_decoded.txt").read_text(
         encoding="utf-8"
     ) == "decoded:1,2,3"
+    raw_state_text = (artifact_dir / "raw_state.txt").read_text(encoding="utf-8")
+    assert "shape: (16,)" in raw_state_text
+    assert "dtype: float32" in raw_state_text
+    transformed_state_text = (artifact_dir / "transformed_state.txt").read_text(
+        encoding="utf-8"
+    )
+    assert "shape: (16,)" in transformed_state_text
     assert (artifact_dir / "raw_images" / "robot0_eye_in_hand.png").is_file()
     assert (artifact_dir / "transformed_images" / "base_0_rgb.png").is_file()
 
 
+def test_write_debug_artifacts_exports_nested_raw_state(
+    tmp_path: pathlib.Path, monkeypatch
+):
+    class _FakeTokenizer:
+        def decode(self, token_ids):
+            return "decoded:" + ",".join(map(str, token_ids))
+
+    monkeypatch.setattr(
+        "plugrl_server.policy.openpi.debug_artifacts._load_sentencepiece_tokenizer",
+        lambda: _FakeTokenizer(),
+    )
+
+    raw_obs = {
+        "images": {
+            "robot0_agentview_left": np.zeros((1, 4, 4, 3), dtype=np.uint8),
+        },
+        "states": {"state": np.arange(16, dtype=np.float32)[None, :]},
+        "prompt": np.asarray(["close the blender lid"]),
+    }
+    transformed_obs = {
+        "image": {"base_0_rgb": np.zeros((1, 4, 4, 3), dtype=np.uint8)},
+        "state": np.arange(16, dtype=np.float32)[None, :],
+        "tokenized_prompt": np.asarray([[1, 2, 3, 0]], dtype=np.int32),
+        "tokenized_prompt_mask": np.asarray([[True, True, True, False]]),
+    }
+
+    artifact_dir = write_debug_artifacts(
+        tmp_path / "policy_debug_nested",
+        raw_obs=raw_obs,
+        transformed_obs=transformed_obs,
+    )
+
+    raw_state_text = (artifact_dir / "raw_state.txt").read_text(encoding="utf-8")
+    assert "shape: (16,)" in raw_state_text
+    assert "dtype: float32" in raw_state_text
+
+
 def test_load_robocasa_norm_stats_prefers_explicit_path(caplog, monkeypatch):
+    from plugrl_server.policy.openpi.robocasa_norm_stats import load_robocasa_norm_stats
+
     explicit_path = pathlib.Path("/tmp/robocasa_norm_stats.json")
     norm_stats = {
         "observation.state": NormStats(
