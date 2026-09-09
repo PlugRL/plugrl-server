@@ -50,6 +50,11 @@ dev = [
     "pytest>=8.4.2,<9.0.0",
 ]
 
+[tool.pytest.ini_options]
+# Without this, pytest walks into third_party/openpi and collects that
+# submodule’s own test suite, whose dependencies are not installed here.
+testpaths = ["tests"]
+
 [tool.setuptools]
 package-dir = {"" = "src"}
 

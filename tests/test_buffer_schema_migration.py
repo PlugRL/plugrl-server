@@ -120,17 +120,21 @@ def test_rollout_buffer_round_trip_restores_full_state() -> None:
         prev_node=(-1, buffer.buffer_signature),
         train_state=train_state_0,
         reward=1.0,
-        done=False,
+        terminated=False,
+        truncated=False,
         last_value=np.array([9.0], dtype=np.float32),
-        next_done=False,
+        next_terminated=False,
+        next_truncated=False,
     )
     buffer.add_frame(
         prev_node=first_node,
         train_state=train_state_1,
         reward=2.0,
-        done=True,
+        terminated=True,
+        truncated=False,
         last_value=np.array([10.0], dtype=np.float32),
-        next_done=True,
+        next_terminated=True,
+        next_truncated=False,
     )
     buffer.advantages[:2] = np.array([11.0, 12.0], dtype=np.float32)
     buffer.returns[:2] = np.array([13.0, 14.0], dtype=np.float32)
@@ -144,8 +148,8 @@ def test_rollout_buffer_round_trip_restores_full_state() -> None:
     assert restored.buffer_signature == buffer.buffer_signature
     assert restored.episode_info_buffer == buffer.episode_info_buffer
     _assert_numpy_tree_equal(
-        restored.obs_storage.get_item(slice(None, restored.idx)),
-        buffer.obs_storage.get_item(slice(None, buffer.idx)),
+        restored.train_state_storage.get_item(slice(None, restored.idx)),
+        buffer.train_state_storage.get_item(slice(None, buffer.idx)),
     )
     np.testing.assert_array_equal(
         restored.actions[: restored.idx], buffer.actions[: buffer.idx]
@@ -180,22 +184,22 @@ def test_rollout_buffer_round_trip_restores_full_state() -> None:
 
 
 def test_replay_buffer_round_trip_restores_full_state() -> None:
-    example_obs = dict(
+    example_state = dict(
         state=np.zeros((1, 3), dtype=np.float32),
         aux=dict(flag=np.zeros((1, 2), dtype=np.float32)),
     )
     example_action = np.zeros((2,), dtype=np.float32)
     buffer = ReplayBuffer(
-        buffer_size=4, example_obs=example_obs, example_action=example_action
+        buffer_size=4, example_state=example_state, example_action=example_action
     )
 
     buffer.add_frame(
         prev_node=(-1, buffer.buffer_signature),
-        obs=dict(
+        state=dict(
             state=np.array([1, 2, 3], dtype=np.float32),
             aux=dict(flag=np.array([4, 5], dtype=np.float32)),
         ),
-        next_obs=dict(
+        next_state=dict(
             state=np.array([6, 7, 8], dtype=np.float32),
             aux=dict(flag=np.array([9, 10], dtype=np.float32)),
         ),
@@ -206,11 +210,11 @@ def test_replay_buffer_round_trip_restores_full_state() -> None:
     )
     buffer.add_frame(
         prev_node=(-1, buffer.buffer_signature),
-        obs=dict(
+        state=dict(
             state=np.array([11, 12, 13], dtype=np.float32),
             aux=dict(flag=np.array([14, 15], dtype=np.float32)),
         ),
-        next_obs=dict(
+        next_state=dict(
             state=np.array([16, 17, 18], dtype=np.float32),
             aux=dict(flag=np.array([19, 20], dtype=np.float32)),
         ),
@@ -222,7 +226,7 @@ def test_replay_buffer_round_trip_restores_full_state() -> None:
 
     payload = buffer.as_dict()
     restored = ReplayBuffer(
-        buffer_size=4, example_obs=example_obs, example_action=example_action
+        buffer_size=4, example_state=example_state, example_action=example_action
     )
     restored.load_dict(payload)
 
@@ -231,12 +235,12 @@ def test_replay_buffer_round_trip_restores_full_state() -> None:
     assert restored.buffer_signature == buffer.buffer_signature
     upper = len(buffer)
     _assert_numpy_tree_equal(
-        restored.obs_storage.get_item(slice(None, upper)),
-        buffer.obs_storage.get_item(slice(None, upper)),
+        restored.state_storage.get_item(slice(None, upper)),
+        buffer.state_storage.get_item(slice(None, upper)),
     )
     _assert_numpy_tree_equal(
-        restored.next_obs_storage.get_item(slice(None, upper)),
-        buffer.next_obs_storage.get_item(slice(None, upper)),
+        restored.next_state_storage.get_item(slice(None, upper)),
+        buffer.next_state_storage.get_item(slice(None, upper)),
     )
     np.testing.assert_array_equal(restored.actions[:upper], buffer.actions[:upper])
     np.testing.assert_array_equal(restored.rewards[:upper], buffer.rewards[:upper])
