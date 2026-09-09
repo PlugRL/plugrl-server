@@ -40,7 +40,14 @@ from plugrl_server.server.training_backend import RayTrainingBackend
 logger = get_logger(__name__)
 
 
-SCHEDULER_SLEEP_INTERVAL = 0.001  # seconds
+# The scheduler wakes on this interval to look for queued inference requests,
+# so it also sets the floor on how long a request waits before anyone sees it.
+# At 1 ms that wait was two thirds of the measured round trip. Lowering it to
+# 0.1 ms measured 1.76x throughput (457 -> 803 exchanges/s, medians of five
+# runs, ranges 425-470 and 692-892), 15% less CPU per exchange, and no change
+# in idle CPU. 0.01 ms showed no reliable further gain.
+# See experiments/e5-boundary-cost/FINDINGS.md.
+SCHEDULER_SLEEP_INTERVAL = 0.0001  # seconds
 
 
 class ServerStoppingError(RuntimeError):
