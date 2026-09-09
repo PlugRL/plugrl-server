@@ -1,5 +1,10 @@
 # 🚀 plugrl-server
 
+[![CI](https://github.com/PlugRL/plugrl-server/actions/workflows/ci.yml/badge.svg)](https://github.com/PlugRL/plugrl-server/actions/workflows/ci.yml)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
+**plugrl-server** runs the policy and the learning algorithm, batching inference across every connected env client over WebSocket.
+
 ## 🛠️ Installation
 
 ### For Users
