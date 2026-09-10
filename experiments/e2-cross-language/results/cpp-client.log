@@ -1,0 +1,5 @@
+connecting to ws://127.0.0.1:8127
+handshake ok, metadata received
+action: dtype=<f4 shape=[4, 1, 7]
+        first values: 0.302487 0.295206 0.758827 0.522158 -0.25781 -0.952547
+completed 120 infer/action/feedback exchanges

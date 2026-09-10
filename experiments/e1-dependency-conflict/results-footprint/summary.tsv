@@ -1,0 +1,6 @@
+envclient-bare	rollout	30	221144102	2	no
+envclient-d4rl	rollout	69	1010914788	5	no
+envclient-robomimic	rollout	111	7557262861	4	yes (16 wheels)
+monolith-d4rl	both	142	6814840127	4	yes (16 wheels)
+monolith-robomimic	both	150	7763370475	5	yes (16 wheels)
+training-only	trainer	111	5908854278	4	yes (16 wheels)

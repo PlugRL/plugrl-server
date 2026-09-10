@@ -1,0 +1,5 @@
+connecting to ws://127.0.0.1:8123
+metadata: {}
+action: dtype=<f4 shape=[4, 1, 7]
+        first values: [-0.8695, -0.0933, -0.2238, -0.0546, -0.4252, 0.0036]
+completed 20 infer/action/feedback exchanges

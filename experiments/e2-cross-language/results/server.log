@@ -1,0 +1,15 @@
+Could not import DPPO algorithm module for reason: No module named 'dppo'
+17:16:03|INFO|plugrl_server version: 0.1.0
+17:16:03|INFO|Algorithm: dummy, Config: DummyAlgoConfig(global_steps=300, fake_inference_duration_sec=0.1, fake_learn_duration_sec=10.0, fake_learn_freq=100, break_action_chunk=False)
+17:16:03|INFO|Policy: dummy-policy, Config: DummyPolicyConfig(algo='dummy', device='cuda', discrete=False, action_dim=7, action_horizon=4)
+17:16:03|INFO|Checkpoint Manager created: 
+<plugrl_server.common.checkpoint_manager.CheckpointManager object at 0x7ba9d6883110> at /mnt/d/75128/Desktop/plugrl-work/experiments/e2-cross-language/checkpoints/dummy/dummy-policy/2026_09_09_17_16_03_25579_0000--s-0
+17:16:03|INFO|Policy created...
+17:16:03|INFO|Algorithm created: 
+<plugrl_server.algorithm.dummy_algorithm.DummyAlgorithm object at 0x7ba9d6956b50>
+17:16:03|INFO|Agent Server is listening on 0.0.0.0:8123
+17:16:06|INFO|Received SIGTERM. Closing connections and allowing workers to reconnect.
+17:16:06|INFO|Shutdown started: aborting pending infer requests.
+17:16:06|INFO|Shutdown closing 0 websocket connection(s).
+17:16:06|INFO|WebSocket server closed.
+17:16:06|INFO|Scheduler task cancelled and cleaned up.

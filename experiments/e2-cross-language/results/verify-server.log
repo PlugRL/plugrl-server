@@ -1,0 +1,38 @@
+Could not import DPPO algorithm module for reason: No module named 'dppo'
+17:16:38|INFO|plugrl_server version: 0.1.0
+17:16:38|INFO|Algorithm: dummy, Config: DummyAlgoConfig(global_steps=300, fake_inference_duration_sec=0.1, fake_learn_duration_sec=10.0, fake_learn_freq=100, break_action_chunk=False)
+17:16:38|INFO|Policy: dummy-policy, Config: DummyPolicyConfig(algo='dummy', device='cuda', discrete=False, action_dim=7, action_horizon=4)
+17:16:38|INFO|Checkpoint Manager created: 
+<plugrl_server.common.checkpoint_manager.CheckpointManager object at 0x7630c061c310> at /mnt/d/75128/Desktop/plugrl-work/experiments/e2-cross-language/checkpoints/dummy/dummy-policy/2026_09_09_17_16_38_11012_0000--s-0
+17:16:38|INFO|Policy created...
+17:16:38|INFO|Algorithm created: 
+<plugrl_server.algorithm.dummy_algorithm.DummyAlgorithm object at 0x762fbdf67590>
+17:16:38|INFO|Agent Server is listening on 0.0.0.0:8126
+Step 100 / 300                    
+╭────────────────────────┬───────╮
+│rollout/                │       │
+│ success                │      0│
+│ reward                 │      0│
+│ length                 │      0│
+│server/                 │       │
+│ total_connections      │      1│
+│runtime/                │       │
+│ infer_batch_time       │   0.1s│
+│ infer_batch_size       │      1│
+│ feedback_batch_time    │   0.0s│
+│ feedback_batch_size    │      1│
+│progress/               │       │
+│ global_step            │    100│
+│ total_time             │  21.2s│
+│ collection_time        │  11.2s│
+│ learn_time             │  10.0s│
+│ fps                    │4.71091│
+│ global_steps           │    300│
+│ global_steps_remaining │    200│
+│ eta_time               │  42.5s│
+╰────────────────────────┴───────╯
+17:17:04|INFO|Received SIGTERM. Closing connections and allowing workers to reconnect.
+17:17:04|INFO|Shutdown started: aborting pending infer requests.
+17:17:04|INFO|Shutdown closing 0 websocket connection(s).
+17:17:04|INFO|WebSocket server closed.
+17:17:04|INFO|Scheduler task cancelled and cleaned up.

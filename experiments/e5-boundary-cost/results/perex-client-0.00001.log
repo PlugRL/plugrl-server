@@ -1,0 +1,11 @@
+connecting to ws://127.0.0.1:8162
+handshake ok, metadata received
+action: dtype=<f4 shape=[4, 1, 7]
+        first values: -0.740955 -0.721209 -0.40261 -0.890997 0.240393 0.0599986
+completed 2000 infer/action/feedback exchanges
+
+boundary cost, 1997 samples (batch=1, 2 cameras @ 224px, infer payload 184 KiB)
+  pack     mean 0.165 ms   p50 0.152   p95 0.245
+  rtt      mean 0.918 ms   p50 0.744   p95 1.898
+  unpack   mean 0.006 ms   p50 0.004   p95 0.014
+  TSV	1	2	224	188700	0.165	0.918	0.006

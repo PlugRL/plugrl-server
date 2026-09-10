@@ -1,0 +1,45 @@
+Could not import DPPO algorithm module for reason: No module named 'dppo'
+17:14:11|INFO|plugrl_server version: 0.1.0
+17:14:11|INFO|Algorithm: dummy, Config: DummyAlgoConfig(global_steps=300, fake_inference_duration_sec=0.1, fake_learn_duration_sec=10.0, fake_learn_freq=100, break_action_chunk=False)
+17:14:11|INFO|Policy: dummy-policy, Config: DummyPolicyConfig(algo='dummy', device='cuda', discrete=True, action_dim=4, action_horizon=4)
+17:14:11|INFO|Checkpoint Manager created: 
+<plugrl_server.common.checkpoint_manager.CheckpointManager object at 0x75860d3fdfd0> at /mnt/d/75128/Desktop/plugrl-work/experiments/e2-cross-language/checkpoints/dummy/dummy-policy/2026_09_09_17_14_11_16283_0000--s-0
+17:14:12|INFO|Policy created...
+17:14:12|INFO|Algorithm created: 
+<plugrl_server.algorithm.dummy_algorithm.DummyAlgorithm object at 0x75860d61f490>
+17:14:12|INFO|Agent Server is listening on 0.0.0.0:8125
+17:14:12|ERROR|opening handshake failed
+Traceback (most recent call last):
+  File "/home/gotham/.e2-server/lib/python3.11/site-packages/websockets/http11.py", line 138, in parse
+    request_line = yield from parse_line(read_line)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gotham/.e2-server/lib/python3.11/site-packages/websockets/http11.py", line 309, in parse_line
+    line = yield from read_line(MAX_LINE_LENGTH)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gotham/.e2-server/lib/python3.11/site-packages/websockets/streams.py", line 46, in read_line
+    raise EOFError(f"stream ends after {p} bytes, before end of line")
+EOFError: stream ends after 0 bytes, before end of line
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/gotham/.e2-server/lib/python3.11/site-packages/websockets/server.py", line 545, in parse
+    request = yield from Request.parse(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gotham/.e2-server/lib/python3.11/site-packages/websockets/http11.py", line 140, in parse
+    raise EOFError("connection closed while reading HTTP request line") from exc
+EOFError: connection closed while reading HTTP request line
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/gotham/.e2-server/lib/python3.11/site-packages/websockets/asyncio/server.py", line 356, in conn_handler
+    await connection.handshake(
+  File "/home/gotham/.e2-server/lib/python3.11/site-packages/websockets/asyncio/server.py", line 207, in handshake
+    raise self.protocol.handshake_exc
+websockets.exceptions.InvalidMessage: did not receive a valid HTTP request
+17:14:17|INFO|Received SIGTERM. Closing connections and allowing workers to reconnect.
+17:14:17|INFO|Shutdown started: aborting pending infer requests.
+17:14:17|INFO|Shutdown closing 0 websocket connection(s).
+17:14:17|INFO|WebSocket server closed.
+17:14:17|INFO|Scheduler task cancelled and cleaned up.

@@ -1,0 +1,6 @@
+solo-training	INSTALLED	101
+solo-envclient	INSTALLED	3
+solo-env-d4rl	INSTALLED	20
+solo-env-robomimic	FAILED	2
+union-d4rl-x-reinflow	INSTALLED	8
+union-robomimic-x-dppo	FAILED	3

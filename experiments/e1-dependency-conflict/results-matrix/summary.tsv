@@ -1,0 +1,11 @@
+single-atari	RESOLVED
+single-classic	RESOLVED
+single-d4rl	RESOLVED
+single-robomimic	RESOLVED
+single-libero	RESOLVED
+pair-atari-d4rl	RESOLVED
+pair-atari-libero	RESOLVED
+pair-d4rl-libero	RESOLVED
+pair-robomimic-libero	RESOLVED
+pair-robomimic-atari	RESOLVED
+all-five-families	RESOLVED

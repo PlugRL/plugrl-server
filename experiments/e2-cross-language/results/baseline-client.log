@@ -1,0 +1,18 @@
+2026-09-09 17:13:16.949 | WARNING  | plugrl_env_client.envs:_load_env_modules:27 - Skip loading env module plugrl_env_client.envs.atari.atari_env: Atari is not installed. Please install it with the 'atari' extra, e.g. 'pip install plugrl-env-client[atari]'
+2026-09-09 17:13:16.952 | WARNING  | plugrl_env_client.envs:_load_env_modules:27 - Skip loading env module plugrl_env_client.envs.libero.libero_env: libero is not installed. Please install it with pip install "plugrl-env-client[libero]".
+2026-09-09 17:13:16.954 | WARNING  | plugrl_env_client.envs:_load_env_modules:27 - Skip loading env module plugrl_env_client.envs.classic.classic_env: pygame is not installed. Please install it with pip install "plugrl-env-client[classic]".
+2026-09-09 17:13:16.957 | WARNING  | plugrl_env_client.envs:_load_env_modules:27 - Skip loading env module plugrl_env_client.envs.robomimic.robomimic_env: Robomimic is not installed. Please install it with the 'robomimic' extra, e.g. 'pip install plugrl-env-client[robomimic]'
+2026-09-09 17:13:16.959 | WARNING  | plugrl_env_client.envs:_load_env_modules:27 - Skip loading env module plugrl_env_client.envs.d4rl.d4rl_env: d4rl is not installed. Please install it with pip install "plugrl-env-client[d4rl]".
+2026-09-09 17:13:17.128 | INFO     | plugrl_env_client.cli:main:83 - Starting env client exp_name=dummy-v1-nenv1-20260909-171317-629c6822 output_dir=runs/dummy-v1-nenv1-20260909-171317-629c6822 recorder={'episode_freq': 0, 'thread0_only': True, 'record_video': False, 'video_fps': 30.0, 'record_full_rollout': False, 'record_obs_stats': True, 'record_episode_metrics': True, 'metric_window': 100}
+2026-09-09 17:13:17.130 | INFO     | plugrl_env_client.agent.websocket_env_client_agent:_wait_for_server:67 - Waiting for server at ws://127.0.0.1:8124...
+Traceback (most recent call last):
+  File "/home/gotham/.e2-envclient/bin/plugrl-run-env-client", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/gotham/.e2-envclient/lib/python3.11/site-packages/plugrl_env_client/cli.py", line 106, in main
+    run(
+  File "/home/gotham/.e2-envclient/lib/python3.11/site-packages/plugrl_env_client/runner/run.py", line 81, in run
+    rollout(
+  File "/home/gotham/.e2-envclient/lib/python3.11/site-packages/plugrl_env_client/runner/rollout.py", line 100, in rollout
+    raise ValueError(
+ValueError: Expected action shape tail (7,), got ()
