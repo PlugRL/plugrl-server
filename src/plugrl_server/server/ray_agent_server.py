@@ -26,6 +26,7 @@ from plugrl_server.common.progress import ProgressReporter
 from plugrl_server.policy.state import slice_policy_step_state
 from plugrl_server.server.inference_coordinator import InferenceCoordinator
 from plugrl_server.server.lifecycle import ServerLifecycle
+from plugrl_server.server.metadata import build_server_metadata
 from plugrl_server.server.protocol import (
     ActionMessage,
     MetadataMessage,
@@ -74,7 +75,10 @@ class RayAgentServer:
 
         self._host = host
         self._port = port
-        self._metadata = metadata or {}
+        # SPEC.md section 5.1: the client reads this before it can send
+        # anything, so it is the only place it can learn the action shape
+        # without being told out of band. Anything the caller passes wins.
+        self._metadata = build_server_metadata(inference_algorithm, extra=metadata)
 
         self._inference = InferenceCoordinator(
             stopping_error_factory=ServerStoppingError,
