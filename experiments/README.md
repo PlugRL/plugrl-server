@@ -6,7 +6,7 @@ what was asked, what came back, and what it does and does not support.
 | | Question | Answer |
 |---|---|---|
 | `e1-dependency-conflict` | Can a training stack and an environment stack share one Python environment? | **Yes** - the claim that they cannot is disproved |
-| `e2-cross-language` | Can the protocol be spoken by something that is not this codebase? | **Yes** - a 693-line C++ client with no third-party libraries drives a real server |
+| `e2-cross-language` | Can the protocol be spoken by something that is not this codebase? | **Yes** - an 814-line C++ client with no third-party libraries drives a real server |
 | `e3-integration-cost` | What does adding a new environment or policy cost, here versus elsewhere? | Not measured yet; the metrics are pre-registered |
 | `e5-boundary-cost` | What does crossing the process boundary cost per step? | Sub-millisecond, and the shipped scheduler interval was costing more than the boundary did |
 
