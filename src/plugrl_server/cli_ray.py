@@ -126,3 +126,7 @@ def _main(args: RayArgs):
 
 def main():
     _main(cli())
+
+
+if __name__ == "__main__":
+    main()
