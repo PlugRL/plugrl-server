@@ -161,12 +161,58 @@ rejection and a frame size cap.
 
 ## Reproducing
 
+**Correction, 2026-09-11.** This section used to list five scripts as though
+they ran from a clone of this repository. They do not, and the reason is the
+move recorded just above: the two client sources went to
+`plugrl-protocol/examples/` and were not left behind here. What reproduces the
+result now lives in that repository. What is in this directory is the original
+harness with its sources removed, kept for the record.
+
+### What reproduces the result
+
+From a clone of `plugrl-protocol`, with `websockets`, `msgpack` and `numpy`
+available:
+
 ```bash
-wsl bash setup-server.sh        # install the server (~2 min the first time)
-wsl bash run-cpp.sh             # C++ client: build + 120 steps (main result)
-wsl bash verify.sh              # Python client: 120 steps + server accounting
-wsl bash run-experiment.sh      # Python client: 20-step smoke test
-wsl bash diagnose.sh            # hand-written HTTP upgrade probe
+# the C++ client. A conformance server serves one client and exits, so
+# each of the two runs below needs its own.
+python examples/conformance_server.py --port 8765 \
+    --steps 10 --horizon 4 --action-dim 7 --timeout 120 &
+g++ -std=c++17 -O2 -Wall -o /tmp/plugrl_client examples/plugrl_client.cpp
+/tmp/plugrl_client 127.0.0.1 8765 10
+
+# the Python client
+python examples/conformance_server.py --port 8766 \
+    --steps 10 --horizon 4 --action-dim 7 --timeout 120 &
+sleep 3
+python examples/raw_client.py --host 127.0.0.1 --port 8766 --steps 10
 ```
 
-Logs are in `results/`.
+Each client exits 0 and the server prints a clause-by-clause report. This is a
+stricter check than the one this experiment ran, because `plugrl-server` is
+deliberately forgiving and `conformance_server.py` is not; it is also the
+`cross-language` job in that repository's `.github/workflows/ci.yml`, so it
+runs on every change there. Note that it checks conformance, not training: the
+claim that a server *advances its training progress* under these clients is
+the one measured here on 2026-09-09, and is not re-run by the above.
+
+### What is in this directory
+
+`setup-server.sh`, `setup-envclient.sh`, `run-cpp.sh`, `verify.sh` and
+`run-experiment.sh`, as they were run on 2026-09-09, with the logs they
+produced in `results/`. Read rather than run: none of them is self-contained.
+
+* `run-cpp.sh` compiles `$HERE/plugrl_client.cpp`, and `verify.sh` and
+  `run-experiment.sh` run `$HERE/raw_client.py`. Neither source is in this
+  directory. Both are in `plugrl-protocol/examples/`.
+* `setup-server.sh` and `setup-envclient.sh` hardcode
+  `REPO=/mnt/d/75128/Desktop/plugrl-work`, the path on the machine the
+  experiment was run on, with no environment-variable fallback.
+
+`diagnose.sh`, which this section used to list, was never published in any of
+these repositories. It produced `results/diag-server.log`, but its stdout -
+which is where a `101 Switching Protocols` line would have shown - was not
+captured to a file. So the hand-written-upgrade half of the transport claim
+above is not backed by a committed log; what is committed is the C++ client,
+which writes its own handshake and whose run is recorded in
+`results/cpp-client.log`.

@@ -39,9 +39,13 @@ which are written down.
 | [`e8-keepalive-hypothesis`](e8-keepalive-hypothesis/) | Does a long learn step kill the WebSocket connection? | **No** - learns of 190 s, nine times the ping timeout, close nothing. The hypothesis was mine and the measurement refuted it |
 
 Each directory has a `FINDINGS.md` stating what was asked, what came back,
-and what it does and does not support. Scripts pin their dependency SHAs at
-the top, as resolved on the day they ran, so a rerun measures the same thing
-rather than whatever the forks have become.
+and what it does and does not support. E1 is the only experiment that
+installs from upstream forks, and its scripts pin those forks' SHAs at the
+top, as resolved on the day they ran, so a rerun measures the same thing
+rather than whatever the forks have become. The rest fix less: E2 installs
+the two local checkouts plus PyPI version ranges, and E5-E8 run against a
+`.venv` that already exists, so rerunning those reproduces a working tree and
+a range, not an exact stack.
 
 ## E1 disproved the hypothesis it was written to test
 
@@ -50,7 +54,7 @@ environment stack (`cython<3`, `mujoco-py`, `robosuite<1.5`) cannot coexist in
 one Python environment, and that the network boundary is therefore forced
 rather than chosen.
 
-Four rounds say otherwise: 1/3 at the metadata layer, 0/2 at the install
+Three rounds say otherwise: 1/3 at the metadata layer, 0/2 at the install
 layer on Linux, 0/6 for environment families against each other. A single
 `uv pip install` produced 144 packages containing torch 2.7.1, d4rl 1.1,
 mujoco-py 2.1.2.14 and cython 0.29.37 together.
@@ -72,10 +76,13 @@ find.
 These live in the findings files, not in git history:
 
 - **E5 claimed a 3.1x round-trip improvement** from the scheduler change.
-  That came from a single pair of samples. Five repetitions showed the faster
-  setting ranging over 0.53-1.06 ms - too noisy for a ratio. The defensible
-  number is **1.76x throughput**, medians of five runs with non-overlapping
-  ranges. The larger claim was retracted.
+  That came from a single pair of samples. Three round-trip observations of
+  the faster setting ranged over 0.53-1.06 ms - too noisy for a ratio. The
+  defensible number is **1.76x throughput**, the median of five runs at the
+  old 1 ms default against the median of four at the adopted 0.1 ms, with
+  non-overlapping ranges. One 0.1 ms repetition was discarded because its
+  client failed to connect, which is why that median is over four and not
+  five. The larger claim was retracted.
 - **E5 warned that the change would raise idle CPU.** It was then measured,
   and it does not. Writing an unverified worry as a warning was wrong.
 - **The measurement harness counted failed runs as data**, once reporting
@@ -98,6 +105,15 @@ These live in the findings files, not in git history:
   cause was the machine suspending for 1 h 53 min. The fix that rested on the
   wrong cause was withdrawn; the fix that was read out of the code and
   reproduced in a test was kept. Both versions are in the branch history.
+
+Four claims on this page were themselves wrong, and are corrected above
+rather than rewritten away. The E5 round-trip spread of 0.53-1.06 ms comes
+from three observations, not five. The 1.76x throughput ratio is a median of
+five runs against a median of four, not five against five. Three rounds of
+E1 disproved the coexistence claim, not four; the fourth measures the
+difference that survives, as the E1 section says. And the sentence about
+pinned dependency SHAs described all of the scripts when it is true of E1's
+alone.
 
 ## Pre-registered and not yet run
 

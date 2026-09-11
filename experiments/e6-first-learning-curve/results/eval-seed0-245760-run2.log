@@ -1,0 +1,21 @@
+Could not import DPPO algorithm module for reason: No module named 'dppo'
+16:41:51|INFO|plugrl_server version: 0.1.0
+16:41:51|INFO|Algorithm: eval, Config: EvalConfig(global_steps=None, break_action_chunk=False, policy_checkpoint_path=WindowsPath('D:/75128/Desktop/plugrl-work/plugrl-server/experiments/e6-first-learning-curve/results/fpo/fpo-policy/halfcheetah-seed0/245760'), num_episodes=5)
+16:41:51|INFO|Policy: fpo-policy, Config: FPOPolicyConfig(algo='eval', device=device(type='cpu'), obs_dim=17, action_dim=6, flow_steps=10, timestep_embed_dim=8, action_horizon=1, feather_std=0.0, policy_mlp_output_scale=0.25, normalize_observations=True, hidden_dims=(32, 32, 32, 32), value_hidden_dims=(256, 256, 256, 256, 256))
+16:41:51|INFO|Checkpoint Manager created: 
+<plugrl_server.common.checkpoint_manager.CheckpointManager object at 0x0000020433278110> at D:\Temp\evalout2\eval\fpo-policy\eval-seed0-245760
+16:41:52|INFO|Policy created...
+16:41:52|INFO|Loading policy checkpoint from D:\75128\Desktop\plugrl-work\plugrl-server\experiments\e6-first-learning-curve\results\fpo\fpo-policy\halfcheetah-seed0\245760
+16:41:52|INFO|Loading model state from D:\75128\Desktop\plugrl-work\plugrl-server\experiments\e6-first-learning-curve\results\fpo\fpo-policy\halfcheetah-seed0\245760...
+16:41:52|INFO|Loading optimizer state from D:\75128\Desktop\plugrl-work\plugrl-server\experiments\e6-first-learning-curve\results\fpo\fpo-policy\halfcheetah-seed0\245760...
+16:41:52|INFO|Loading metadata from D:\75128\Desktop\plugrl-work\plugrl-server\experiments\e6-first-learning-curve\results\fpo\fpo-policy\halfcheetah-seed0\245760...
+16:41:52|INFO|Checkpoint loaded from D:\75128\Desktop\plugrl-work\plugrl-server\experiments\e6-first-learning-curve\results\fpo\fpo-policy\halfcheetah-seed0\245760.
+16:41:52|INFO|Algorithm created: 
+<plugrl_server.algorithm.evaluation.Evaluation object at 0x000002043344E890>
+16:41:52|INFO|Agent Server is listening on 0.0.0.0:8701
+16:42:27|INFO|Checkpoint saved at step 0 to D:\Temp\evalout2\eval\fpo-policy\eval-seed0-245760\0
+16:42:27|INFO|Stopping server as the algorithm signaled to stop.
+16:42:27|INFO|Shutdown started: aborting pending infer requests.
+16:42:27|INFO|Shutdown closing 1 websocket connection(s).
+16:42:27|INFO|WebSocket server closed.
+16:42:27|INFO|Scheduler task cancelled and cleaned up.

@@ -184,3 +184,30 @@ learning effect can be checked afterwards.
   as supporting evidence in the table itself.
 * **Cells that were not completed are shown anyway**, with the blocker. That
   is a result too.
+
+---
+
+## Correction, added 2026-09-11
+
+The T-POL note under "Task definitions" ends "correctness is E4's job". There
+is no E4. `plugrl-server/experiments/` holds e1, e2, e3, e5, e6, e7, e8, e9
+and e10, and `experiments/README.md` lists that same set in both its tables,
+including the pre-registered ones; a search across the public repositories
+finds "E4" nowhere but in that one sentence. It resolves only in planning
+documents that were never published. The rule itself is left exactly as it
+was, because this file is pre-registered and the whole point of it is that it
+is not edited after the fact.
+
+So the correctness question that sentence hands off is not answered anywhere.
+The two things that do exist are narrower than what E4 would have been:
+
+* `plugrl-protocol/examples/conformance_server.py` grades a client against
+  SPEC.md clause by clause and exits non-zero on a violation.
+* `plugrl-env-client/tests/test_protocol_alternation.py` records what the
+  rollout loop would put on the wire and asserts the sequence strictly
+  alternates infer, action, feedback, which is SPEC.md section 4.2.
+
+Both check that PlugRL's own boundary behaves as specified. Neither asks
+whether an integrated policy learns correctly, and neither is a comparison
+across frameworks, which is what the E3 write-up would have needed. Read the
+T-POL note as deferring the question to an experiment that was never run.
