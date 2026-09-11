@@ -55,14 +55,51 @@ We use `uv` to manage dependencies and development environments.
 #### Available Components
 
 **Algorithms:**
-- `dummy` - Dummy algorithm for testing and debugging
-- `dppo` - DPPO (Diffusion-based Policy Optimization) algorithm
+- `fpo` - Flow Policy Optimization. **The one that learns with no extras installed.**
+- `dummy` - Dummy algorithm for testing and debugging. Its `learn` is a
+  `sleep`; it moves no weights.
+- `dppo` - DPPO (Diffusion Policy Policy Optimization). Requires
+  `plugrl-server[dppo]`.
 - `dppo-dist` - Distributed DPPO (experimental)
+- `eval` - Evaluation only, no learning
 
 **Policies:**
-- `dummy-policy` - Dummy policy that outputs random actions (for testing)
-- `dppo-policy` - DPPO policy (requires `plugrl-server[dppo]` and checkpoint)
-- `pi0-policy` - PI0 policy (OpenPI) (requires checkpoint)
+- `fpo-policy` - Flow policy. Defaults to `obs_dim=17`, `action_dim=6`
+- `dummy-policy` - Outputs random actions (for testing)
+- `dppo-policy` - DPPO policy (requires `plugrl-server[dppo]` and a checkpoint)
+- `pi0-policy` - PI0 policy (OpenPI) (requires a checkpoint)
+
+`python -m plugrl_server.cli --help` lists what is actually available in your
+install; the optional ones do not appear without their extra.
+
+#### Quick Start: a run that actually learns
+
+FPO on HalfCheetah-v5, CPU only, no extras beyond `plugrl-env-client[mujoco]`.
+HalfCheetah-v5 has a 17-dimensional observation and a 6-dimensional action,
+which are exactly `fpo-policy`'s defaults, so nothing needs configuring.
+
+```bash
+# Terminal 1: the training server
+python -m plugrl_server.cli fpo-policy default fpo default \
+    --port 8000 --policy.device cpu \
+    --algo.global-steps 500000 --algo.buffer-size 4096
+
+# Terminal 2: the environment (from plugrl-env-client)
+python -m plugrl_env_client.cli mujoco-v1 \
+    --server-port 8000 --num-envs 1 --num-episodes 600 \
+    --runner.replan-steps 1 --runner.seed 0
+```
+
+Episode return climbs out of the -300s within about 40k steps, which takes a
+few minutes on a laptop. `experiments/e6-first-learning-curve/` has the full
+three-seed run and its findings.
+
+**`--algo.buffer-size` is not optional here, and the default will surprise
+you.** FPO learns when its rollout buffer fills *or* when the run reaches its
+last step. At the default `buffer_size=983040`, any run shorter than about a
+million steps therefore learns exactly once, at the very end - producing a
+single point rather than a curve. 4096 gives one update per 4096 environment
+steps.
 
 #### Quick Start: Testing with Dummy Components
 

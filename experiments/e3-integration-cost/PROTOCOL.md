@@ -1,132 +1,155 @@
-# E3 度量口径（预注册）
+# E3 measurement protocol (pre-registered)
 
-**状态：在采集任何数据之前写定。** 2026-09-10
+**Status: written, never executed.** The comparison this protocol describes
+was planned for a paper that is no longer being written. It is kept because
+the protocol itself is the useful part - it fixes the rules before any data
+exists, and it declares the bias that would have favoured us. Anyone
+repeating this kind of comparison can start from it. **No numbers were ever
+collected, so nothing here should be cited as a result.**
 
----
-
-## 为什么要预注册
-
-E3 要主张的是"在 PlugRL 上接入一个新环境/新策略比在单体框架上便宜"。
-这类主张最容易被攻击的地方不是数字本身，而是**口径**：什么算"接入完成"、
-改动行数怎么数、时间从哪一刻起算、失败的尝试算不算。
-
-如果这些规则是在看过结果之后定的，那么无论数字多好看，
-审稿人都有理由怀疑是挑出来的。所以先写死，再测。
-
-**本文件在采集第一个数据点之后不得修改。** 若发现口径有缺陷，
-新开一版并说明为何原版不可用，两版都保留。
+**Written 2026-09-10, before any data was collected.**
 
 ---
 
-## 任务定义
+## Why pre-register
 
-两类任务，各自独立计量。
+E3 was to claim that adding a new environment or policy costs less on PlugRL
+than on a monolithic framework. The weakest point of such a claim is not the
+numbers, it is the **definitions**: what counts as "integrated", how lines
+are counted, when the clock starts, whether failed attempts count.
 
-### T-ENV：接入一个新环境
+If those rules are chosen after seeing the results, a reviewer is right to
+suspect they were chosen to fit. So they are fixed first.
 
-**完成判据**：该环境能与一个已有策略跑完 3 个 episode，
-且在 3 个不同 seed 下**都**完成。跑不完就不算完成。
-
-### T-POL：接入一个新策略
-
-**完成判据**：该策略能在一个已有环境上跑完 3 个 episode × 3 seed，
-并产生非零梯度更新（即 `learn` 至少成功执行一次）。
-
-**注意**：不要求学到东西。E3 量的是集成成本，不是学习效果；
-正确性由 E4 单独负责。
+**This file must not be edited after the first data point is collected.** If
+a rule turns out to be flawed, write a new version explaining why the old one
+was unusable, and keep both.
 
 ---
 
-## 三个被测对象
+## Task definitions
 
-| 框架 | 版本锁定 |
+Two task types, measured independently.
+
+### T-ENV: integrate a new environment
+
+**Done when** the environment completes 3 episodes with an existing policy,
+under 3 different seeds, **all of them**. Not finishing is not finishing.
+
+### T-POL: integrate a new policy
+
+**Done when** the policy completes 3 episodes x 3 seeds on an existing
+environment and produces a non-zero gradient update - that is, `learn`
+executes successfully at least once.
+
+**Note:** it is not required to learn anything. E3 measures integration cost,
+not learning quality; correctness is E4's job.
+
+---
+
+## The three subjects
+
+| Framework | Version pinning |
 |---|---|
-| PlugRL | 本仓库 `main` 的某个 commit（记录 SHA） |
-| RLinf | 采集当日的 release tag |
-| SimpleVLA-RL | 采集当日的 release tag |
+| PlugRL | a specific commit of this repository (record the SHA) |
+| RLinf | the release tag on the day of collection |
+| SimpleVLA-RL | the release tag on the day of collection |
 
-对照组的版本必须在**同一天**取，且记录 SHA/tag，不得中途更新。
-
----
-
-## 四个指标
-
-### 1. 新增/修改代码行数（LOC）
-
-- **只数需要人写的行**：新建文件的全部行数，加上对已有文件的
-  `git diff --numstat` 增删之和
-- **不计**：自动生成的文件（锁文件、`__pycache__`）、注释与空行
-  （用 `cloc --by-file` 的 `code` 列，不用 `wc -l`）
-- **不计**：格式化工具造成的改动（提交前先跑各自项目的 formatter，
-  再计量）
-- **分开记录**：框架本体的改动 vs 用户侧新增代码。
-  改到框架本体是更贵的成本，因为它意味着 fork 或上游 PR
-
-### 2. 新增依赖数
-
-- 以各框架的锁文件为准：接入前后 `uv.lock` / `poetry.lock` /
-  `requirements.txt` 解析出的包集合之差
-- **只数新增**，不数升级
-- 单独标注是否引入了**新的系统级依赖**（apt 包、CMake、编译器、
-  CUDA 版本要求）—— 这类成本远高于一个 wheel
-
-### 3. 墙钟时间
-
-- **起点**：第一次为该任务打开编辑器或终端
-- **终点**：完成判据满足的那一刻
-- **计入**：读文档、试错、装依赖、debug
-- **不计入**：等待纯下载的时间（记录但单列）、与本任务无关的中断
-- 用一个简单的计时记录：每次开始/暂停都写一行到
-  `timing.jsonl`，含时间戳与一句话说明
-
-**已知的偏倚**：执行者对 PlugRL 熟悉、对 RLinf 和 SimpleVLA-RL 不熟悉。
-这会系统性地让 PlugRL 显得更便宜。缓解见下。
-
-### 4. 是否需要改动框架本体
-
-布尔值 + 说明。这一项单独报告，不折算进 LOC。
+The comparison versions must be taken on the **same day**, with SHAs or tags
+recorded, and must not be updated partway through.
 
 ---
 
-## 偏倚与缓解
+## Four metrics
 
-### 熟悉度偏倚（最严重）
+### 1. Lines added or modified
 
-**问题**：我们写了 PlugRL，没写过 RLinf。同一个人做三边，
-时间指标必然偏向 PlugRL。
+* **Count only lines a human writes**: all lines of new files, plus the sum
+  of additions and deletions reported by `git diff --numstat` for existing
+  files.
+* **Do not count** generated files (lock files, `__pycache__`), comments or
+  blank lines - use the `code` column of `cloc --by-file`, not `wc -l`.
+* **Do not count** formatter-induced changes: run each project's own
+  formatter before measuring.
+* **Record separately**: changes to the framework itself versus code added on
+  the user side. Touching the framework is the more expensive kind, because
+  it means a fork or an upstream pull request.
 
-**缓解，按强度排序**：
+### 2. New dependencies
 
-1. **首选**：请一位**没参与过 PlugRL 开发**的人做全部三边，
-   计时由他自己记。这是唯一能真正消除偏倚的做法。
-2. **次选**：三边都由同一人做，但**先做 RLinf 和 SimpleVLA-RL，
-   最后做 PlugRL**。这样学习效应反而不利于 PlugRL。
-3. **兜底**：如果只能用方案 3，则**时间指标降级为辅助证据**，
-   主结论只用 LOC 和依赖数（这两项客观得多），
-   并在论文里明确写出这个限制。
+* Taken from each framework's lock file: the difference in the resolved
+  package set from `uv.lock` / `poetry.lock` / `requirements.txt` before and
+  after.
+* **Count additions only**, not upgrades.
+* Note separately whether a **new system-level dependency** was introduced
+  (an apt package, CMake, a compiler, a CUDA version requirement). That kind
+  of cost is far higher than a wheel.
 
-**无论用哪个方案，都必须在论文里写明用的是哪个。**
+### 3. Wall clock
 
-### 选择偏倚
+* **Starts** the first time an editor or terminal is opened for the task.
+* **Ends** the moment the completion criterion is satisfied.
+* **Includes** reading documentation, trial and error, installing
+  dependencies, debugging.
+* **Excludes** pure download waiting (record it, report it separately) and
+  interruptions unrelated to the task.
+* Keep a simple log: one line per start and pause in `timing.jsonl`, with a
+  timestamp and a sentence.
 
-被接入的环境/策略不能挑对 PlugRL 有利的。**样本在预注册时就定死**：
+**Known bias:** the operator is familiar with PlugRL and unfamiliar with
+RLinf and SimpleVLA-RL. This systematically makes PlugRL look cheaper. See
+below.
 
-- T-ENV 样本：`RoboCasa`、`ManiSkill`（两者 PlugRL 都还没有）
-- T-POL 样本：`Diffusion Policy`、一个纯 MLP 的 SAC 策略
+### 4. Whether the framework itself had to change
 
-若某个样本在某框架上**根本无法接入**，如实记为"未完成"并说明卡在哪，
-不得替换成别的样本。
-
-### 停止规则
-
-单个 (框架 × 任务) 的时间上限为 **8 小时**。超过即记为"未在预算内完成"，
-并记录卡在哪一步。这防止"再试一天说不定就成了"变成无限投入。
+A boolean plus an explanation. Reported separately, not folded into the line
+count.
 
 ---
 
-## 记录格式
+## Bias and mitigation
 
-每个 (框架 × 任务) 产出一个 `<framework>-<task>.json`：
+### Familiarity bias (the serious one)
+
+**The problem**: we wrote PlugRL and have never written RLinf. One person
+doing all three sides guarantees the time metric favours PlugRL.
+
+**Mitigations, strongest first:**
+
+1. **Preferred**: have someone who has **never worked on PlugRL** do all
+   three, keeping their own time. This is the only option that actually
+   removes the bias.
+2. **Second**: one person does all three, but does **RLinf and SimpleVLA-RL
+   first and PlugRL last**, so the learning effect works against PlugRL.
+3. **Fallback**: if only option 3 is available, **demote the time metric to
+   supporting evidence**. The main conclusion then rests on lines and
+   dependency counts, which are far more objective, and the limitation is
+   stated explicitly.
+
+**Whichever is used must be named in the write-up.**
+
+### Selection bias
+
+The environments and policies integrated must not be chosen to suit PlugRL.
+**The sample is fixed here, before collection:**
+
+* T-ENV: `RoboCasa`, `ManiSkill` - PlugRL has neither.
+* T-POL: `Diffusion Policy`, and a plain-MLP SAC policy.
+
+If a sample **cannot** be integrated into some framework at all, record it as
+not completed and say where it stopped. Do not substitute a different sample.
+
+### Stopping rule
+
+Each (framework x task) cell has an **8 hour** limit. Beyond that it is
+recorded as "not completed within budget", along with where it stopped. This
+stops "one more day might do it" from becoming unbounded.
+
+---
+
+## Record format
+
+Each (framework x task) produces one `<framework>-<task>.json`:
 
 ```json
 {
@@ -148,13 +171,16 @@ E3 要主张的是"在 PlugRL 上接入一个新环境/新策略比在单体框�
 }
 ```
 
-`order_index` 记录该任务在执行顺序中的位置，供事后检验学习效应。
+`order_index` records the position of the task in the execution order, so the
+learning effect can be checked afterwards.
 
 ---
 
-## 报告方式
+## Reporting
 
-- 三个框架并列，**不做归一化**，不算"倍数"
-- 每个格子标注是否完成、是否在预算内
-- 时间指标若用了兜底方案，在表格里显式标注为辅助证据
-- 未完成的格子**照常展示**，写明卡点 —— 那本身就是结果
+* Three frameworks side by side, **no normalisation**, no ratios.
+* Each cell marked completed or not, and within budget or not.
+* If the fallback mitigation was used, the time metric is explicitly labelled
+  as supporting evidence in the table itself.
+* **Cells that were not completed are shown anyway**, with the blocker. That
+  is a result too.

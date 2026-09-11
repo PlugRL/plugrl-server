@@ -1,131 +1,144 @@
-# E5 结论：边界代价亚毫秒级，且默认配置白白多花了约 1.1 ms
+# E5: the boundary costs under a millisecond, and the default setting was wasting more than that
 
-日期：2026-09-09 · WSL2 Ubuntu 22.04 · loopback · plugrl-server @ 4aaebe0
-客户端：`e2-cross-language/plugrl_client.cpp`（零第三方库 C++）
+2026-09-09 · WSL2 Ubuntu 22.04 · loopback · plugrl-server @ 4aaebe0
+Client: `e2-cross-language/plugrl_client.cpp` (C++, no third-party libraries)
 
-## 一句话
+## In one sentence
 
-跨进程边界传一帧 184 KiB 的观测，**实测代价在亚毫秒量级（0.5–0.7 ms）**。
-朴素测量得到的 1.65 ms 里有约 1.1 ms 是服务端调度器的轮询等待 ——
-那是一个可调常量，不是架构代价。
+Sending a 184 KiB observation across the process boundary costs **under a
+millisecond** (0.5-0.7 ms). A naive measurement says 1.65 ms, but about
+1.1 ms of that is the server's scheduler waiting to poll - a tunable
+constant, not an architectural cost.
 
-## 载荷规模扫描
+## Payload size sweep
 
-服务端的人为延迟已关闭（`--algo.fake-inference-duration-sec 0`），
-所以数字只含序列化 + 传输 + 反序列化 + 空策略前向。
+The server's artificial delay is off (`--algo.fake-inference-duration-sec 0`),
+so these numbers contain only serialization, transport, deserialization and
+an empty policy forward.
 
-| 配置 | 上行载荷 | pack | RTT | unpack |
+| Configuration | Uplink payload | pack | RTT | unpack |
 |---|---|---|---|---|
-| 1 相机 @ 128px | 48 KiB | 0.022 ms | 1.709 ms | 0.004 ms |
-| 1 相机 @ 224px | 147 KiB | 0.124 ms | 1.680 ms | 0.005 ms |
-| **2 相机 @ 224px（dummy-v1）** | **184 KiB** | **0.122 ms** | **1.603 ms** | **0.003 ms** |
-| 1 相机 @ 448px | 588 KiB | 0.575 ms | 1.796 ms | 0.005 ms |
-| 2 相机 @ 224px，batch 4 | 735 KiB | 0.241 ms | 1.955 ms | 0.005 ms |
-| 2 相机 @ 224px，batch 16 | 2942 KiB | 3.080 ms | 5.622 ms | 0.007 ms |
+| 1 camera @ 128px | 48 KiB | 0.022 ms | 1.709 ms | 0.004 ms |
+| 1 camera @ 224px | 147 KiB | 0.124 ms | 1.680 ms | 0.005 ms |
+| **2 cameras @ 224px (dummy-v1)** | **184 KiB** | **0.122 ms** | **1.603 ms** | **0.003 ms** |
+| 1 camera @ 448px | 588 KiB | 0.575 ms | 1.796 ms | 0.005 ms |
+| 2 cameras @ 224px, batch 4 | 735 KiB | 0.241 ms | 1.955 ms | 0.005 ms |
+| 2 cameras @ 224px, batch 16 | 2942 KiB | 3.080 ms | 5.622 ms | 0.007 ms |
 
-要点：
+What that says:
 
-- **RTT 在 48 KiB → 588 KiB 之间几乎不变**（1.68 → 1.80 ms）。
-  在这个量级上主导项不是载荷，是固定开销。
-- **打包代价亚毫秒**，直到 588 KiB 才到 0.575 ms。
-- **解包可忽略**（约 0.005 ms）—— 下行只有动作，很小。
-- 只有到 2.9 MiB（batch 16）才明显爬升。
+* **RTT barely moves from 48 KiB to 588 KiB** (1.68 to 1.80 ms). At this
+  scale the dominant term is fixed overhead, not payload.
+* **Packing stays sub-millisecond**, reaching 0.575 ms only at 588 KiB.
+* **Unpacking is negligible** (~0.005 ms) - the downlink is just an action.
+* Only at 2.9 MiB (batch 16) does anything climb noticeably.
 
-## 把固定开销拆开：多少是轮询？
+## Splitting the fixed overhead: how much is polling?
 
-固定载荷 184 KiB，只改服务端 `SCHEDULER_SLEEP_INTERVAL`：
+Payload fixed at 184 KiB, varying only the server's
+`SCHEDULER_SLEEP_INTERVAL`:
 
-| 轮询间隔 | RTT 均值（第 1 次） | RTT 均值（第 2 次） |
+| Poll interval | mean RTT (run 1) | mean RTT (run 2) |
 |---|---|---|
-| **1.000 ms（仓库默认）** | **1.653 ms** | **1.570 ms** |
+| **1.000 ms (repository default)** | **1.653 ms** | **1.570 ms** |
 | 0.500 ms | 1.134 ms | 1.503 ms |
 | 0.100 ms | 0.532 ms | 0.701 ms |
-| 0.010 ms | 0.556 ms | （该次客户端失败，已丢弃）|
+| 0.010 ms | 0.556 ms | (client failed; discarded) |
 
-1 ms 档很稳定，两次相差 5%。0.1 ms 档波动明显（0.532 / 0.701 ms；
-另一次端到端复核得均值 1.060、中位 0.883 ms）。因此：
+The 1 ms setting is stable across runs, within 5%. The 0.1 ms setting is
+visibly noisy (0.532 / 0.701 ms; a separate end-to-end check gave mean 1.060,
+median 0.883 ms). So:
 
-| 成分 | 耗时 |
+| Component | Cost |
 |---|---|
-| 序列化 + loopback 传输 + 空策略前向 | **0.5–0.7 ms** |
-| 调度器轮询等待（默认配置） | **≈ 0.9–1.1 ms** |
+| serialization + loopback transport + empty policy forward | **0.5-0.7 ms** |
+| scheduler poll wait (at the default) | **~0.9-1.1 ms** |
 
-**RTT 只用于说明量级，不用于给出比值** —— 定量结论以下一节的
-5 次重复吞吐中位数为准。
+**These RTT numbers establish an order of magnitude, not a ratio.** The
+quantitative claim is the throughput median over five repetitions, below.
 
-## 两个结论
+## Two conclusions
 
-### 1. 论文结论：边界很便宜
+### 1. The boundary is cheap
 
-一次 VLA 策略前向通常是几十毫秒量级。相比之下，
-**跨边界传一帧双目 224px 观测约 0.5 ms** —— 是个位数百分比的开销。
-这让"把环境放到任何机器上"这件事在延迟上站得住。
+A VLA policy forward is tens of milliseconds. Against that, **moving a
+two-camera 224px observation across the boundary costs about 0.5 ms** - a
+single-digit percentage. That is what makes "run the environment on any
+machine" defensible on latency grounds.
 
-诚实的限定：**这是 loopback，是下限。** 真实跨机数字会更高，
-那是 E6 的测量，需要集群。但**序列化成本已经测定且很小**，
-跨机增加的将是网络往返，与 PlugRL 的实现无关。
+The honest limit: **this is loopback, which is a lower bound.** Real
+cross-machine numbers will be higher. What that adds is network round trip,
+and the serialization cost - the part PlugRL controls - is measured here and
+is small.
 
-带宽推算：184 KiB/步 × 30 Hz ≈ 5.4 MB/s 每个 env client。
-千兆链路理论上约 22 个客户端饱和 —— E6 设计时需要考虑。
+Bandwidth, for planning: 184 KiB/step x 30 Hz is about 5.4 MB/s per env
+client, so a gigabit link saturates at roughly 22 clients.
 
-### 2. 工程结论：默认值每步白白浪费约 1.1 ms，且改掉它没有代价
+### 2. The default setting cost about 1.1 ms per step, and removing it cost nothing
 
-`websocket_agent_server.py:37` 的 `SCHEDULER_SLEEP_INTERVAL = 0.001`
-让每次推理请求平均多等约 1.1 ms。改成 `0.0001` 后：
+`SCHEDULER_SLEEP_INTERVAL = 0.001` in `websocket_agent_server.py` made every
+inference request wait about 1.1 ms longer on average. At `0.0001`:
 
-| 轮询间隔 | 吞吐（5 次重复中位数） | CPU/次交换 | 空闲 CPU | RTT 量级 |
+| Poll interval | Throughput (median of 5) | CPU per exchange | Idle CPU | RTT scale |
 |---|---|---|---|---|
-| **1.000 ms（当前默认）** | 457/s（425–470） | 0.890 ms | 7.3% | ~1.6 ms |
-| **0.100 ms（建议值）** | **803/s**（692–892） | 0.758 ms | 6.1% | ~0.5–1.0 ms |
-| 0.010 ms | 861/s（657–874） | 0.710 ms | 6.2% | 未充分重复 |
+| **1.000 ms (old default)** | 457/s (425-470) | 0.890 ms | 7.3% | ~1.6 ms |
+| **0.100 ms (adopted)** | **803/s** (692-892) | 0.758 ms | 6.1% | ~0.5-1.0 ms |
+| 0.010 ms | 861/s (657-874) | 0.710 ms | 6.2% | not repeated enough |
 
-**这是一个没有代价的改动：**
+This change has no downside that the data can find:
 
-- **吞吐 1.76×**，且 1 ms 与 0.1 ms 的区间不重叠（425–470 vs 692–892），差异确凿
-- **每次交换的 CPU 反而降低 15%** —— 更紧的轮询不是在空转，是在减少等待
-- **空闲 CPU 不变**（7.3% → 6.1%，在噪声内）
+* **1.76x throughput**, and the ranges do not overlap (425-470 vs 692-892).
+* **15% less CPU per exchange** - tighter polling is not spinning, it is
+  waiting less.
+* **Idle CPU unchanged** (7.3% to 6.1%, within noise).
 
-0.1 ms 与 0.01 ms 之间区间重叠（692–892 vs 657–874），**本数据分不出差别**，
-因此建议取较保守的 **0.1 ms**。
+The 0.1 ms and 0.01 ms ranges do overlap (692-892 vs 657-874), so **this data
+cannot separate them**, and the more conservative 0.1 ms was adopted.
 
-按 200 步/episode 算，每个 episode 省 0.22 s。对高频控制影响更大。
-**建议单独提一个 PR**，与定位决策无关。
+At 200 steps per episode that is 0.22 s saved per episode, and more for
+high-frequency control.
 
-#### 两处更正
+#### Three corrections to earlier versions of this document
 
-本文档早先版本有两处说法，经补充实验后更正：
+1. It said "lowering this will raise idle CPU; confirm by measurement."
+   **It was measured, and it does not.** Idle usage is the same across all
+   three settings (6.1%-7.3%). Writing an unverified worry as a warning was
+   wrong.
+2. It said, from a single sample, that 0.01 ms gave no further benefit and
+   was possibly worse. **That was noise**: over five repetitions its median
+   throughput is slightly *higher* than 0.1 ms. One sample is not enough to
+   justify a production change.
+3. It claimed a **3.1x RTT improvement** from one pair of samples. **That
+   does not survive remeasurement** - the 1 ms setting is stable at
+   1.57-1.65 ms, but the 0.1 ms setting ranges over 0.53-1.06 ms, and the
+   sample is too small for a ratio. The defensible number is the 1.76x
+   throughput over five repetitions.
 
-1. 曾写「降低该值会提高空闲时的 CPU 占用，应实测确认」——
-   **实测了，不会**。空闲占用在三个档位上一致（6.1%–7.3%）。
-   把未验证的顾虑写成警告是不对的。
-2. 曾据单次采样称「0.01 ms 已无进一步收益」，甚至一度更差。
-   **那是噪声**：五次重复里 0.01 ms 的中位吞吐反而略高于 0.1 ms。
-   单样本不足以支撑改动生产代码的建议。
-3. 曾据单对样本称 RTT 有「3.1× 提升」。**重测后不成立** —— 1 ms 档稳定在
-   1.57–1.65 ms，但 0.1 ms 档在 0.53–1.06 ms 之间波动，样本量不足以给出比值。
-   站得住的定量结论是 5 次重复的吞吐 1.76×。
+#### A harness defect, fixed
 
-#### 一个 harness 缺陷（已修）
+While repeating the runs, the measurement script was found to treat **failed
+runs as valid data** - it reported 118879 exchanges/s from a client that had
+failed to connect. `run-cpu-per-exchange.sh` now requires the client log to
+confirm it completed the requested number of exchanges, and discards the run
+otherwise. The n column above is valid samples only.
 
-重复实验期间发现测量脚本会把**失败的运行**当成有效数据 ——
-客户端连接失败时报出了 118879 次交换/秒。`run-cpu-per-exchange.sh` 现在
-要求客户端日志确认完成了指定次数，否则丢弃该次。上表的 n 列即有效样本数。
+## One configuration that could not be measured
 
-## 一个未能测量的配置
+The `states only (no cameras)` case failed with `server returned an empty
+action`. That is the dummy policy defect recorded in E2: `_infer_batch_size`
+takes `next(iter(obs.values()))` and then `len()`, which computes batch=0
+when `images` is an empty dict, and **returns an empty action silently
+instead of raising**. A proprioception-only robot with no cameras lands on it
+exactly.
 
-`states only（无相机）` 一项失败，报 `server returned an empty action`。
-这正是 E2 记录的 dummy policy 缺陷：`_infer_batch_size` 取
-`next(iter(obs.values()))` 再 `len()`，观测里 `images` 为空字典时算出 batch=0，
-**静默返回空动作而不报错**。纯本体感知的机器人（无相机）正好会踩到这个。
-
-## 复现
+## Reproducing
 
 ```bash
-wsl bash run.sh                    # 载荷规模扫描
-wsl bash run-isolate-poll.sh       # 分离轮询开销
-wsl bash run-idle-cost.sh          # 空闲/忙时 CPU 占用
-wsl bash repeat.sh                 # 5 次重复 + 中位数（含有效性校验）
+wsl bash run.sh                    # payload size sweep
+wsl bash run-isolate-poll.sh       # isolate the polling overhead
+wsl bash run-idle-cost.sh          # idle and busy CPU usage
+wsl bash repeat.sh                 # 5 repetitions + medians, with validation
 ```
 
-- `server_with_interval.py` —— 用指定轮询间隔启动服务端
-- 结果在 `results/summary.tsv`
+* `server_with_interval.py` starts a server with a given poll interval.
+* Results are in `results/summary.tsv`.
