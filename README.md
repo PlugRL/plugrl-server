@@ -90,9 +90,12 @@ python -m plugrl_env_client.cli mujoco-v1 \
     --runner.replan-steps 1 --runner.seed 0
 ```
 
-Episode return climbs out of the -300s within about 40k steps, which takes a
-few minutes on a laptop. `experiments/e6-first-learning-curve/` has the full
-three-seed run and its findings.
+Episode return starts near -300. Across three seeds it is still dipping back
+into the -300s at step 20k, the mean crosses zero at about 60k, and by 500k
+steps it reaches 1928 +/- 224 - roughly a hundred minutes on the CPU-only
+desktop that measured it. The first few minutes are noise; judge it over tens
+of thousands of steps. `experiments/e6-first-learning-curve/` has the
+three-seed curve, the logs and the findings.
 
 **`--algo.buffer-size` is not optional here, and the default will surprise
 you.** FPO learns when its rollout buffer fills *or* when the run reaches its
