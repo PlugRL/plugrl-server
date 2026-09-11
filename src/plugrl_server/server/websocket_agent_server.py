@@ -185,43 +185,7 @@ class WebSocketAgentServer:
         self._install_signal_handlers()
         try:
             self._server = await _server.serve(
-                self._handler,
-                self._host,
-                self._port,
-                compression=None,
-                max_size=None,
-                # websockets defaults to a 20 s ping with a 20 s timeout, and
-                # a learn step is CPU-bound work that can hold the GIL past
-                # that. On a slow machine the server then closes the
-                # connection with 1011 for a client that is perfectly
-                # healthy - and because the per-environment maps live in the
-                # connection handler, the reconnect starts with empty ones
-                # and the next feedback reaches the algorithm with no
-                # previous observation and no step state. Silent, and worse
-                # than the disconnect it came from.
-                #
-                # This protocol has its own liveness mechanism already:
-                # FEEDBACK_WAIT_TIMEOUT. Keepalive pings on top of it buy
-                # almost nothing and cost that.
-                #
-                # Almost, and not nothing: the feedback timeout covers the
-                # wait between an action and its feedback, and the recv above
-                # that waits for the next infer is unbounded. A peer that dies
-                # without closing its socket - power cut, cable out - leaves
-                # that recv parked until the operating system gives up on the
-                # TCP connection, where before it would have been noticed in
-                # 20 s. It costs one idle coroutine and one socket, and the
-                # run was going to stall regardless, because a dead client
-                # sends no more observations either way.
-                #
-                # A long ping timeout instead of none would close that gap,
-                # and was rejected: the value would have to exceed the
-                # longest learn step, which is 16 x ceil(buffer_size / 1024)
-                # gradient steps of whatever policy the user brought, on
-                # whatever hardware they have. Any number here is a guess
-                # about someone else's machine, and being wrong about it
-                # costs real transitions.
-                ping_interval=None,
+                self._handler, self._host, self._port, compression=None, max_size=None
             )
             logger.info(f"Agent Server is listening on {self._host}:{self._port}")
             await self._lifecycle.stop_event.wait()

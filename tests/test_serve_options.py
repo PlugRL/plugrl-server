@@ -1,16 +1,18 @@
-"""The server must not ping its clients to death.
+"""The server must not cap the frame size, and must survive a reconnect.
 
-`websockets` defaults to a 20 s keepalive ping with a 20 s timeout. A learn
-step is CPU-bound Python: it holds the GIL, the event loop does not run, the
-pong is not read, and the server closes a perfectly healthy connection with
-1011. That is bad on its own, and worse than it looks: the per-environment
-maps that carry the previous observation live inside the connection handler,
-so the reconnect starts with empty ones and the next feedback reaches the
-algorithm with nothing behind it. No error, just a corrupt transition.
+An observation is megabytes, so `max_size` has to stay off; the `websockets`
+default of 1 MiB would reject a two-camera frame outright.
 
-The protocol already has its own liveness check - FEEDBACK_WAIT_TIMEOUT - so
-the ping buys nothing. These tests pin that down, because the setting is one
-keyword away from coming back by accident.
+The keepalive is deliberately left at the library default. An earlier version
+of this file asserted `ping_interval is None`, on the theory that a CPU-bound
+learn step holds the event loop past the 20 s ping timeout. That theory was
+measured and is false - `LocalTrainingBackend` runs `learn` through
+`asyncio.to_thread`, and five learns of about 180 s each produced no timeout
+at all. See `experiments/e8-keepalive-hypothesis/`.
+
+What is true, and what `test_a_missing_step_state_is_reported` covers, is the
+consequence of a reconnect whatever caused it: the per-environment maps live
+in the connection handler, so the new connection starts empty.
 """
 
 import asyncio
@@ -69,11 +71,11 @@ def _serve_kwargs(server, monkeypatch):
     return seen
 
 
-def test_keepalive_pings_are_off(server, monkeypatch):
-    """A learn step can outlast any ping interval, so there is no safe one."""
-    assert _serve_kwargs(server, monkeypatch)["ping_interval"] is None
-
-
-def test_the_frame_size_cap_is_still_off(server, monkeypatch):
+def test_the_frame_size_cap_is_off(server, monkeypatch):
     """An observation is megabytes; the 1 MiB default would reject it."""
     assert _serve_kwargs(server, monkeypatch)["max_size"] is None
+
+
+def test_compression_is_off(server, monkeypatch):
+    """Observations are already-compressed image bytes; deflate only costs."""
+    assert _serve_kwargs(server, monkeypatch)["compression"] is None
