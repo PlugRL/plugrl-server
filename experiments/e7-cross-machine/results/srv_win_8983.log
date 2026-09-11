@@ -1,0 +1,38 @@
+conformance server on ws://0.0.0.0:8983 - expecting 100000 exchanges, horizon 4, action dtype float32
+
+completed 1000 infer/action/feedback exchanges
+
+====================================================================
+SPEC.md conformance report
+====================================================================
+  ok    2 message is a map  (2000 checks)
+  ok    2 message_type is a string, not bytes  (2000 checks)
+  note  3.4 text is a numpy <U array, as plugrl-env-client sends  (2000 checks)
+          infer: text arrived as a list; accepted, but a policy written against the array form would see something else
+  ok    4.2 infer and feedback strictly alternate  (2000 checks)
+  ok    4.4 env indices are unique within a message  (1000 checks)
+  ok    5.2 an infer names at least one env  (1000 checks)
+  ok    5.2 env_indices is a one-dimensional integer array  (1000 checks)
+  ok    5.2 every array shares one leading dimension  (2000 checks)
+  ok    5.2 images are [n, h, w, c]  (2000 checks)
+  ok    5.2 images are uint8  (2000 checks)
+  ok    5.2 images is a map of named arrays  (2000 checks)
+  ok    5.2 infer carries data, env_indices and step_ids  (3000 checks)
+  ok    5.2 observation batch matches env_indices  (2000 checks)
+  ok    5.2 observation has exactly images, states and text  (2000 checks)
+  ok    5.2 observation is a map  (2000 checks)
+  ok    5.2 states is a map of named arrays  (2000 checks)
+  ok    5.2 step_ids matches env_indices in length  (1000 checks)
+  ok    5.4 feedback carries data, env_indices and step_ids  (3000 checks)
+  ok    5.4 feedback data has exactly its five keys  (1000 checks)
+  ok    5.4 feedback data is a map  (1000 checks)
+  ok    5.4 feedback env_indices is a one-dimensional integer array  (1000 checks)
+  ok    5.4 info is a map  (1000 checks)
+  ok    5.4 rewards is a float array of length m  (1000 checks)
+  ok    5.4 rewards is float32, as plugrl-env-client sends  (1000 checks)
+  ok    5.4 terminated is a bool array of length m  (1000 checks)
+  ok    5.4 truncated is a bool array of length m  (1000 checks)
+  FAIL  connection  (0 checks)
+          ConnectionClosedError: no close frame received or sent
+====================================================================
+1 violation(s), 1 advisory note(s)
