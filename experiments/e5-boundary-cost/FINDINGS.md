@@ -61,15 +61,24 @@ quantitative claim is the throughput median over five repetitions, below.
 
 ### 1. The boundary is cheap
 
-A VLA policy forward is tens of milliseconds. Against that, **moving a
-two-camera 224px observation across the boundary costs about 0.5 ms** - a
-single-digit percentage. That is what makes "run the environment on any
-machine" defensible on latency grounds.
+**Moving a two-camera 224px observation across the boundary costs about
+0.5 ms.** That is the measurement. Whether it is cheap depends on what it is
+being compared against, and the comparison is not measured here.
 
-The honest limit: **this is loopback, which is a lower bound.** Real
+> **The assumption this conclusion rests on.** "Cheap" means cheap relative
+> to a VLA policy forward in the tens of milliseconds. PlugRL has never run a
+> VLA - the experiments index says so under "What is missing" - so that
+> number is borrowed from the literature and not established by anything in
+> this repository. It is load-bearing: at a 30 ms forward the boundary is
+> under 2% of the step and the architecture is defensible on latency grounds;
+> at a 2 ms forward it is a fifth of the step and the conclusion flips. The
+> measurement above stands either way. The word "cheap" does not.
+
+The other honest limit: **this is loopback, which is a lower bound.** Real
 cross-machine numbers will be higher. What that adds is network round trip,
 and the serialization cost - the part PlugRL controls - is measured here and
-is small.
+is small. E7 later put a number on the difference: **+0.52 ms** once the
+bytes leave the machine.
 
 Bandwidth, for planning: 184 KiB/step x 30 Hz is about 5.4 MB/s per env
 client, so a gigabit link saturates at roughly 22 clients.
@@ -120,7 +129,7 @@ While repeating the runs, the measurement script was found to treat **failed
 runs as valid data** - it reported 118879 exchanges/s from a client that had
 failed to connect. `run-cpu-per-exchange.sh` now requires the client log to
 confirm it completed the requested number of exchanges, and discards the run
-otherwise. The n column above is valid samples only.
+otherwise. Every median above is over valid runs only.
 
 ## One configuration that could not be measured
 
