@@ -30,7 +30,7 @@ We use `uv` to manage dependencies and development environments.
 2. **Clone the repository:**
 
     ```bash
-    git clone git@github.com:PlugRL/plugrl-server.git
+    git clone https://github.com/PlugRL/plugrl-server.git
     cd plugrl-server
     ```
 
