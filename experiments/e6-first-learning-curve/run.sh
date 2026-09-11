@@ -38,14 +38,45 @@ PORT_BASE="${PORT_BASE:-8600}"
 BUFFER="${BUFFER:-4096}"
 
 SERVER_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
-CLIENT_DIR="$(cd "$SERVER_DIR/../plugrl-env-client" && pwd)"
 mkdir -p "$OUT"
 
-# Both venvs; adapt if yours live elsewhere.
-SERVER_PY="$SERVER_DIR/.venv/Scripts/python.exe"
-CLIENT_PY="$CLIENT_DIR/.venv/Scripts/python.exe"
-[ -x "$SERVER_PY" ] || SERVER_PY="$SERVER_DIR/.venv/bin/python"
-[ -x "$CLIENT_PY" ] || CLIENT_PY="$CLIENT_DIR/.venv/bin/python"
+# Finding the two interpreters, in order of preference:
+#
+#   1. PLUGRL_SERVER_PYTHON / PLUGRL_CLIENT_PYTHON, if you set them;
+#   2. a .venv beside each repository, Windows layout or POSIX layout;
+#   3. whatever `python3`/`python` is on PATH - which is the right answer when
+#      both packages are installed in one environment, as they can be.
+#
+# The env client's location is a guess (a sibling checkout) and guesses should
+# be overridable, so PLUGRL_ENV_CLIENT exists.
+CLIENT_DIR="${PLUGRL_ENV_CLIENT:-$SERVER_DIR/../plugrl-env-client}"
+[ -d "$CLIENT_DIR" ] && CLIENT_DIR="$(cd "$CLIENT_DIR" && pwd)"
+
+pick_python() {  # $1 = repo dir, $2 = override
+  local repo="$1" override="${2:-}"
+  if [ -n "$override" ]; then echo "$override"; return; fi
+  for candidate in "$repo/.venv/Scripts/python.exe" "$repo/.venv/bin/python"; do
+    if [ -x "$candidate" ]; then echo "$candidate"; return; fi
+  done
+  command -v python3 || command -v python
+}
+
+SERVER_PY="$(pick_python "$SERVER_DIR" "${PLUGRL_SERVER_PYTHON:-}")"
+CLIENT_PY="$(pick_python "$CLIENT_DIR" "${PLUGRL_CLIENT_PYTHON:-}")"
+
+# Fail now, with the reason, rather than after the first seed has silently
+# written an empty log.
+"$SERVER_PY" -c "import plugrl_server" 2>/dev/null || {
+  echo "error: $SERVER_PY cannot import plugrl_server." >&2
+  echo "       Set PLUGRL_SERVER_PYTHON to an interpreter that can." >&2
+  exit 1
+}
+"$CLIENT_PY" -c "import plugrl_env_client.envs.mujoco.mujoco_env" 2>/dev/null || {
+  echo "error: $CLIENT_PY cannot import the MuJoCo env." >&2
+  echo "       Install it with:  uv sync --extra mujoco   (in plugrl-env-client)" >&2
+  echo "       Or set PLUGRL_CLIENT_PYTHON / PLUGRL_ENV_CLIENT." >&2
+  exit 1
+}
 
 for seed in $SEEDS; do
   port=$((PORT_BASE + seed))
