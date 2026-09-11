@@ -85,6 +85,26 @@ These live in the findings files, not in git history:
   rather than quietly reworded into one that was. The reformulation that
   does hold is labelled post-hoc.
 
+## Pre-registered and not yet run
+
+Two protocols are committed with no data behind them, because the hardware
+they need has not been available. Writing them now is deliberate: a
+pre-registration is worth something only if it predates the data, and the
+cleanest moment to fix the rules is when collecting any is impossible.
+
+| | Question | Status |
+|---|---|---|
+| [`e9-many-clients`](e9-many-clients/) | What does a second, fourth and eighth env client cost one server - and does it stay correct? | Pre-registered. Needs two machines that can reach each other |
+| [`e10-vla-forward-cost`](e10-vla-forward-cost/) | What does a VLA forward actually cost, and is the boundary therefore cheap? | Pre-registered. Needs a GPU and the `openpi` extra |
+
+E9 also collects, as its one-client cell on a second machine, **the L2 rung
+E7 could not reach**. E10 measures **the denominator E5 borrowed** - the
+number that decides whether "the boundary is cheap" is a finding or a hope.
+
+E3 is pre-registered in the same way and has been for longer, which is the
+honest reason to say that a pre-registration is a commitment and not an
+achievement.
+
 ## What is missing
 
 - **A true cross-machine number.** E7 got as far as one virtual machine to
