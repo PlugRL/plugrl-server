@@ -1,0 +1,8 @@
+# Keep the logs and the extracted curve; leave the weights out of git.
+#
+# A run writes one checkpoint per save-interval learn cycles, each holding
+# model.safetensors plus an optimizer state - a few megabytes apiece, tens of
+# megabytes across three seeds, and none of it is what a reader of this
+# experiment needs. The curve itself is extracted to summary.tsv.
+results/*/
+!results/*.log

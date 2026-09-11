@@ -1,11 +1,14 @@
 [project]
 name = "plugrl-server"
 version = "0.1.0"
-description = ""
+description = "PlugRL training server: policies, algorithms, and batched inference over WebSocket."
 authors = [
-    {name = "chenhao lu", email = "luch21@mails.tsinghua.edu.cn"}
+    {name = "chenhao lu", email = "luch21@mails.tsinghua.edu.cn"},
+    {name = "Zuo Gou"}
 ]
 readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
 requires-python = ">=3.11,<3.14"
 dependencies = [
     "websockets>=15.0.1,<16.0.0",
@@ -18,10 +21,9 @@ dependencies = [
     "pyyaml>=6.0.3,<7.0.0",
     "swanlab>=0.6.10,<0.7.0",
     "wandb>=0.22.0,<0.23.0",
-    "plugrl-protocol @ git+https://github.com/PlugRL/plugrl-protocol.git",
+    "plugrl-protocol @ git+https://github.com/PlugRL/plugrl-protocol.git@840296ecbe39dddc6fb9f3ac92479decac0797bd",
     "tensordict>=0.10.0,<0.11.0",
     "ray>=2.51.1,<3.0.0",
-    "pytest>=8.4.2,<9.0.0",
     "tensorboard>=2.20.0,<3.0.0",
     "tqdm>=4.67.1,<5.0.0",
 ]
@@ -32,21 +34,27 @@ plugrl-run-server-ray = "plugrl_server.cli_ray:main"
 
 [project.optional-dependencies]
 dppo = [
-    "dppo @ git+https://github.com/CTP314/dppo.git",
+    "dppo @ git+https://github.com/CTP314/dppo.git@89ac4169b3c145a54ce4dc2f8f55ef6cc8980b1c",
 ]
 openpi = [
     "huggingface-hub<1.0",
     "safetensors<0.6.0",
-    "lerobot @ git+https://github.com/huggingface/lerobot.git@ed83cbd",
+    "lerobot @ git+https://github.com/huggingface/lerobot.git@ed83cbd4f2091a3e97cdd0c48cc657020c037240",
 ]
 reinflow = [
-    "reinflow @ git+https://github.com/CTP314/ReinFlow.git",
+    "reinflow @ git+https://github.com/CTP314/ReinFlow.git@1307057af17a065f4bfd752b1000558d0514da3f",
 ]
 
 [dependency-groups]
 dev = [
     "pre-commit>=4.5.1,<5.0.0",
+    "pytest>=8.4.2,<9.0.0",
 ]
+
+[tool.pytest.ini_options]
+# Without this, pytest walks into third_party/openpi and collects that
+# submodule’s own test suite, whose dependencies are not installed here.
+testpaths = ["tests"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -56,5 +64,5 @@ where = ["src"]
 include = ["plugrl_server*"]
 
 [build-system]
-requires = ["setuptools>=69", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"

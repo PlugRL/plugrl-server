@@ -179,3 +179,7 @@ def _main(args: Args):
 
 def main():
     _main(cli())
+
+
+if __name__ == "__main__":
+    main()

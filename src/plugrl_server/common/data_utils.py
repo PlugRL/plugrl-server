@@ -252,6 +252,34 @@ def torch_tree_batch_size(value: TorchTree) -> int:
     raise TypeError("TorchTree observation must expose a batch dimension.")
 
 
+def first_array_in_tree(value: Any) -> np.ndarray | None:
+    if isinstance(value, np.ndarray):
+        return value
+    if isinstance(value, Mapping):
+        for item in value.values():
+            array = first_array_in_tree(item)
+            if array is not None:
+                return array
+    return None
+
+
+def numpy_tree_batch_size(value: Any) -> int:
+    """Batch size of a numpy observation tree.
+
+    Reads the leading dimension of the first array found, at any depth. Taking
+    len() of the tree's first value instead would measure the number of keys
+    in a nested group - the number of cameras, say - which is a different
+    number that happens to look plausible.
+    """
+    array = first_array_in_tree(value)
+    if array is not None and array.ndim >= 1:
+        return int(array.shape[0])
+    raise TypeError(
+        "Observation must contain at least one array with a batch dimension; "
+        f"got {type(value).__name__}."
+    )
+
+
 def torch_tree_to_device(tree: TorchTree, device: torch.device) -> TorchTree:
     if isinstance(tree, torch.Tensor):
         tensor_tree = cast(torch.Tensor, tree)
@@ -263,7 +291,9 @@ def torch_tree_to_device(tree: TorchTree, device: torch.device) -> TorchTree:
     )
 
 
-def torch_tree_repeat_interleave(tree: TorchTree, repeats: int, dim: int = 0) -> TorchTree:
+def torch_tree_repeat_interleave(
+    tree: TorchTree, repeats: int, dim: int = 0
+) -> TorchTree:
     if isinstance(tree, torch.Tensor):
         tensor_tree = cast(torch.Tensor, tree)
         return torch.repeat_interleave(tensor_tree, repeats, dim=dim)

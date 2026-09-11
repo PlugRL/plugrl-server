@@ -1,0 +1,32 @@
+PlugRL
+Copyright 2026 The PlugRL Authors
+
+This product includes software developed by the RLinf Authors
+(https://github.com/RLinf/RLinf), Copyright 2025 The RLinf Authors,
+licensed under the Apache License, Version 2.0.
+
+  src/plugrl_server/policy/openpi/value_head.py is taken from RLinf and
+  retains its Apache-2.0 header.
+
+The following are pinned build- and run-time dependencies rather than code
+included here, and carry their own licences at their own repositories. They
+are listed because the algorithms in this package are implementations of
+what they published, and a reader deserves to be pointed at the originals:
+
+  DPPO      https://github.com/irom-princeton/dppo
+            Official implementation of "Diffusion Policy Policy
+            Optimization" (2024)
+            (pinned via a fork at github.com/CTP314/dppo)
+
+  ReinFlow  https://github.com/ReinFlow/ReinFlow
+            Official implementation of "ReinFlow: Fine-tuning Flow Policy
+            with Online Reinforcement Learning" (NeurIPS 2025)
+            (pinned via a fork at github.com/CTP314/ReinFlow)
+
+  openpi    https://github.com/Physical-Intelligence/openpi
+            Copyright 2024 Physical Intelligence, Apache-2.0. Vendored as a
+            git submodule at third_party/openpi, which retains its own
+            LICENSE; nothing in it has been modified.
+
+The wire format in plugrl-protocol is openpi's, byte for byte, and is
+attributed in that repository's NOTICE.

@@ -1,0 +1,56 @@
+# case:        conflict-d4rl-x-reinflow
+# expectation: FAILED
+# python:      3.11
+# date:        2026-09-09T20:37:03Z
+# uv:          uv 0.9.8 (85c5d3228 2025-11-07)
+
+--- pyproject.toml ---
+[project]
+name = "e1-conflict-d4rl-x-reinflow"
+version = "0.0.0"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+
+    "websockets>=15.0.1,<16.0.0",
+    "tyro>=0.9.32,<0.10.0",
+    "loguru>=0.7.3,<0.8.0",
+    "torch>=2.7.0,<2.8.0",
+    "safetensors>=0.5.3,<0.6.0",
+    "packaging>=25.0,<26.0",
+    "python-dateutil>=2.9.0.post0,<3.0.0",
+    "pyyaml>=6.0.3,<7.0.0",
+    "swanlab>=0.6.10,<0.7.0",
+    "wandb>=0.22.0,<0.23.0",
+    "plugrl-protocol @ git+https://github.com/PlugRL/plugrl-protocol.git@c7961da3ca050717ad3a01721f00afa1ed29bf47",
+    "tensordict>=0.10.0,<0.11.0",
+    "ray>=2.51.1,<3.0.0",
+    "tensorboard>=2.20.0,<3.0.0",
+    "tqdm>=4.67.1,<5.0.0",
+
+    "loguru>=0.7.3,<0.8.0",
+    "gymnasium>=1.2.0,<2.0.0",
+    "dm-tree>=0.1.9,<0.2.0",
+    "websockets>=15.0.1,<16.0.0",
+    "msgpack>=1.1.1,<2.0.0",
+    "tyro>=0.9.31,<0.10.0",
+    "plugrl-protocol @ git+https://github.com/PlugRL/plugrl-protocol.git@c7961da3ca050717ad3a01721f00afa1ed29bf47",
+    "pandas>=2.3.3,<3.0.0",
+    "imageio[ffmpeg]>=2.37.2,<3.0.0",
+    "reinflow @ git+https://github.com/CTP314/ReinFlow.git@1307057af17a065f4bfd752b1000558d0514da3f",
+    "cython<3",
+    "d4rl>=1.1,<2.0.0",
+    "patchelf>=0.17.2.4,<0.18.0",
+    "gymnasium-robotics[mujoco-py]>=1.4.1,<2.0.0",
+
+]
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+--- uv lock ---
+Using CPython [36m3.11.14[39m[36m[39m
+[2mResolved [1m146 packages[0m [2min 235ms[0m[0m
+[1m[32mAdded[39m[0m imageio-ffmpeg v0.6.0
+[1m[32mUpdated[39m[0m pandas v3.0.5 -> v2.3.3
+[1m[32mAdded[39m[0m pytz v2026.3.post1

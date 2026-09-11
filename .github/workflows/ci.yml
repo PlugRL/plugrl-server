@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # This repository's .pre-commit-config pins
+      # default_language_version: python3.11, and pre-commit builds its hook
+      # environments with a system interpreter - setup-uv does not provide
+      # one, so without this the hooks fail with "failed to find interpreter
+      # for python_spec='python3.11'".
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Run pre-commit
+        run: uvx pre-commit run --all-files --show-diff-on-failure
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      # third_party/openpi is deliberately not checked out: tool.pytest
+      # testpaths limits collection to tests/, and nothing there needs it.
+      - name: Sync
+        run: uv sync --frozen
+
+      - name: Test
+        run: uv run pytest -q
+
+  harness:
+    # The sweep harness has no dependencies beyond the standard library, so it
+    # tests on its own rather than waiting for a torch install.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Test
+        working-directory: harness
+        run: uvx --with pytest python -m pytest tests -q

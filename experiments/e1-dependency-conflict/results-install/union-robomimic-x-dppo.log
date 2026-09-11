@@ -1,0 +1,542 @@
+# case:    union-robomimic-x-dppo
+# date:    2026-09-09T20:52:40Z
+# uv:      uv 0.9.9
+# python:  3.11
+# deps:
+#   websockets>=15.0.1,<16.0.0
+#   tyro>=0.9.32,<0.10.0
+#   loguru>=0.7.3,<0.8.0
+#   torch>=2.7.0,<2.8.0
+#   safetensors>=0.5.3,<0.6.0
+#   packaging>=25.0,<26.0
+#   python-dateutil>=2.9.0.post0,<3.0.0
+#   pyyaml>=6.0.3,<7.0.0
+#   swanlab>=0.6.10,<0.7.0
+#   wandb>=0.22.0,<0.23.0
+#   plugrl-protocol @ file:///mnt/d/75128/Desktop/plugrl-work/plugrl-protocol
+#   tensordict>=0.10.0,<0.11.0
+#   ray>=2.51.1,<3.0.0
+#   tensorboard>=2.20.0,<3.0.0
+#   tqdm>=4.67.1,<5.0.0
+#   loguru>=0.7.3,<0.8.0
+#   gymnasium>=1.2.0,<2.0.0
+#   dm-tree>=0.1.9,<0.2.0
+#   websockets>=15.0.1,<16.0.0
+#   msgpack>=1.1.1,<2.0.0
+#   tyro>=0.9.31,<0.10.0
+#   plugrl-protocol @ file:///mnt/d/75128/Desktop/plugrl-work/plugrl-protocol
+#   pandas>=2.3.3,<3.0.0
+#   imageio[ffmpeg]>=2.37.2,<3.0.0
+#   dppo @ git+https://github.com/CTP314/dppo.git@89ac4169b3c145a54ce4dc2f8f55ef6cc8980b1c
+#   cython<3
+#   d4rl>=1.1,<2.0.0
+#   patchelf>=0.17.2.4,<0.18.0
+#   robomimic==0.3.0
+#   robosuite<1.5.0
+#   PyOpenGL==3.1.4
+
+Using CPython 3.11.14
+Creating virtual environment at: /home/gotham/.e1-install/union-robomimic-x-dppo
+Activate with: source /home/gotham/.e1-install/union-robomimic-x-dppo/bin/activate
+Using Python 3.11.14 environment at: /home/gotham/.e1-install/union-robomimic-x-dppo
+Resolved 150 packages in 1.47s
+   Building plugrl-protocol @ file:///mnt/d/75128/Desktop/plugrl-work/plugrl-protocol
+   Updating https://github.com/CTP314/dppo.git (89ac4169b3c145a54ce4dc2f8f55ef6cc8980b1c)
+   Building pyopengl==3.1.4
+   Building egl-probe==1.0.2
+   Building evdev==2.0.0
+Downloading robosuite (184.6MiB)
+Downloading opencv-python (70.4MiB)
+Downloading llvmlite (57.1MiB)
+Downloading numba (3.6MiB)
+Downloading torchvision (7.1MiB)
+    Updated https://github.com/CTP314/dppo.git (89ac4169b3c145a54ce4dc2f8f55ef6cc8980b1c)
+   Building dppo @ git+https://github.com/CTP314/dppo.git@89ac4169b3c145a54ce4dc2f8f55ef6cc8980b1c
+ Downloading numba
+  × Failed to build `egl-probe==1.0.2`
+  ├─▶ The build backend returned an error
+  ╰─▶ Call to `setuptools.build_meta:__legacy__.build_wheel` failed (exit
+      status: 1)
+
+      [stdout]
+      running bdist_wheel
+      running build
+      running build_py
+      running egg_info
+      writing egl_probe.egg-info/PKG-INFO
+      writing dependency_links to egl_probe.egg-info/dependency_links.txt
+      writing top-level names to egl_probe.egg-info/top_level.txt
+      reading manifest file 'egl_probe.egg-info/SOURCES.txt'
+      reading manifest template 'MANIFEST.in'
+      adding license file 'LICENSE'
+      writing manifest file 'egl_probe.egg-info/SOURCES.txt'
+      running build_ext
+
+      [stderr]
+      /home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/_distutils/dist.py:318:
+      UserWarning: Unknown distribution option: 'tests_require'
+        warnings.warn(msg)
+      /home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/command/build_py.py:215:
+      _Warning: Package 'egl_probe.glad' is absent from the `packages`
+      configuration.
+      !!
+
+      
+      ********************************************************************************
+              ############################
+              # Package would be ignored #
+              ############################
+              Python recognizes 'egl_probe.glad' as an importable package[^1],
+              but it is absent from setuptools' `packages` configuration.
+
+              This leads to an ambiguous overall configuration. If you want to
+      distribute this
+              package, please make sure that 'egl_probe.glad' is explicitly
+      added
+              to the `packages` configuration field.
+
+              Alternatively, you can also rely on setuptools' discovery
+      methods
+              (for example by using
+      `find_namespace_packages(...)`/`find_namespace:`
+              instead of `find_packages(...)`/`find:`).
+
+              You can read more about "package discovery" on setuptools
+      documentation page:
+
+              -
+      https://setuptools.pypa.io/en/latest/userguide/package_discovery.html
+
+              If you don't want 'egl_probe.glad' to be distributed and are
+              already explicitly excluding 'egl_probe.glad' via
+              `find_namespace_packages(...)/find_namespace` or
+      `find_packages(...)/find`,
+              you can try to use `exclude_package_data`, or
+      `include-package-data=False` in
+              combination with a more fine grained `package-data`
+      configuration.
+
+              You can read more about "package data files" on setuptools
+      documentation page:
+
+              - https://setuptools.pypa.io/en/latest/userguide/datafiles.html
+
+
+              [^1]: For Python, any directory (with suitable naming) can be
+      imported,
+                    even if it does not contain any `.py` files.
+                    On the other hand, currently there is no concept of
+      package data
+                    directory, all directories are treated like packages.
+      
+      ********************************************************************************
+
+      !!
+        check.warn(importable)
+      /home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/command/build_py.py:215:
+      _Warning: Package 'egl_probe.glad.EGL' is absent from the `packages`
+      configuration.
+      !!
+
+      
+      ********************************************************************************
+              ############################
+              # Package would be ignored #
+              ############################
+              Python recognizes 'egl_probe.glad.EGL' as an importable
+      package[^1],
+              but it is absent from setuptools' `packages` configuration.
+
+              This leads to an ambiguous overall configuration. If you want to
+      distribute this
+              package, please make sure that 'egl_probe.glad.EGL' is
+      explicitly added
+              to the `packages` configuration field.
+
+              Alternatively, you can also rely on setuptools' discovery
+      methods
+              (for example by using
+      `find_namespace_packages(...)`/`find_namespace:`
+              instead of `find_packages(...)`/`find:`).
+
+              You can read more about "package discovery" on setuptools
+      documentation page:
+
+              -
+      https://setuptools.pypa.io/en/latest/userguide/package_discovery.html
+
+              If you don't want 'egl_probe.glad.EGL' to be distributed and are
+              already explicitly excluding 'egl_probe.glad.EGL' via
+              `find_namespace_packages(...)/find_namespace` or
+      `find_packages(...)/find`,
+              you can try to use `exclude_package_data`, or
+      `include-package-data=False` in
+              combination with a more fine grained `package-data`
+      configuration.
+
+              You can read more about "package data files" on setuptools
+      documentation page:
+
+              - https://setuptools.pypa.io/en/latest/userguide/datafiles.html
+
+
+              [^1]: For Python, any directory (with suitable naming) can be
+      imported,
+                    even if it does not contain any `.py` files.
+                    On the other hand, currently there is no concept of
+      package data
+                    directory, all directories are treated like packages.
+      
+      ********************************************************************************
+
+      !!
+        check.warn(importable)
+      /home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/command/build_py.py:215:
+      _Warning: Package 'egl_probe.glad.KHR' is absent from the `packages`
+      configuration.
+      !!
+
+      
+      ********************************************************************************
+              ############################
+              # Package would be ignored #
+              ############################
+              Python recognizes 'egl_probe.glad.KHR' as an importable
+      package[^1],
+              but it is absent from setuptools' `packages` configuration.
+
+              This leads to an ambiguous overall configuration. If you want to
+      distribute this
+              package, please make sure that 'egl_probe.glad.KHR' is
+      explicitly added
+              to the `packages` configuration field.
+
+              Alternatively, you can also rely on setuptools' discovery
+      methods
+              (for example by using
+      `find_namespace_packages(...)`/`find_namespace:`
+              instead of `find_packages(...)`/`find:`).
+
+              You can read more about "package discovery" on setuptools
+      documentation page:
+
+              -
+      https://setuptools.pypa.io/en/latest/userguide/package_discovery.html
+
+              If you don't want 'egl_probe.glad.KHR' to be distributed and are
+              already explicitly excluding 'egl_probe.glad.KHR' via
+              `find_namespace_packages(...)/find_namespace` or
+      `find_packages(...)/find`,
+              you can try to use `exclude_package_data`, or
+      `include-package-data=False` in
+              combination with a more fine grained `package-data`
+      configuration.
+
+              You can read more about "package data files" on setuptools
+      documentation page:
+
+              - https://setuptools.pypa.io/en/latest/userguide/datafiles.html
+
+
+              [^1]: For Python, any directory (with suitable naming) can be
+      imported,
+                    even if it does not contain any `.py` files.
+                    On the other hand, currently there is no concept of
+      package data
+                    directory, all directories are treated like packages.
+      
+      ********************************************************************************
+
+      !!
+        check.warn(importable)
+      /home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/command/build_py.py:215:
+      _Warning: Package 'egl_probe.glad.X11' is absent from the `packages`
+      configuration.
+      !!
+
+      
+      ********************************************************************************
+              ############################
+              # Package would be ignored #
+              ############################
+              Python recognizes 'egl_probe.glad.X11' as an importable
+      package[^1],
+              but it is absent from setuptools' `packages` configuration.
+
+              This leads to an ambiguous overall configuration. If you want to
+      distribute this
+              package, please make sure that 'egl_probe.glad.X11' is
+      explicitly added
+              to the `packages` configuration field.
+
+              Alternatively, you can also rely on setuptools' discovery
+      methods
+              (for example by using
+      `find_namespace_packages(...)`/`find_namespace:`
+              instead of `find_packages(...)`/`find:`).
+
+              You can read more about "package discovery" on setuptools
+      documentation page:
+
+              -
+      https://setuptools.pypa.io/en/latest/userguide/package_discovery.html
+
+              If you don't want 'egl_probe.glad.X11' to be distributed and are
+              already explicitly excluding 'egl_probe.glad.X11' via
+              `find_namespace_packages(...)/find_namespace` or
+      `find_packages(...)/find`,
+              you can try to use `exclude_package_data`, or
+      `include-package-data=False` in
+              combination with a more fine grained `package-data`
+      configuration.
+
+              You can read more about "package data files" on setuptools
+      documentation page:
+
+              - https://setuptools.pypa.io/en/latest/userguide/datafiles.html
+
+
+              [^1]: For Python, any directory (with suitable naming) can be
+      imported,
+                    even if it does not contain any `.py` files.
+                    On the other hand, currently there is no concept of
+      package data
+                    directory, all directories are treated like packages.
+      
+      ********************************************************************************
+
+      !!
+        check.warn(importable)
+      /home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/command/build_py.py:215:
+      _Warning: Package 'egl_probe.glad.X11.extensions' is absent from the
+      `packages` configuration.
+      !!
+
+      
+      ********************************************************************************
+              ############################
+              # Package would be ignored #
+              ############################
+              Python recognizes 'egl_probe.glad.X11.extensions' as an
+      importable package[^1],
+              but it is absent from setuptools' `packages` configuration.
+
+              This leads to an ambiguous overall configuration. If you want to
+      distribute this
+              package, please make sure that 'egl_probe.glad.X11.extensions'
+      is explicitly added
+              to the `packages` configuration field.
+
+              Alternatively, you can also rely on setuptools' discovery
+      methods
+              (for example by using
+      `find_namespace_packages(...)`/`find_namespace:`
+              instead of `find_packages(...)`/`find:`).
+
+              You can read more about "package discovery" on setuptools
+      documentation page:
+
+              -
+      https://setuptools.pypa.io/en/latest/userguide/package_discovery.html
+
+              If you don't want 'egl_probe.glad.X11.extensions' to be
+      distributed and are
+              already explicitly excluding 'egl_probe.glad.X11.extensions' via
+              `find_namespace_packages(...)/find_namespace` or
+      `find_packages(...)/find`,
+              you can try to use `exclude_package_data`, or
+      `include-package-data=False` in
+              combination with a more fine grained `package-data`
+      configuration.
+
+              You can read more about "package data files" on setuptools
+      documentation page:
+
+              - https://setuptools.pypa.io/en/latest/userguide/datafiles.html
+
+
+              [^1]: For Python, any directory (with suitable naming) can be
+      imported,
+                    even if it does not contain any `.py` files.
+                    On the other hand, currently there is no concept of
+      package data
+                    directory, all directories are treated like packages.
+      
+      ********************************************************************************
+
+      !!
+        check.warn(importable)
+      /home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/command/build_py.py:215:
+      _Warning: Package 'egl_probe.glad.glad' is absent from the `packages`
+      configuration.
+      !!
+
+      
+      ********************************************************************************
+              ############################
+              # Package would be ignored #
+              ############################
+              Python recognizes 'egl_probe.glad.glad' as an importable
+      package[^1],
+              but it is absent from setuptools' `packages` configuration.
+
+              This leads to an ambiguous overall configuration. If you want to
+      distribute this
+              package, please make sure that 'egl_probe.glad.glad' is
+      explicitly added
+              to the `packages` configuration field.
+
+              Alternatively, you can also rely on setuptools' discovery
+      methods
+              (for example by using
+      `find_namespace_packages(...)`/`find_namespace:`
+              instead of `find_packages(...)`/`find:`).
+
+              You can read more about "package discovery" on setuptools
+      documentation page:
+
+              -
+      https://setuptools.pypa.io/en/latest/userguide/package_discovery.html
+
+              If you don't want 'egl_probe.glad.glad' to be distributed and
+      are
+              already explicitly excluding 'egl_probe.glad.glad' via
+              `find_namespace_packages(...)/find_namespace` or
+      `find_packages(...)/find`,
+              you can try to use `exclude_package_data`, or
+      `include-package-data=False` in
+              combination with a more fine grained `package-data`
+      configuration.
+
+              You can read more about "package data files" on setuptools
+      documentation page:
+
+              - https://setuptools.pypa.io/en/latest/userguide/datafiles.html
+
+
+              [^1]: For Python, any directory (with suitable naming) can be
+      imported,
+                    even if it does not contain any `.py` files.
+                    On the other hand, currently there is no concept of
+      package data
+                    directory, all directories are treated like packages.
+      
+      ********************************************************************************
+
+      !!
+        check.warn(importable)
+      Traceback (most recent call last):
+        File "<string>", line 21, in run
+        File
+      "/home/gotham/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/subprocess.py",
+      line 466, in check_output
+          return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File
+      "/home/gotham/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/subprocess.py",
+      line 548, in run
+          with Popen(*popenargs, **kwargs) as process:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File
+      "/home/gotham/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/subprocess.py",
+      line 1026, in __init__
+          self._execute_child(args, executable, preexec_fn, close_fds,
+        File
+      "/home/gotham/.local/share/uv/python/cpython-3.11.14-linux-x86_64-gnu/lib/python3.11/subprocess.py",
+      line 1955, in _execute_child
+          raise child_exception_type(errno_num, err_msg, err_filename)
+      FileNotFoundError: [Errno 2] No such file or directory: 'cmake'
+
+      During handling of the above exception, another exception occurred:
+
+      Traceback (most recent call last):
+        File "<string>", line 11, in <module>
+        File
+      "/home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/build_meta.py",
+      line 438, in build_wheel
+          return _build(['bdist_wheel'])
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+        File
+      "/home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/build_meta.py",
+      line 429, in _build
+          return self._build_with_temp_dir(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File
+      "/home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/build_meta.py",
+      line 410, in _build_with_temp_dir
+          self.run_setup()
+        File
+      "/home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/build_meta.py",
+      line 520, in run_setup
+          super().run_setup(setup_script=setup_script)
+        File
+      "/home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/build_meta.py",
+      line 317, in run_setup
+          exec(code, locals())  # noqa: S102 # exec is intentional here
+          ^^^^^^^^^^^^^^^^^^^^
+        File "<string>", line 50, in <module>
+        File
+      "/home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/__init__.py",
+      line 117, in setup
+          return distutils.core.setup(**attrs)  # type: ignore[return-value]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File
+      "/home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/_distutils/core.py",
+      line 168, in setup
+          return run_commands(dist)
+                 ^^^^^^^^^^^^^^^^^^
+        File
+      "/home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/_distutils/core.py",
+      line 184, in run_commands
+          dist.run_commands()
+        File
+      "/home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/_distutils/dist.py",
+      line 1028, in run_commands
+          self.run_command(cmd)
+        File
+      "/home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/dist.py",
+      line 1106, in run_command
+          super().run_command(command)
+        File
+      "/home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/_distutils/dist.py",
+      line 1047, in run_command
+          cmd_obj.run()
+        File
+      "/home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/command/bdist_wheel.py",
+      line 385, in run
+          self.run_command("build")
+        File
+      "/home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/_distutils/cmd.py",
+      line 342, in run_command
+          self.distribution.run_command(command)
+        File
+      "/home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/dist.py",
+      line 1106, in run_command
+          super().run_command(command)
+        File
+      "/home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/_distutils/dist.py",
+      line 1047, in run_command
+          cmd_obj.run()
+        File
+      "/home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/_distutils/command/build.py",
+      line 137, in run
+          self.run_command(cmd_name)
+        File
+      "/home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/_distutils/cmd.py",
+      line 342, in run_command
+          self.distribution.run_command(command)
+        File
+      "/home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/dist.py",
+      line 1106, in run_command
+          super().run_command(command)
+        File
+      "/home/gotham/.cache/uv/builds-v0/.tmptHDj1P/lib/python3.11/site-packages/setuptools/_distutils/dist.py",
+      line 1047, in run_command
+          cmd_obj.run()
+        File "<string>", line 23, in run
+      RuntimeError: CMake must be installed.
+
+      hint: This usually indicates a problem with the package or the build
+      environment.
+  help: `egl-probe` (v1.0.2) was included because `robomimic` (v0.3.0) depends
+        on `egl-probe`

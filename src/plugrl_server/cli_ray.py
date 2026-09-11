@@ -18,6 +18,12 @@ from plugrl_server.cli import (
 )
 from plugrl_server.policy.registration import make_policy
 from plugrl_server.algorithm.registration import make_algo
+
+# DDPAlgorithm lives in algorithm.distributed, which is where every other
+# module imports it from. This one looked for it on base_algorithm, where
+# it has never been, so the advertised `plugrl-run-server-ray` died with
+# AttributeError before it could start.
+from plugrl_server.algorithm.distributed import DDPAlgorithm
 from plugrl_server.common.logging_utils import configure_logging, get_logger
 from plugrl_server.common.metrics import (
     close_metric_sink_and_tracker,
@@ -77,7 +83,7 @@ def _main(args: RayArgs):
         ),
     )
     algo = make_algo(args.algo_uid, config=args.algo, policy=policy)
-    assert isinstance(algo, plugrl_server.algorithm.base_algorithm.DDPAlgorithm), (
+    assert isinstance(algo, DDPAlgorithm), (
         f"Algorithm {args.algo_uid} is not a DDPAlgorithm."
     )
     if args.resume:
@@ -126,3 +132,7 @@ def _main(args: RayArgs):
 
 def main():
     _main(cli())
+
+
+if __name__ == "__main__":
+    main()

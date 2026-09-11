@@ -2,6 +2,8 @@ import dataclasses
 import numpy as np
 import torch
 
+from plugrl_server.common.data_utils import numpy_tree_batch_size
+
 from .registration import register_policy_config, register_policy
 from .base_torch_policy import BaseTorchPolicyConfig, BaseTorchPolicy
 from .state import PolicyRuntimeState
@@ -53,8 +55,7 @@ class DummyPolicy(BaseTorchPolicy):
     def _infer_batch_size(self, obs: dict) -> int:
         if not obs:
             return 1
-        first_value = next(iter(obs.values()))
-        return len(first_value)
+        return numpy_tree_batch_size(obs)
 
     def _get_value(self, obs: torch.Tensor | dict) -> torch.Tensor:
         # Return a zero value per batch element. Accept raw dict or tensor input.

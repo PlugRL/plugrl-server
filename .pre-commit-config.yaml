@@ -1,7 +1,9 @@
 # See https://pre-commit.com for more information
 # Install: uv sync --group dev && uv run pre-commit install
 
-exclude: '^(checkpoints/|pretrains/|swanlog/|third_party/|\.venv/|dist/|build/|\.mypy_cache/|\.pytest_cache/|\.ruff_cache/)'
+# experiments/*/results* holds captured run logs. They are evidence, not
+# source: a whitespace hook rewriting them would quietly alter the record.
+exclude: '^(checkpoints/|pretrains/|swanlog/|third_party/|experiments/[^/]+/results[^/]*/|\.venv/|dist/|build/|\.mypy_cache/|\.pytest_cache/|\.ruff_cache/)'
 
 default_language_version:
   python: python3.11

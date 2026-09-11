@@ -26,6 +26,7 @@ from plugrl_server.common.progress import ProgressReporter
 from plugrl_server.policy.state import slice_policy_step_state
 from plugrl_server.server.inference_coordinator import InferenceCoordinator
 from plugrl_server.server.lifecycle import ServerLifecycle
+from plugrl_server.server.metadata import build_server_metadata
 from plugrl_server.server.protocol import (
     ActionMessage,
     MetadataMessage,
@@ -40,7 +41,14 @@ from plugrl_server.server.training_backend import RayTrainingBackend
 logger = get_logger(__name__)
 
 
-SCHEDULER_SLEEP_INTERVAL = 0.001  # seconds
+# The scheduler wakes on this interval to look for queued inference requests,
+# so it also sets the floor on how long a request waits before anyone sees it.
+# At 1 ms that wait was two thirds of the measured round trip. Lowering it to
+# 0.1 ms measured 1.76x throughput (457 -> 803 exchanges/s, medians of five
+# runs, ranges 425-470 and 692-892), 15% less CPU per exchange, and no change
+# in idle CPU. 0.01 ms showed no reliable further gain.
+# See experiments/e5-boundary-cost/FINDINGS.md.
+SCHEDULER_SLEEP_INTERVAL = 0.0001  # seconds
 
 
 class ServerStoppingError(RuntimeError):
@@ -67,7 +75,10 @@ class RayAgentServer:
 
         self._host = host
         self._port = port
-        self._metadata = metadata or {}
+        # SPEC.md section 5.1: the client reads this before it can send
+        # anything, so it is the only place it can learn the action shape
+        # without being told out of band. Anything the caller passes wins.
+        self._metadata = build_server_metadata(inference_algorithm, extra=metadata)
 
         self._inference = InferenceCoordinator(
             stopping_error_factory=ServerStoppingError,

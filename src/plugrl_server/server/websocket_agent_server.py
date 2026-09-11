@@ -21,6 +21,7 @@ from plugrl_server.common.progress import ProgressReporter
 from plugrl_server.policy.state import slice_policy_step_state
 from plugrl_server.server.inference_coordinator import InferenceCoordinator
 from plugrl_server.server.lifecycle import ServerLifecycle
+from plugrl_server.server.metadata import build_server_metadata
 from plugrl_server.server.protocol import (
     ActionMessage,
     MetadataMessage,
@@ -34,9 +35,20 @@ from plugrl_server.server.training_backend import LocalTrainingBackend
 
 logger = get_logger(__name__)
 
-SCHEDULER_SLEEP_INTERVAL = 0.001  # seconds
+# The scheduler wakes on this interval to look for queued inference requests,
+# so it also sets the floor on how long a request waits before anyone sees it.
+# At 1 ms that wait was two thirds of the measured round trip. Lowering it to
+# 0.1 ms measured 1.76x throughput (457 -> 803 exchanges/s, medians of five
+# runs, ranges 425-470 and 692-892), 15% less CPU per exchange, and no change
+# in idle CPU. 0.01 ms showed no reliable further gain.
+# See experiments/e5-boundary-cost/FINDINGS.md.
+SCHEDULER_SLEEP_INTERVAL = 0.0001  # seconds
 INFER_READY_TIMEOUT = 5.0  # seconds to wait for full infer batch before warning
 FEEDBACK_WAIT_TIMEOUT = 60.0  # seconds to wait for client feedback before closing
+# How long a shutdown will wait for the model lock in order to write a final
+# checkpoint. Long enough for a learn step to notice it has been asked to
+# stop, short enough that Ctrl-C still feels like Ctrl-C.
+SHUTDOWN_SAVE_TIMEOUT = 30.0  # seconds
 
 
 class ServerStoppingError(RuntimeError):
@@ -61,7 +73,10 @@ class WebSocketAgentServer:
         self._metric_sink = metric_sink
         self._host = host
         self._port = port
-        self._metadata = metadata or {}
+        # SPEC.md section 5.1: the client reads this before it can send
+        # anything, so it is the only place it can learn the action shape
+        # without being told out of band. Anything the caller passes wins.
+        self._metadata = build_server_metadata(algorithm, extra=metadata)
 
         self._inference = InferenceCoordinator(
             stopping_error_factory=ServerStoppingError,
@@ -115,8 +130,48 @@ class WebSocketAgentServer:
                 f"pending_futures={pending_futures}, drained_requests={drained_requests}"
             )
 
+    async def _save_on_exit(self) -> None:
+        """Write a checkpoint on the way out, so an interrupted run resumes.
+
+        Periodic saving is the algorithm's decision and the gap can be very
+        large: FPO's default is one save per ten learn cycles, and at its
+        default buffer size that is 9.8 million environment steps - hours on
+        a CPU. A run stopped before the first of those lost everything, and
+        stopping a run early is the normal case, not the exception.
+
+        Three things this deliberately does not do. It does not save after a
+        fatal error, because the state that produced one is not state worth
+        resuming from. It does not save when the algorithm stopped of its own
+        accord, because `_run_control_cycle` has just written a checkpoint at
+        that same step and doing it again only writes the model twice and
+        logs it twice. And it does not wait indefinitely: the model lock may
+        be held by a learn step, which is asked to stop but may take a moment
+        to notice, and a shutdown that hangs is worse than a lost checkpoint.
+        """
+        if self._lifecycle.fatal_reported:
+            return
+        if self._lifecycle.close_reason == SERVER_STOP_REASON:
+            return
+        try:
+            await asyncio.wait_for(
+                self._save_under_lock(), timeout=SHUTDOWN_SAVE_TIMEOUT
+            )
+            logger.info("Checkpoint written during shutdown.")
+        except asyncio.TimeoutError:
+            logger.warning(
+                f"Gave up writing a shutdown checkpoint after "
+                f"{SHUTDOWN_SAVE_TIMEOUT:.0f}s; the model lock was still held."
+            )
+        except Exception as exc:  # noqa: BLE001 - never block shutdown
+            logger.warning(f"Could not write a checkpoint during shutdown: {exc}")
+
+    async def _save_under_lock(self) -> None:
+        async with self._model_lock:
+            await self._training.process_save()
+
     async def _shutdown(self, scheduler_task: asyncio.Task, reason: str) -> None:
         self._lifecycle.shutdown_reason = reason
+        await self._save_on_exit()
         await self._lifecycle.shutdown(
             scheduler_task=scheduler_task,
             server=self._server,
