@@ -120,7 +120,7 @@ rather than failing is a hazard, and it was fixed separately.
 
 Both were moved into `plugrl-protocol/examples/`, next to the specification
 they implement, and are exercised by that repository's CI on every change.
-The C++ client has since grown to 814 lines, having gained explicit
+The C++ client has since grown to 843 lines, having gained explicit
 little-endian packing, typestr parsing on the action decode, text-frame
 rejection and a frame size cap.
 

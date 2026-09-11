@@ -9,7 +9,9 @@ instead:
    dependency stacks cannot coexist. → **E1: no, they can.**
 2. **What does it cost?** Every step pays for serialization and a round trip.
    → **E5: 0.5-0.7 ms on loopback**, and the shipped scheduler interval was
-   costing more than the boundary itself.
+   costing more than the boundary itself. → **E7: +0.52 ms more once the
+   bytes leave the machine** - and nothing measurable for the network stack
+   itself, which is not where the cost turned out to be.
 3. **Is it actually portable?** A protocol decouples nothing unless something
    other than this codebase can speak it. → **E2: yes** - two clients written
    from the specification alone, one of them C++ with no third-party
@@ -23,10 +25,11 @@ built on.
 | | Question | Answer |
 |---|---|---|
 | [`e1-dependency-conflict`](e1-dependency-conflict/) | Can a training stack and an environment stack share one Python environment? | **Yes** - the claim that they cannot is disproved |
-| [`e2-cross-language`](e2-cross-language/) | Can the protocol be spoken by something that is not this codebase? | **Yes** - an 814-line C++ client with no third-party libraries drives a real server |
+| [`e2-cross-language`](e2-cross-language/) | Can the protocol be spoken by something that is not this codebase? | **Yes** - an 843-line C++ client with no third-party libraries drives a real server |
 | [`e3-integration-cost`](e3-integration-cost/) | What does adding a new environment or policy cost, here versus elsewhere? | **Never run.** The metrics are pre-registered; the plan is kept, the result does not exist |
 | [`e5-boundary-cost`](e5-boundary-cost/) | What does crossing the process boundary cost per step? | **Sub-millisecond** on loopback - a lower bound, not a cross-machine number |
 | [`e6-first-learning-curve`](e6-first-learning-curve/) | Does anything here actually learn? | **Yes** - three seeds, episode return from about -300 into the thousands |
+| [`e7-cross-machine`](e7-cross-machine/) | What does the boundary cost once packets leave loopback? | **+0.52 ms** on a 184 KiB observation - and the cost is in leaving the machine, not in the network stack |
 
 Each directory has a `FINDINGS.md` stating what was asked, what came back,
 and what it does and does not support. Scripts pin their dependency SHAs at
@@ -73,12 +76,21 @@ These live in the findings files, not in git history:
   the client log to confirm completion before a number is kept.
 - **E1's first two robomimic failures were harness defects**, not evidence,
   and are labelled as such rather than counted.
+- **E7's conformance server was stricter than the specification it checks**,
+  counting a clean client disconnect as a protocol violation on all 45 runs.
+  The specification said nothing about a client stopping at all. All three
+  were fixed: the client now sends a close frame, SPEC.md gained a section
+  saying it should, and the harness downgraded the case to a note.
+- **E7's own prediction P2 was not supported**, and is recorded as such
+  rather than quietly reworded into one that was. The reformulation that
+  does hold is labelled post-hoc.
 
 ## What is missing
 
-- **E5 is loopback only**, which is a lower bound. The cross-machine number -
-  the one the architecture's cost argument actually needs - has never been
-  measured.
+- **A true cross-machine number.** E7 got as far as one virtual machine to
+  its host, which separates the network stack from the machine boundary but
+  still shares a CPU and a hypervisor. A physical NIC and a switch will cost
+  more; how much more is unmeasured, and needs a second computer.
 - **E3 was never run.** Its protocol is pre-registered, including an explicit
   declaration of the familiarity bias that would have favoured PlugRL and
   three ranked mitigations, but no data exists.
