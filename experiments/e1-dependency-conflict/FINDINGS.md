@@ -113,9 +113,21 @@ source. Measured with uv 0.9.9 on WSL2 Ubuntu 22.04:
 
 | Environment | env client | monolith | advantage |
 |---|---|---|---|
-| dummy / classic / atari | 224M, no GPU | 6.5G, GPU | **29x, and no GPU** |
+| dummy (`envclient-bare`) | 224M, no GPU | 6.5G, GPU | **29x, and no GPU** |
 | d4rl | 1008M, no GPU | 6.5G, GPU | **6.4x, and no GPU** |
 | **robomimic** | **7.2G, GPU** | 7.4G, GPU | **about none** |
+
+**Correction, 2026-09-11.** That first row read "dummy / classic / atari"
+until now, and only the dummy case was ever measured. `run-footprint.sh`
+installs the env client's base dependencies and nothing else - the 30 packages
+listed in `results-footprint/envclient-bare.log`, with no `ale-py`, no
+`pygame`, no `shimmy`. That is exactly what the dummy environment needs, since
+`dummy_env.py` sits in the base package, while `atari/` and `classic/` are
+separate extras in `plugrl-env-client/pyproject.toml`. Round 3 resolved those
+two extras (`results-matrix/single-atari.log`, `single-classic.log`) but never
+installed them, so their size on disk is not measured anywhere in this
+experiment. The 224M, and the 29x beside it, are the bare env client's
+numbers; each extra adds to them by an amount not recorded here.
 
 `envclient-robomimic` drags in `torch==2.14.0` and 16 nvidia wheels by
 itself, because robomimic is a deep learning library that ships its own
@@ -133,8 +145,11 @@ Supported:
 
 * The two stacks install together, on Linux, including the combinations that
   were expected to be impossible.
-* For environments that are pure simulators, the env client is 6-29x smaller
-  than a monolithic install and needs no GPU.
+* For the two rollout cases that were installed and weighed, the env client
+  is smaller than a monolithic install and needs no GPU: 6.4x for d4rl, 29x
+  for the bare client carrying no environment package at all. The other
+  environment families were resolved but never installed, so the 29x should
+  not be read as covering them.
 * One real dependency conflict exists (lerobot's gymnasium pin) and it is an
   ordinary upstream pin.
 

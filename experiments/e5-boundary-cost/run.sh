@@ -8,18 +8,32 @@
 # The dummy algorithm's artificial sleeps are turned off, so the numbers are
 # serialization plus transport plus deserialization and nothing else. Loopback
 # only - this is the floor. Real cross-machine numbers need the cluster and
-# will be higher; that measurement is E6.
+# will be higher; that measurement is E7, not E6 - E6 is the learning curve.
+#
+# Prerequisite: the server venv E2 builds. Run
+# ../e2-cross-language/setup-server.sh first; this script calls
+# $HOME/.e2-server/bin/plugrl-run-server directly.
 
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CPP="$HERE/../e2-cross-language/plugrl_client.cpp"
+# The tracked C++ client lives in the protocol repository, which sits beside
+# this one in the workspace. The binary the committed results came from was
+# built from an untracked working copy of this client that is in no repository
+# (693 lines against 843); this file takes the same arguments and prints the
+# same TSV, but a rerun is a rerun, not a replay.
+CPP="${E5_CPP:-$HERE/../../../plugrl-protocol/examples/plugrl_client.cpp}"
 RESULTS="$HERE/results"; mkdir -p "$RESULTS"
 BIN="$HOME/.e5-client"
 PORT="${E5_PORT:-8130}"
 STEPS="${E5_STEPS:-200}"
 
 echo "=== build ==="
+[ -f "$CPP" ] || {
+    echo "client source not found: $CPP"
+    echo "set E5_CPP to plugrl-protocol/examples/plugrl_client.cpp"
+    exit 1
+}
 g++ -std=c++17 -O2 -Wall -o "$BIN" "$CPP" 2>&1 | head -20
 [ -x "$BIN" ] || { echo "BUILD FAILED"; exit 1; }
 echo "  ok"
