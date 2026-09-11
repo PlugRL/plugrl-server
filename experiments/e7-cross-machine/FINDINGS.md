@@ -112,14 +112,19 @@ tested hypothesis, and the next measurement of it should say so first.
 
 * The process boundary costs about **1.3 ms** for a two-camera 224 px
   observation when the two sides are on different machines in the weakest
-  sense available here. Against a VLA forward pass of tens of milliseconds,
-  that remains a single-digit percentage.
+  sense available here.
 * E5's loopback figure understates the real cost by roughly **0.5 ms**, not
   by an order of magnitude.
 * The cost is in crossing the machine boundary. Routing through the network
   stack on one machine is free.
 
 **Not supported:**
+
+* **That 1.3 ms is cheap.** The protocol's own framing says the boundary is
+  cheap relative to a VLA forward pass of tens of milliseconds, and nothing
+  in PlugRL has ever measured one. That figure is borrowed, it is
+  load-bearing, and E5's findings now say so in full. This experiment
+  measured the boundary, not the ratio.
 
 * **This is still not two machines.** The WSL2 guest and its host share a
   CPU, a memory bus and a hypervisor. `win` is the strongest rung available
