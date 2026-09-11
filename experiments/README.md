@@ -37,6 +37,7 @@ which are written down.
 | [`e6-first-learning-curve`](e6-first-learning-curve/) | Does anything here actually learn? | **Yes** - three seeds, episode return from about -300 into the thousands |
 | [`e7-cross-machine`](e7-cross-machine/) | What does the boundary cost once packets leave loopback? | **+0.52 ms** on a 184 KiB observation - and the cost is in leaving the machine, not in the network stack |
 | [`e8-keepalive-hypothesis`](e8-keepalive-hypothesis/) | Does a long learn step kill the WebSocket connection? | **No** - learns of 190 s, nine times the ping timeout, close nothing. The hypothesis was mine and the measurement refuted it |
+| [`e10-vla-forward-cost`](e10-vla-forward-cost/) | What does a VLA forward actually cost, and is the boundary therefore cheap? | **Yes** - 34.9 ms for the policy PlugRL ships, 100.0 ms full size, against 1.3 ms to cross a machine. The boundary is 1.3-3.6% of a step |
 
 Each directory has a `FINDINGS.md` stating what was asked, what came back,
 and what it does and does not support. E1 is the only experiment that
@@ -125,11 +126,11 @@ cleanest moment to fix the rules is when collecting any is impossible.
 | | Question | Status |
 |---|---|---|
 | [`e9-many-clients`](e9-many-clients/) | What does a second, fourth and eighth env client cost one server - and does it stay correct? | Pre-registered. Needs two machines that can reach each other |
-| [`e10-vla-forward-cost`](e10-vla-forward-cost/) | What does a VLA forward actually cost, and is the boundary therefore cheap? | Pre-registered. Needs a GPU and the `openpi` extra |
 
 E9 also collects, as its one-client cell on a second machine, **the L2 rung
-E7 could not reach**. E10 measures **the denominator E5 borrowed** - the
-number that decides whether "the boundary is cheap" is a finding or a hope.
+E7 could not reach**. E10 has since run: it measured **the denominator E5
+borrowed**, and the answer was that "the boundary is cheap" is a finding
+rather than a hope.
 
 E3 is pre-registered in the same way and has been for longer, which is the
 honest reason to say that a pre-registration is a commitment and not an
@@ -144,9 +145,12 @@ achievement.
 - **E3 was never run.** Its protocol is pre-registered, including an explicit
   declaration of the familiarity bias that would have favoured PlugRL and
   three ranked mitigations, but no data exists.
-- **No VLA has ever run through this system.** E6 trains a 272k-parameter MLP
-  on continuous control. The openpi policy path exists and has never been
-  executed.
+- **No VLA has been trained through this system.** E10 executed the openpi
+  model and measured what a forward costs, so "never executed" is no longer
+  true. But it built `PI0Pytorch` directly, because `Pi0Policy` asserts a
+  checkpoint and cannot be constructed without one - the model ran, the server
+  wrapper around it did not, and nothing has trained. E6 remains the only
+  learning curve, and it trains a 272k-parameter MLP on continuous control.
 
 ## Reproducing
 
