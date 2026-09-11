@@ -58,9 +58,7 @@ def render(curves: dict[int, list[tuple[int, float]]], width: int = 46) -> str:
         mean = statistics.fmean(values)
         bar = "#" * int((mean - lo) / span * width)
         lines.append(
-            f"{step}\t"
-            + "\t".join(f"{v:.1f}" for v in values)
-            + f"\t{mean:.1f}\t{bar}"
+            f"{step}\t" + "\t".join(f"{v:.1f}" for v in values) + f"\t{mean:.1f}\t{bar}"
         )
     return "\n".join(lines)
 
