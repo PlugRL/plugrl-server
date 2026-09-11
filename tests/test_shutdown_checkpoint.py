@@ -122,14 +122,19 @@ def test_a_held_model_lock_does_not_hang_the_shutdown(server, monkeypatch):
 
 def test_a_failing_save_is_survivable(server, monkeypatch):
     """A full disk at shutdown must not turn into an unhandled exception."""
-    s, _ = server
+    s, manager = server
+    attempted = []
 
     async def explode():
+        attempted.append(True)
         raise OSError("No space left on device")
 
     monkeypatch.setattr(s._training, "process_save", explode)
 
-    asyncio.run(s._save_on_exit())  # must not raise
+    asyncio.run(s._save_on_exit())  # the point: this does not raise
+
+    assert attempted == [True], "it should have tried before giving up"
+    assert manager.saved == []
 
 
 def test_shutdown_saves_before_it_tears_anything_down(server, monkeypatch):
