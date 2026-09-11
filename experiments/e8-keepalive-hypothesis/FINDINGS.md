@@ -35,15 +35,21 @@ raising the epoch count rather than the buffer keeps the fill short while
 making the learn long - and it is the learn's *duration* the keepalive would
 race against, not the buffer's size.
 
-| run | buffer | updates/batch | gradient steps per learn | learns | learn duration | keepalive timeouts |
-|---|---|---|---|---|---|---|
-| 1 | 16384 | 16 (default) | 256 | 3 | 7-11 s | **0** |
-| 2 | 4096 | 400 | 1600 | 5 | 177-190 s | **0** |
+| run | buffer | updates/batch | gradient steps per learn | learns | learn duration | keepalive timeouts | reconnects |
+|---|---|---|---|---|---|---|---|
+| `short-learns` | 16384 | 16 (default) | 256 | 3 | roughly 5-24 s | **0** | **0** |
+| `long-learns` | 4096 | 400 | 1600 | 5 | 177-190 s | **0** | **0** |
 
-Run 2's learn step is **nine times** the 20 s ping timeout, on every one of
-five cycles, and nothing closed. The durations are measured as gaps between
-the client's 30 s periodic timing lines, so they include only what the client
-waited.
+Two separate refutations, and the weaker run is enough on its own: one of
+`short-learns`' three learn steps lasted about 24 s, **already past the 20 s
+ping timeout**, and nothing closed. `long-learns` then put the learn step at
+**nine times** the timeout, five cycles running, with the same result.
+
+Durations are read off the gaps between the client's periodic timing lines,
+which are emitted every 30 s; a gap of 53.7 s contains one 30 s interval plus
+about 24 s of waiting. That makes them approximate, and approximate is
+sufficient to separate 24 s from 20 s in the direction that matters, because
+the hypothesis predicts a close and there was none.
 
 The reason is one line in `server/training_backend.py`:
 
@@ -135,8 +141,8 @@ part that rested on the incident alone is the part that was wrong.
 ## Reproducing
 
 ```bash
-bash run.sh before 16384 49152 1 8613 16     # default epochs: short learns
-bash run.sh before  4096 20480 1 8615 400    # long learns, ~15 min
+bash run.sh short-learns 16384 49152 1 8617 16    # default epochs, ~9 min
+bash run.sh long-learns   4096 20480 1 8615 400   # long learns, ~15 min
 ```
 
 The last argument is `num_updates_per_batch`. `results/` holds both runs and

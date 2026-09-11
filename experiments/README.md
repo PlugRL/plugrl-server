@@ -14,13 +14,19 @@ instead:
    itself, which is not where the cost turned out to be.
 3. **Is it actually portable?** A protocol decouples nothing unless something
    other than this codebase can speak it. → **E2: yes** - two clients written
-   from the specification alone, one of them C++ with no third-party
-   libraries.
+   against the specification, one of them C++ with no third-party libraries.
+   They share an author with the specification, so this shows it is
+   sufficient, not that it is clear.
 4. **Does any of it train?** → **E6: yes** - FPO on HalfCheetah-v5, three
    seeds.
+5. **Does it survive being used?** A clean-machine install found a silent
+   corruption of the training buffer across a reconnect. → **E8: fixed** -
+   and the first explanation of it was wrong, which the same experiment
+   records.
 
-One of those four answers is negative, and it is the one the project was
-built on.
+The first of those five answers is negative, and it is the one the project
+was built on. The last one cost a bug and a retracted diagnosis, both of
+which are written down.
 
 | | Question | Answer |
 |---|---|---|
@@ -30,6 +36,7 @@ built on.
 | [`e5-boundary-cost`](e5-boundary-cost/) | What does crossing the process boundary cost per step? | **Sub-millisecond** on loopback - a lower bound, not a cross-machine number |
 | [`e6-first-learning-curve`](e6-first-learning-curve/) | Does anything here actually learn? | **Yes** - three seeds, episode return from about -300 into the thousands |
 | [`e7-cross-machine`](e7-cross-machine/) | What does the boundary cost once packets leave loopback? | **+0.52 ms** on a 184 KiB observation - and the cost is in leaving the machine, not in the network stack |
+| [`e8-keepalive-hypothesis`](e8-keepalive-hypothesis/) | Does a long learn step kill the WebSocket connection? | **No** - learns of 190 s, nine times the ping timeout, close nothing. The hypothesis was mine and the measurement refuted it |
 
 Each directory has a `FINDINGS.md` stating what was asked, what came back,
 and what it does and does not support. Scripts pin their dependency SHAs at
@@ -84,6 +91,13 @@ These live in the findings files, not in git history:
 - **E7's own prediction P2 was not supported**, and is recorded as such
   rather than quietly reworded into one that was. The reformulation that
   does hold is labelled post-hoc.
+- **E8 refuted a diagnosis that had already been written up and shipped as
+  four pull requests.** A dropped connection was blamed on a CPU-bound learn
+  step outlasting the 20 s WebSocket ping. Learn steps of 190 s were then
+  measured to close nothing - `learn` runs off the event loop - and the real
+  cause was the machine suspending for 1 h 53 min. The fix that rested on the
+  wrong cause was withdrawn; the fix that was read out of the code and
+  reproduced in a test was kept. Both versions are in the branch history.
 
 ## What is missing
 
