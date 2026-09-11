@@ -330,6 +330,20 @@ class WebSocketAgentServer:
 
                         prev_node = prev_node_map.get(eid, (-1, ""))
                         step_state = step_state_map.get(eid, None)
+                        if step_state is None:
+                            # Every env that reaches feedback got an action
+                            # first, on this connection, which is what fills
+                            # this map - so a miss means the connection was
+                            # replaced and the state went with it. The
+                            # transition below is then built from an empty
+                            # observation and no step state. That used to
+                            # happen without a word; it is at least loud now.
+                            logger.warning(
+                                f"Feedback for env {eid} arrived with no step "
+                                "state. The connection was almost certainly "
+                                "re-established mid-run, and this transition "
+                                "carries no previous observation."
+                            )
                         runtime_state = (
                             step_state.runtime_state if step_state is not None else None
                         )
