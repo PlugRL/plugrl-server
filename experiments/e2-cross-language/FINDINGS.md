@@ -9,6 +9,11 @@ Two clients - one in Python with neither numpy nor any PlugRL package, one in
 plugrl-server through 120 complete training exchanges. "An environment client
 need not be this codebase" stopped being a claim and became a demonstration.
 
+The specification's author wrote both clients, so what this shows is that
+SPEC.md is *sufficient*, not that it is clear to a stranger. That distinction
+is spelled out under "What this does not establish" below, and it is the
+reason `conformance_server.py` exists.
+
 ## The stronger result: the C++ client
 
 `plugrl_client.cpp`, built with g++ 11.4, a 68 KB binary. `ldd` says:
@@ -115,6 +120,36 @@ returned an empty action of `shape=[4, 0, 7]` - **without raising**.
 
 It affects only the dummy policy, but silently returning an empty action
 rather than failing is a hazard, and it was fixed separately.
+
+## What this does not establish
+
+**Not that a stranger can read the specification and succeed.** The same
+person wrote SPEC.md and both clients. That makes this a test of whether the
+specification is *sufficient* - whether everything a client needs is written
+down somewhere - and not a test of whether it is *clear*. An author cannot
+measure their own document's clarity, because they cannot forget what they
+meant.
+
+The two things that do bear on clarity are worth naming, since neither is
+this experiment:
+
+* `examples/conformance_server.py` grades a client clause by clause and exits
+  non-zero on a violation, so a third party gets a verdict without asking
+  anyone. That converts "it worked for me" into something checkable.
+* Nobody outside the project has implemented a client. Until someone does,
+  the honest statement is the sufficiency one.
+
+**Not that the protocol is easy**, either. 843 lines of C++ is small for what
+it does and is still 843 lines, and four of the defects it has since needed -
+little-endian packing, typestr parsing, text-frame rejection, a frame size
+cap - were places where the first implementation was wrong in ways the server
+accepted. A specification that admits four such mistakes is not yet a
+specification that prevents them; sections 3.3 and 3.4 exist because of them.
+
+**Not anything about throughput.** The 22.4 s and 22.6 s above are wall clock
+for 120 exchanges including process startup and a learn phase, and are
+recorded to show the runs completed, not to be compared with each other or
+with anything else. E5 and E7 are the measurements.
 
 ## Where the clients live now
 
