@@ -185,7 +185,25 @@ class WebSocketAgentServer:
         self._install_signal_handlers()
         try:
             self._server = await _server.serve(
-                self._handler, self._host, self._port, compression=None, max_size=None
+                self._handler,
+                self._host,
+                self._port,
+                compression=None,
+                max_size=None,
+                # websockets defaults to a 20 s ping with a 20 s timeout, and
+                # a learn step is CPU-bound work that can hold the GIL past
+                # that. On a slow machine the server then closes the
+                # connection with 1011 for a client that is perfectly
+                # healthy - and because the per-environment maps live in the
+                # connection handler, the reconnect starts with empty ones
+                # and the next feedback reaches the algorithm with no
+                # previous observation and no step state. Silent, and worse
+                # than the disconnect it came from.
+                #
+                # This protocol has its own liveness mechanism already:
+                # FEEDBACK_WAIT_TIMEOUT. Keepalive pings on top of it buy
+                # nothing and cost that.
+                ping_interval=None,
             )
             logger.info(f"Agent Server is listening on {self._host}:{self._port}")
             await self._lifecycle.stop_event.wait()
@@ -330,6 +348,20 @@ class WebSocketAgentServer:
 
                         prev_node = prev_node_map.get(eid, (-1, ""))
                         step_state = step_state_map.get(eid, None)
+                        if step_state is None:
+                            # Every env that reaches feedback got an action
+                            # first, on this connection, which is what fills
+                            # this map - so a miss means the connection was
+                            # replaced and the state went with it. The
+                            # transition below is then built from an empty
+                            # observation and no step state. That used to
+                            # happen without a word; it is at least loud now.
+                            logger.warning(
+                                f"Feedback for env {eid} arrived with no step "
+                                "state. The connection was almost certainly "
+                                "re-established mid-run, and this transition "
+                                "carries no previous observation."
+                            )
                         runtime_state = (
                             step_state.runtime_state if step_state is not None else None
                         )
