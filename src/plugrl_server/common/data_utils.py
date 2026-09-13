@@ -30,7 +30,11 @@ def batch_aggregate(
         values = [d[key] for d in list_of_dicts]
         first_value = values[0]
 
-        if isinstance(first_value, np.ndarray):
+        # A numpy scalar (openpi's image masks are np.True_) stacks into a
+        # batch dimension like a 0-d array; concat has no axis for it.
+        if isinstance(first_value, np.ndarray) or (
+            aggregate_method == "stack" and isinstance(first_value, np.generic)
+        ):
             try:
                 if aggregate_method == "stack":
                     result[key] = np.stack(values, axis=0)
