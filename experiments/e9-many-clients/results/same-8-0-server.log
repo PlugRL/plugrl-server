@@ -1,0 +1,26 @@
+WARNING:plugrl_server.algorithm:Could not import DPPO algorithm module for reason: No module named 'dppo'
+17:33:55|INFO|plugrl_server version: 0.1.0
+17:33:55|INFO|Algorithm: fpo, Config: FPOAlgoConfig(global_steps=16384, buffer_size=4096, output_mode='u_but_supervise_as_eps', fpo_playground_trick=True, treat_truncated_as_done=False, discounting=0.995, reward_scaling=10.0, gae_lambda=0.95, batch_size=1024, num_updates_per_batch=16, learning_rate=0.0003, value_loss_coeff=0.25, clipping_epsilon=0.05, normalize_advantage=True, n_samples_per_action=8, discretize_t_for_training=True, average_losses_before_exp=True, save_interval=10)
+17:33:55|INFO|Policy: fpo-policy, Config: FPOPolicyConfig(algo='fpo', device=device(type='cpu'), obs_dim=17, action_dim=6, flow_steps=10, timestep_embed_dim=8, action_horizon=1, feather_std=0.0, policy_mlp_output_scale=0.25, normalize_observations=True, hidden_dims=(32, 32, 32, 32), value_hidden_dims=(256, 256, 256, 256, 256))
+17:33:55|INFO|Checkpoint Manager created: 
+<plugrl_server.common.checkpoint_manager.CheckpointManager object at 0x7f592a4f4850> at /home/gotham/tmp/plugrl/results-e9/ck-same-8-0/fpo/fpo-policy/same-8-0
+17:33:55|INFO|Policy created...
+17:33:55|INFO|Initialized RolloutBuffer buffer_size=4096 action_shape=(4096, 1, 6) value_shape=(4096, 1)
+17:33:55|INFO|Algorithm created: 
+<plugrl_server.algorithm.fpo.fpo.FPOAlgorithm object at 0x7f592a810210>
+17:33:55|INFO|Agent Server is listening on 0.0.0.0:8909
+17:34:22|INFO|Checkpoint saved at step 16394 to /home/gotham/tmp/plugrl/results-e9/ck-same-8-0/fpo/fpo-policy/same-8-0/16394
+17:34:22|INFO|Stopping server as the algorithm signaled to stop.
+17:34:22|INFO|Shutdown started: aborting pending infer requests.
+17:34:22|INFO|Shutdown cleanup finished: pending_futures=8, drained_requests=8
+17:34:22|INFO|Shutdown closing 8 websocket connection(s).
+17:34:22|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 47570).
+17:34:22|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 47594).
+17:34:22|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 47556).
+17:34:22|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 47552).
+17:34:22|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 47604).
+17:34:22|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 47602).
+17:34:22|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 47574).
+17:34:22|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 47582).
+17:34:22|INFO|WebSocket server closed.
+17:34:22|INFO|Scheduler task cancelled and cleaned up.

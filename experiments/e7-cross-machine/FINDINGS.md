@@ -139,6 +139,10 @@ tested hypothesis, and the next measurement of it should say so first.
   unmeasured.
 * Nothing about wide-area links.
 * Nothing about many clients at once. Every run here is one client.
+  E9 has since measured 1, 2, 4 and 8 clients against one server, but on a
+  single machine, so it does not lift this limitation for the cross-machine
+  numbers above - it only shows the server stays correct while several
+  clients feed it.
 * The server runs no policy, so these are transport-and-serialization
   numbers. A real run adds the forward pass, which makes the boundary look
   proportionally smaller - leaving it out is the conservative choice.

@@ -38,6 +38,7 @@ which are written down.
 | [`e7-cross-machine`](e7-cross-machine/) | What does the boundary cost once packets leave loopback? | **+0.52 ms** on a 184 KiB observation - and the cost is in leaving the machine, not in the network stack |
 | [`e8-keepalive-hypothesis`](e8-keepalive-hypothesis/) | Does a long learn step kill the WebSocket connection? | **No** - learns of 190 s, nine times the ping timeout, close nothing. The hypothesis was mine and the measurement refuted it |
 | [`e10-vla-forward-cost`](e10-vla-forward-cost/) | What does a VLA forward actually cost, and is the boundary therefore cheap? | **Yes** - 34.9 ms for the policy PlugRL ships, 100.0 ms full size, against 1.3 ms to cross a machine. The boundary is 1.3-3.6% of a step |
+| [`e9-many-clients`](e9-many-clients/) | Does one server stay correct while 8 env clients feed it? | **Yes** - 12 runs at 1/2/4/8 clients, every one exact to the unit, zero warnings. Throughput still rising at 8, which falsified its own prediction |
 
 Each directory has a `FINDINGS.md` stating what was asked, what came back,
 and what it does and does not support. E1 is the only experiment that
@@ -116,25 +117,16 @@ difference that survives, as the E1 section says. And the sentence about
 pinned dependency SHAs described all of the scripts when it is true of E1's
 alone.
 
-## Pre-registered and not yet run
+## Pre-registered before the data, then run
 
-Two protocols are committed with no data behind them, because the hardware
-they need has not been available. Writing them now is deliberate: a
-pre-registration is worth something only if it predates the data, and the
-cleanest moment to fix the rules is when collecting any is impossible.
+E9 and E10 were both written and committed while this project had no hardware
+to run them on, which is the only moment a pre-registration costs anything.
+Both have since run, and one of the four predictions across them was
+falsified and is reported as falsified.
 
-| | Question | Status |
-|---|---|---|
-| [`e9-many-clients`](e9-many-clients/) | What does a second, fourth and eighth env client cost one server - and does it stay correct? | Pre-registered. Needs two machines that can reach each other |
-
-E9 also collects, as its one-client cell on a second machine, **the L2 rung
-E7 could not reach**. E10 has since run: it measured **the denominator E5
-borrowed**, and the answer was that "the boundary is cheap" is a finding
-rather than a hope.
-
-E3 is pre-registered in the same way and has been for longer, which is the
-honest reason to say that a pre-registration is a commitment and not an
-achievement.
+E3 remains pre-registered with no data, and has been for longer than either of
+those, which is the honest reason to treat a pre-registration as a commitment
+rather than an achievement.
 
 ## What is missing
 
