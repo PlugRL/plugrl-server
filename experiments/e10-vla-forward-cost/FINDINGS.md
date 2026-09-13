@@ -8,16 +8,22 @@ project had access to any GPU. Deviations in [`AMENDMENT.md`](AMENDMENT.md).
 
 ## In one sentence
 
-A VLA forward costs **34.9 ms** for the policy PlugRL actually ships and
-**100.0 ms** for the full-size one, against E7's **1.3 ms** to cross a machine
-boundary - so the process split costs **1.3% to 3.6% of a step**, and "the
-boundary is cheap" stops being a borrowed figure and becomes a measurement.
+A VLA forward, through openpi's own compiled inference entry point, costs
+**34.9 ms** for the policy PlugRL actually ships and **100.0 ms** for the
+full-size one, against E7's **1.3 ms** to cross a machine boundary - so the
+process split costs **1.3% to 3.6% of a step**, and "the boundary is cheap"
+stops being a borrowed figure and becomes a measurement.
+
+That forward is not quite the one PlugRL's server runs. The correction further
+down explains why: the conclusion survives it, and the millisecond figures do
+not transfer.
 
 ## The numbers
 
 Median of three independent process launches, `[min, max]` beside it. One
-action inference means the whole `sample_actions` call, five denoising steps,
-which is what a server answers per `infer`.
+action inference means one call to openpi's `sample_actions`, five denoising
+steps. That is openpi's inference entry point. It is not the one PlugRL's
+server calls, which the correction further down explains.
 
 | policy | parameters | GPU (bf16) | CPU (fp32) |
 |---|---|---|---|
@@ -68,19 +74,27 @@ so the first call is not an inference, it is a compilation:
 | tiny / CPU | 106 s | 20.6 s, 20.6 s |
 | base / CPU | 122 s | 41.6 s, 41.0 s |
 
-A training server answering its first `infer` blocks for the whole of that.
-The env client's WebSocket keepalive fires at **20 s** and the server's own
-`FEEDBACK_WAIT_TIMEOUT` is **60 s**. So a cold start exceeds both by a wide
-margin, and even a warm cache exceeds the keepalive for three of the four
-configurations.
+Anything that calls `sample_actions` pays that on its first call.
 
-**This is the mechanism E8 went looking for and did not find.** E8 refuted the
-idea that a long learn step drops the connection - learning runs off the event
-loop, and 184 s of blocking closed nothing. The VLA's first inference is a
-different matter: it happens on the server's request path, and it is minutes.
-Nothing here demonstrates a drop, because these runs had no WebSocket in them.
-It is a hypothesis with a measured magnitude, which is more than E8's had, and
-it should be tested rather than believed.
+> **Correction, 2026-09-13.** An earlier version of this section said a
+> training server answering its first `infer` blocks for the whole of that
+> compilation, that this exceeds the env client's 20 s keepalive and the
+> server's 60 s `FEEDBACK_WAIT_TIMEOUT`, and that it was "the mechanism E8
+> went looking for and did not find". **It is not, because PlugRL's server
+> never calls `sample_actions`.** Nothing in `plugrl_server` references it.
+> All four algorithms - `dppo`, `dummy`, `eval` and `fpo` - call
+> `policy.get_action_and_runtime_state`, and for a flow policy that runs
+> PlugRL's own `_predict_v` denoising loop, uncompiled. The compile cost above
+> is real, and it belongs to openpi's inference path, which PlugRL does not
+> take. This was found while preparing E11, when `Pi0Policy` was first
+> constructed through the real server path.
+>
+> The same fact qualifies this document's headline. The 34.9 ms and 100.0 ms
+> figures time the compiled `sample_actions`, not PlugRL's eager loop. An
+> uncompiled loop is usually slower, which would shrink the boundary's share of
+> a step and leave "cheap" standing - but that is an expectation, not a
+> measurement. PlugRL's own per-inference cost for pi0 is not measured here;
+> E11 records it inside the real loop.
 
 ## What this does and does not support
 
@@ -108,7 +122,10 @@ it should be tested rather than believed.
 * **One hardware generation.** An RTX 3090. A faster accelerator shrinks the
   forward and makes the boundary relatively more expensive; how much is
   unmeasured.
-* **The compile-timeout interaction is untested.** See above.
+* **PlugRL's own pi0 inference cost.** Every figure here times openpi's
+  compiled `sample_actions`, which PlugRL's server never calls. An earlier
+  version of this list called the compile-timeout interaction untested; it
+  does not arise on PlugRL's path at all. See the correction above.
 
 ## Reproducing
 
