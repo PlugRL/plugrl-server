@@ -235,7 +235,10 @@ class FPOAlgorithm(BaseAlgorithm):
                 obs_batch = torch_tree_get_item(obs_all, slice(i, j))
                 obs_cache_batch = self.policy.build_obs_cache(obs_batch)
                 value_batch = self.policy._get_value(obs_batch, obs_cache_batch)
-                value_batches.append(value_batch.detach().cpu().numpy().reshape(-1, 1))
+                # Pi0Policy's value head runs in bfloat16, which numpy cannot hold.
+                value_batches.append(
+                    value_batch.detach().float().cpu().numpy().reshape(-1, 1)
+                )
         self.rollout_buffer.values[:idx] = np.concatenate(value_batches, axis=0)
         self.rollout_buffer.compute_advantages_and_returns(
             policy=self.policy,

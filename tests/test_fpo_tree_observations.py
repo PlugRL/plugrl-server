@@ -100,7 +100,10 @@ class TreeObsFlowPolicy(BasePolicyGradientFlowPolicy):
 
     def _get_value(self, obs, obs_cache=None) -> torch.Tensor:
         batch = obs_cache.shape[0] if obs_cache is not None else obs["state"].shape[0]
-        return self.critic(self._features(obs, obs_cache, batch)).squeeze(-1)
+        value = self.critic(self._features(obs, obs_cache, batch)).squeeze(-1)
+        # Pi0Policy builds its value head in bfloat16, so its values arrive in
+        # bfloat16, which numpy has no type for.
+        return value.to(torch.bfloat16)
 
     def _get_timesteps(self) -> torch.Tensor:
         return torch.linspace(1.0, 1.0 / FLOW_STEPS, FLOW_STEPS)
