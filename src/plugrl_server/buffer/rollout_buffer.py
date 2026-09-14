@@ -325,8 +325,9 @@ class GAEBuffer(RolloutBuffer):
                     next_observations[i : i + batch_size], aggregate_method="concat"
                 )
                 with torch.inference_mode():
+                    # A value head may run in bfloat16, which numpy cannot hold.
                     batch_values = (
-                        policy.get_value(batch_obs).cpu().numpy().reshape(-1, 1)
+                        policy.get_value(batch_obs).float().cpu().numpy().reshape(-1, 1)
                     )
                 self.last_values[next_ids[i : i + batch_size]] = batch_values
 
