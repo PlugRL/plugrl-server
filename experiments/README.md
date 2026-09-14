@@ -37,7 +37,7 @@ which are written down.
 | [`e6-first-learning-curve`](e6-first-learning-curve/) | Does anything here actually learn? | **Yes** - three seeds, episode return from about -300 into the thousands |
 | [`e7-cross-machine`](e7-cross-machine/) | What does the boundary cost once packets leave loopback? | **+0.52 ms** on a 184 KiB observation - and the cost is in leaving the machine, not in the network stack |
 | [`e8-keepalive-hypothesis`](e8-keepalive-hypothesis/) | Does a long learn step kill the WebSocket connection? | **No** - learns of 190 s, nine times the ping timeout, close nothing. The hypothesis was mine and the measurement refuted it |
-| [`e10-vla-forward-cost`](e10-vla-forward-cost/) | What does a VLA forward actually cost, and is the boundary therefore cheap? | **Yes** - 34.9 ms for the policy PlugRL ships, 100.0 ms full size, against 1.3 ms to cross a machine. The boundary is 1.3-3.6% of a step |
+| [`e10-vla-forward-cost`](e10-vla-forward-cost/) | What does a VLA forward actually cost, and is the boundary therefore cheap? | **Yes** - 34.9 ms for the policy PlugRL ships and 100.0 ms full size, through openpi's compiled inference, against 1.3 ms to cross a machine: 1.3-3.6% of a step. PlugRL's own uncompiled path is not timed there |
 | [`e9-many-clients`](e9-many-clients/) | Does one server stay correct while 8 env clients feed it? | **Yes** - 12 runs at 1/2/4/8 clients, every one exact to the unit, zero warnings. Throughput still rising at 8, which falsified its own prediction |
 
 Each directory has a `FINDINGS.md` stating what was asked, what came back,
