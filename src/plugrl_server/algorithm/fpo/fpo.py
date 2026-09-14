@@ -76,8 +76,17 @@ class FPOAlgorithm(BaseAlgorithm):
         value_array = np.asarray(numpy_state["value"], dtype=np.float32)
         final_action = action_array[:, -1]
         value = value_array.reshape(-1, 1)
+        cond = numpy_state["obs"]["cond"]
         return dict(
-            obs=np.asarray(numpy_state["obs"]["cond"], dtype=np.float32),
+            # A vector observation is stored as float32, as it always was. A
+            # tree - Pi0Policy's images, masks and token ids - keeps each
+            # leaf's dtype: a dict cannot be cast at all, and uint8 images cast
+            # to float32 would take four times the buffer.
+            obs=(
+                np.asarray(cond, dtype=np.float32)
+                if isinstance(cond, np.ndarray)
+                else cond
+            ),
             action=final_action,
             logprob=np.zeros_like(final_action, dtype=np.float32),
             value=value,
@@ -223,7 +232,7 @@ class FPOAlgorithm(BaseAlgorithm):
         with torch.inference_mode():
             for i in range(0, idx, self.config.batch_size):
                 j = min(i + self.config.batch_size, idx)
-                obs_batch = obs_all[i:j]
+                obs_batch = torch_tree_get_item(obs_all, slice(i, j))
                 obs_cache_batch = self.policy.build_obs_cache(obs_batch)
                 value_batch = self.policy._get_value(obs_batch, obs_cache_batch)
                 value_batches.append(value_batch.detach().cpu().numpy().reshape(-1, 1))
