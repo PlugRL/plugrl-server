@@ -249,3 +249,11 @@ class Pi0Policy(BasePolicyGradientFlowPolicy):
             self.actor.paligemma_with_expert.paligemma.eval()
             for params in self.actor.paligemma_with_expert.paligemma.parameters():
                 params.requires_grad = False
+            # The action expert is a GemmaForCausalLM, but denoising only runs
+            # its model body, never its language-model head, so the head's
+            # 263M parameters can receive no gradient. Left trainable, a
+            # training algorithm would still keep optimizer state for them.
+            for (
+                params
+            ) in self.actor.paligemma_with_expert.gemma_expert.lm_head.parameters():
+                params.requires_grad = False

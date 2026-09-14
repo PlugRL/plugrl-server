@@ -5,6 +5,7 @@ import numpy as np
 import torch
 
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm
+from plugrl_server.algorithm.master_weights import MasterWeights
 from plugrl_server.algorithm.registration import register_algo
 from plugrl_server.common.checkpoint_manager import Checkpoint
 from plugrl_server.common.data_utils import (
@@ -54,9 +55,14 @@ class FPOAlgorithm(BaseAlgorithm):
             gae_lambda=config.gae_lambda,
             treat_truncated_as_done=config.treat_truncated_as_done,
         )
+        # Pi0Policy holds its action expert in bfloat16, where a step at a
+        # small learning rate rounds away. The optimizer steps float32 copies
+        # of such parameters instead; see MasterWeights.
+        self.master_weights = MasterWeights(
+            list(self.policy.actor.parameters()) + list(self.policy.critic.parameters())
+        )
         self.optimizer = torch.optim.Adam(
-            list(self.policy.actor.parameters())
-            + list(self.policy.critic.parameters()),
+            self.master_weights.optimizer_params,
             lr=config.learning_rate,
         )
         self.global_step = 0
@@ -189,6 +195,7 @@ class FPOAlgorithm(BaseAlgorithm):
     def load_checkpoint(self, checkpoint: Checkpoint) -> None:
         if checkpoint.model is not None:
             self.policy.load_state_dict(checkpoint.model)
+            self.master_weights.sync_from_model()
         if checkpoint.optimizer is not None:
             self.optimizer.load_state_dict(checkpoint.optimizer)
         self.global_step = checkpoint.step
@@ -433,8 +440,11 @@ class FPOAlgorithm(BaseAlgorithm):
 
                 backward_step_started_at = time.perf_counter()
                 self.optimizer.zero_grad(set_to_none=True)
+                self.master_weights.clear_model_grads()
                 total_loss.backward()
+                self.master_weights.grads_to_masters()
                 self.optimizer.step()
+                self.master_weights.masters_to_model()
                 _sync_cuda_if_needed(self.policy.device)
                 backward_step_total += time.perf_counter() - backward_step_started_at
                 learn_progress_current += 1
