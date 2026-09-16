@@ -183,6 +183,19 @@ class FPOAlgorithm(BaseAlgorithm):
     def should_save(self) -> bool:
         return self.curr_train_itrs - self.last_saved_itr >= self.config.save_interval
 
+    def post_learn(self) -> None:
+        super().post_learn()
+        # A learn step allocates far more than inference does: master weights,
+        # optimizer state, the buffer's observations, attention intermediates.
+        # PyTorch keeps those blocks in its caching allocator when the step
+        # ends, and collection is what comes next. E11's second training
+        # iteration died looking for 124 MiB for an attention matmul with the
+        # card at 24,098 MiB of 24,125 MiB, none of it leaked. Hand the cache
+        # back before inference resumes.
+        device = getattr(self.policy, "device", None)
+        if device is not None and device.type == "cuda" and torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
     def create_checkpoint(self) -> Checkpoint:
         self.last_saved_itr = self.curr_train_itrs
         return Checkpoint(
