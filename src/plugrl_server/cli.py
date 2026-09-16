@@ -55,6 +55,7 @@ class Args:
     resume: bool = False
 
     mini_infer_batch_size: int | None = None
+    feedback_wait_timeout: float = 60.0
     show_metric_table: bool = True
     show_progress_bar: bool = True
 
@@ -168,6 +169,7 @@ def _main(args: Args):
         host=args.host,
         port=args.port,
         mini_infer_batch_size=args.mini_infer_batch_size,
+        feedback_wait_timeout=args.feedback_wait_timeout,
         show_metric_table=args.show_metric_table,
         show_progress_bar=args.show_progress_bar,
     )

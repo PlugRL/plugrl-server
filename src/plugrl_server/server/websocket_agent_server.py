@@ -67,8 +67,13 @@ class WebSocketAgentServer:
         host: str = "0.0.0.0",
         port: int = 8000,
         metadata: dict | None = None,
+        feedback_wait_timeout: float = FEEDBACK_WAIT_TIMEOUT,
     ):
         self._algorithm = algorithm
+        self._feedback_wait_timeout = feedback_wait_timeout
+        # True while a learn step holds the model lock. A client's silence
+        # means something different then; see _recv_feedback.
+        self._learning = False
         self._checkpoint_manager = checkpoint_manager
         self._metric_sink = metric_sink
         self._host = host
@@ -286,18 +291,8 @@ class WebSocketAgentServer:
                 )
                 await websocket.send(packer.pack(action_response.to_payload()))
 
-                try:
-                    packed_feedback_msg = await asyncio.wait_for(
-                        websocket.recv(), timeout=FEEDBACK_WAIT_TIMEOUT
-                    )
-                except asyncio.TimeoutError:
-                    logger.warning(
-                        f"Timed out waiting for feedback from {websocket.remote_address} after {FEEDBACK_WAIT_TIMEOUT:.1f}s, closing connection"
-                    )
-                    await websocket.close(
-                        code=websockets.frames.CloseCode.GOING_AWAY,
-                        reason="Feedback timeout",
-                    )
+                packed_feedback_msg = await self._recv_feedback(websocket)
+                if packed_feedback_msg is None:
                     break
                 feedback_payload = msgpack_numpy.unpackb(packed_feedback_msg)
                 try:
@@ -396,6 +391,47 @@ class WebSocketAgentServer:
         finally:
             if connection_counted:
                 self._total_connections = max(0, self._total_connections - 1)
+
+    async def _recv_feedback(self, websocket) -> bytes | None:
+        """Wait for a client's feedback, tolerating the server's own learn steps.
+
+        A client that has been sent an action owes feedback, and silence past
+        the timeout means it is gone. A server in the middle of a learn step is
+        a different matter: it holds the model lock, this connection would wait
+        on that lock anyway, and the env client is waiting on us.
+
+        E11 measured a learn of 58 minutes behind this 60 s timeout. Every
+        iteration closed all ten connections, and each client lost the feedback
+        it was holding, because a client drops held feedback across a reconnect
+        (SPEC.md section 7.6). While a learn is in flight the wait is extended
+        instead, and only a client that is silent while the server is idle is
+        treated as gone.
+
+        Returns the packed message, or None once the connection is closed.
+        """
+        while True:
+            try:
+                return await asyncio.wait_for(
+                    websocket.recv(), timeout=self._feedback_wait_timeout
+                )
+            except asyncio.TimeoutError:
+                if self._learning:
+                    logger.info(
+                        "Still waiting for feedback from "
+                        f"{websocket.remote_address} after "
+                        f"{self._feedback_wait_timeout:.1f}s while a learn step is "
+                        "in flight; keeping the connection."
+                    )
+                    continue
+                logger.warning(
+                    f"Timed out waiting for feedback from {websocket.remote_address} "
+                    f"after {self._feedback_wait_timeout:.1f}s, closing connection"
+                )
+                await websocket.close(
+                    code=websockets.frames.CloseCode.GOING_AWAY,
+                    reason="Feedback timeout",
+                )
+                return None
 
     def _runtime_metrics(self) -> dict:
         return dict(
@@ -499,7 +535,11 @@ class WebSocketAgentServer:
                 if self._collect_progress_started:
                     self._progress_reporter.finish_phase("collect")
                     self._collect_progress_started = False
-                await self._training.process_learn()
+                self._learning = True
+                try:
+                    await self._training.process_learn()
+                finally:
+                    self._learning = False
 
         async with self._model_lock:
             stop_requested = self._training.should_stop()
