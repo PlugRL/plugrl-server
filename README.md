@@ -184,7 +184,7 @@ silently ignored. (`n_critic_warmup_itr` is dead in the same way; the live
 field is `n_critic_warmup_itrs`.) Earlier versions of this README documented
 `--algo.n_train_itr` as "number of training iterations", which was wrong.
 
-#### Training DPPO with PI0 (OpenPI) Policy
+#### Training PI0 (OpenPI) with FPO
 
 **Prerequisites, which no earlier step in this README provides.** `pi0-policy`
 imports `openpi` (`from openpi import transforms`,
@@ -208,33 +208,50 @@ is not in the `python -m plugrl_server.cli --help` menu at all - the policy
 package catches the import error and registers nothing, so the failure is
 silent.
 
-**These install steps are not verified.** They are transcribed from the
-submodule layout and the openpi policy README, not from a successful run: the
-submodule's own dependencies include `jax[cuda12]==0.5.3`, and no machine in
-this project has installed them. The PI0 path itself has never been executed
-here either - `experiments/e6-first-learning-curve/FINDINGS.md` records that
-"the openpi policy path exists in `plugrl-server` and **has never been
-executed**". Treat the commands below as a description of intent, not as a
-tested recipe.
+**These steps have since been run.** E11 installed openpi on a single RTX
+3090 and ran `pi0-policy` end to end, both evaluation and FPO training, against
+a full-size `pi05_libero` checkpoint. The resolved environment of both
+processes is recorded in
+`experiments/e11-vla-rl-libero/results/environment-server.txt` and
+`environment-client.txt`, and the pins that mattered, with the reasons, are in
+`experiments/e11-vla-rl-libero/NOTES.md`. What E6's findings file says - that
+the openpi path had never been executed - was true when it was written.
+
+The commands below are the ones E11 ran, with the checkpoint path left for you
+to fill in.
 
 ```bash
-# Single GPU training with PI0 policy
-python -m plugrl_server.cli pi0-policy default dppo hopper \
-  --policy.checkpoint_path /path/to/pi0/checkpoint \
-  --exp_name pi0_dppo_exp \
-  --track.enabled
+# Evaluation: no learning, one server for as many env clients as you start
+python -m plugrl_server.cli pi0-policy default eval default \
+  --policy.name pi05_libero \
+  --policy.checkpoint-path /path/to/pi0/checkpoint \
+  --policy.device cuda
 
-# With custom denoising steps
-python -m plugrl_server.cli pi0-policy default dppo hopper \
-  --policy.checkpoint_path /path/to/pi0/checkpoint \
-  --policy.denoising_steps 10 \
-  --exp_name pi0_dppo_exp_custom
+# FPO fine-tuning, as E11 ran it
+python -m plugrl_server.cli pi0-policy default fpo default \
+  --policy.name pi05_libero \
+  --policy.checkpoint-path /path/to/pi0/checkpoint \
+  --policy.device cuda \
+  --algo.learning-rate 1e-5 --algo.batch-size 8 \
+  --algo.n-samples-per-action 4 --algo.buffer-size 4096 \
+  --algo.global-steps 40960
 ```
 
+`pi0-policy` is a flow policy, so it pairs with `fpo` or with `eval`. It does
+not pair with `dppo`, which expects a diffusion policy - `hopper` is one of
+that algorithm's presets, and this README used to pass both.
+
+The batch size of 8 is not the protocol's starting value of 32. At 32 the first
+learn step ran out of memory on a 24 GB card, which
+`experiments/e11-vla-rl-libero/AMENDMENT.md` records. Even at 8, the *second*
+learn step does not fit beside the optimizer state the first one allocates;
+`experiments/e11-vla-rl-libero/FINDINGS.md` has the measurements.
+
 **PI0 policy options:**
-- `--policy.checkpoint_path` - Path to PI0 checkpoint directory (required)
-- `--policy.denoising_steps` - Number of denoising steps (default: 5)
-- `--policy.train_expert_only` - Freeze VLM and train only expert (default: true)
+- `--policy.checkpoint-path` - Path to PI0 checkpoint directory (required)
+- `--policy.name` - openpi training config, for example `pi05_libero`
+- `--policy.denoising-steps` - Number of denoising steps (default: 5)
+- `--policy.train-expert-only` - Freeze VLM and train only expert (default: true)
 
 #### Distributed Training with Ray (DPPO)
 
