@@ -118,3 +118,25 @@ These rules were proposed and agreed on 2026-09-14, before any Stage C run.
 **Evaluation.** One env client process runs 50 episodes with initial states in order, 0 to 49. This is openpi's LIBERO procedure. The baseline and the fine-tuned policy face exactly the same 50 initial states.
 
 **Hyperparameters.** The protocol's starting values, with `batch_size` 8 per `AMENDMENT.md`.
+
+## 2026-09-16 - Stage C ran twice and stopped
+
+**The rule, fixed before the restart.** A crashed run is not retried indefinitely: the last saved checkpoint is evaluated and labelled incomplete, at most one restart is allowed, and a negative result is not chased with hyperparameters. This was agreed on 2026-09-16, before the first attempt had finished, and it is what ended Stage C.
+
+**Attempt 1, cell `C_train`.** Completed iteration 1 and died collecting iteration 2: CUDA out of memory, 124 MiB wanted, 21.48 GiB allocated and 1.33 GiB reserved but unused. Its checkpoint interval was every 5 iterations, so it left nothing to evaluate.
+
+**Between the attempts**, three changes, none of them one of the protocol's two adjustments:
+
+- plugrl-server #21, which releases the allocator's cache after a learn step, deployed to the cluster;
+- `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` in the harness;
+- a checkpoint every iteration instead of every fifth.
+
+The only protocol adjustment used remains `batch_size` 32 to 8, recorded in `AMENDMENT.md`.
+
+`results/e11_stageC_train.sh` in this commit is the version attempt 2 ran. Attempt 1 ran the version committed in `b0908ff`, which differs in exactly those last two points.
+
+**Attempt 2, cell `C_train2`.** Standing memory after the first learn fell from 23,558 MiB to 17,104 MiB, and collection for iteration 2 completed - the ten clients reported about 815 inference calls each. The run then died seven seconds into the second learn, with 23.05 GiB allocated and 73 MiB reserved but unused. The memory was in use, not stranded: a first learn step allocates master weights and Adam's moments that did not exist before it, and the second learn has to fit beside them.
+
+Its checkpoint at step 4096 was evaluated, labelled incomplete, and scored 0 of 50 against the baseline's 26 of 50. `FINDINGS.md` judges P3 on that.
+
+**What the cluster actually ran.** plugrl-server #20 was merged before both attempts but never deployed. The deployed tree matched commit `0c36c0e` in 63 of its 65 files; the two exceptions are `cli.py` and `server/websocket_agent_server.py`, exactly the files #20 touched. So both training runs show the pre-#20 connection behaviour, and the four feedback timeouts and 420 client reconnect attempts in attempt 2 are that behaviour, not a new fault.
