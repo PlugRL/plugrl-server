@@ -39,6 +39,7 @@ which are written down.
 | [`e8-keepalive-hypothesis`](e8-keepalive-hypothesis/) | Does a long learn step kill the WebSocket connection? | **No** - learns of 190 s, nine times the ping timeout, close nothing. The hypothesis was mine and the measurement refuted it |
 | [`e10-vla-forward-cost`](e10-vla-forward-cost/) | What does a VLA forward actually cost, and is the boundary therefore cheap? | **Yes** - 34.9 ms for the policy PlugRL ships and 100.0 ms full size, through openpi's compiled inference, against 1.3 ms to cross a machine: 1.3-3.6% of a step. PlugRL's own uncompiled path is not timed there |
 | [`e9-many-clients`](e9-many-clients/) | Does one server stay correct while 8 env clients feed it? | **Yes** - 12 runs at 1/2/4/8 clients, every one exact to the unit, zero warnings. Throughput still rising at 8, which falsified its own prediction |
+| [`e11-vla-rl-libero`](e11-vla-rl-libero/) | Can a real VLA be trained through this boundary, and does it help? | **Trained, not helped** - pi0.5 ran end to end with the server's record exact against the clients'; one FPO iteration took the chosen task from 26/50 to 0/50, and the run stopped at 1 iteration of 10 because a second learn step does not fit beside the optimizer state the first one allocated |
 
 Each directory has a `FINDINGS.md` stating what was asked, what came back,
 and what it does and does not support. E1 is the only experiment that
@@ -124,6 +125,12 @@ to run them on, which is the only moment a pre-registration costs anything.
 Both have since run, and one of the four predictions across them was
 falsified and is reported as falsified.
 
+E11 was pre-registered before any success rate existed, and its four
+predictions came back split: one confirmed, one that the protocol's own rule
+for overlapping intervals says cannot be separated, one falsified - the
+fine-tuned policy scored below its baseline rather than above it - and one that
+two crashed training runs left untestable.
+
 E3 remains pre-registered with no data, and has been for longer than either of
 those, which is the honest reason to treat a pre-registration as a commitment
 rather than an achievement.
@@ -137,12 +144,14 @@ rather than an achievement.
 - **E3 was never run.** Its protocol is pre-registered, including an explicit
   declaration of the familiarity bias that would have favoured PlugRL and
   three ranked mitigations, but no data exists.
-- **No VLA has been trained through this system.** E10 executed the openpi
-  model and measured what a forward costs, so "never executed" is no longer
-  true. But it built `PI0Pytorch` directly, because `Pi0Policy` asserts a
-  checkpoint and cannot be constructed without one - the model ran, the server
-  wrapper around it did not, and nothing has trained. E6 remains the only
-  learning curve, and it trains a 272k-parameter MLP on continuous control.
+- **No VLA has been trained to completion through this system.** E11 trained
+  one: `pi05_libero` collected 4,096 transitions across the boundary, took
+  2,048 optimizer steps, and wrote a checkpoint - which evaluates worse than
+  its baseline, 0 of 50 against 26 of 50. What is missing is a complete run.
+  Both attempts died out of memory at the second learn step, which has to fit
+  beside the optimizer state the first one allocated, so no result exists about
+  whether RL helps a VLA here. E6 remains the only complete learning curve, and
+  it trains a 272k-parameter MLP on continuous control.
 
 ## Reproducing
 

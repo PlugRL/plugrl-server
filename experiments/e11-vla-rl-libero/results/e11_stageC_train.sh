@@ -37,6 +37,9 @@ BUDGET_S="${5:-72000}"
 BUFFER_SIZE="${6:-4096}"
 BATCH_SIZE="${E11_FPO_BATCH_SIZE:-32}"
 N_SAMPLES="${E11_FPO_N_SAMPLES:-4}"
+# Every iteration, not every fifth: the run that ran out of memory at
+# iteration 2 had nothing saved to evaluate.
+SAVE_INTERVAL="${E11_FPO_SAVE_INTERVAL:-1}"
 SUITE=libero_10
 NPROC=10
 GLOBAL_STEPS=$(( ITERATIONS * BUFFER_SIZE ))
@@ -99,7 +102,7 @@ source_manifest() {
   done)
 }
 
-log "cell=$CELL suite=$SUITE task_id=$TASK_ID iterations=$ITERATIONS buffer=$BUFFER_SIZE batch_size=$BATCH_SIZE n_samples=$N_SAMPLES global_steps=$GLOBAL_STEPS procs=$NPROC port=$PORT budget=${BUDGET_S}s res=$RES"
+log "cell=$CELL suite=$SUITE task_id=$TASK_ID iterations=$ITERATIONS buffer=$BUFFER_SIZE batch_size=$BATCH_SIZE n_samples=$N_SAMPLES save_interval=$SAVE_INTERVAL global_steps=$GLOBAL_STEPS procs=$NPROC port=$PORT budget=${BUDGET_S}s res=$RES"
 
 if ! report_strays "refusing to start, env client processes" "$CLIENT_PATTERN" \
   || ! report_strays "refusing to start, pi0 server processes" "$SERVER_PATTERN"; then
@@ -124,6 +127,7 @@ free_port "$PORT"
   cd "$R/plugrl-server" && exec setsid env \
     OPENPI_DATA_HOME="$R/.cache/openpi" XDG_CACHE_HOME="$R/.cache" TMPDIR="$R/.tmp" \
     HF_HOME="$R/.cache/hf" TORCHINDUCTOR_CACHE_DIR="$R/.cache/inductor" CUDA_VISIBLE_DEVICES=0 \
+    PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
     "$SPY" -m plugrl_server.cli pi0-policy default fpo default \
       --policy.name pi05_libero \
       --policy.checkpoint-path "$R/ckpt/pi05_libero" \
@@ -135,7 +139,7 @@ free_port "$PORT"
       --algo.buffer-size "$BUFFER_SIZE" \
       --algo.clipping-epsilon 0.05 \
       --algo.global-steps "$GLOBAL_STEPS" \
-      --algo.save-interval 5 \
+      --algo.save-interval "$SAVE_INTERVAL" \
       --port "$PORT" \
       --no-show-progress-bar --no-show-metric-table \
       --checkpoint-base-dir "$OUT/ck" --exp-name "$CELL" --overwrite

@@ -1,0 +1,2 @@
+step	episodes	rolling_sr	mean_reward	learn_s	gpu_mem_gb	valid	collect_s	mean_length	note
+4096	39	0.5128	0.5128	3489	20.95	true	650	478.3	lower bound; collected 20480 steps at mean length 478 allows at most ~43 episodes, so 39
