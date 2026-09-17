@@ -1,9 +1,37 @@
-# 🚀 plugrl-server
+# plugrl-server
 
 [![CI](https://github.com/PlugRL/plugrl-server/actions/workflows/ci.yml/badge.svg)](https://github.com/PlugRL/plugrl-server/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-**plugrl-server** runs the policy and the learning algorithm, batching inference across every connected env client over WebSocket.
+The training side of PlugRL: it holds the policy and the learning algorithm,
+batches inference across every connected env client over WebSocket, and learns
+from the feedback those clients send back.
+
+**A full-size pi0.5 has run end to end through it on LIBERO** - inference,
+feedback and FPO training - with the server's record of episodes and steps
+reconciling exactly with the clients'. As a control, the unmodified checkpoint
+scored 99 of 100 on `libero_spatial` and 185 of 200 on `libero_10`, against
+openpi's published 98.8 and 92.4.
+
+**The reinforcement learning result is negative.** One FPO iteration took the
+hardest task from 26 of 50 to 0 of 50, and the run is incomplete at one
+iteration of ten: a second learn step does not fit beside the optimizer state
+the first one allocates on a 24 GB card. The predictions were registered before
+the run, and one of them is falsified.
+
+| | Question | Answer |
+|---|---|---|
+| [E1](experiments/e1-dependency-conflict/) | Do a training stack and an environment stack really conflict? | **No** - the assumption this project was built on is disproved |
+| [E6](experiments/e6-first-learning-curve/) | Does anything here actually learn? | **Yes** - FPO on HalfCheetah-v5, three seeds |
+| [E7](experiments/e7-cross-machine/) | What does the boundary cost once packets leave the machine? | **+0.52 ms** on a 184 KiB observation |
+| [E10](experiments/e10-vla-forward-cost/) | Is that cheap beside a VLA forward pass? | **Yes** - 1.3-3.6% of a step |
+| [E11](experiments/e11-vla-rl-libero/) | Can a real VLA be trained through this boundary, and does it help? | **Ran end to end; did not help** |
+
+[`experiments/`](experiments/) holds ten of these, nine of them run. Each
+carries its data and a `FINDINGS.md` stating what the result does **not**
+support. The documentation, including a quickstart that trains FPO on
+HalfCheetah with no GPU and nothing to download, is at
+[plugrl.github.io](https://plugrl.github.io).
 
 ## 🛠️ Installation
 
