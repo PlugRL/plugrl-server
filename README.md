@@ -35,7 +35,7 @@ We use `uv` to manage dependencies and development environments.
     ```
 
   Nothing in the default install needs a git submodule. `pi0-policy` does -
-  see [Training DPPO with PI0 (OpenPI) Policy](#training-dppo-with-pi0-openpi-policy)
+  see [Training PI0 (OpenPI) with FPO](#training-pi0-openpi-with-fpo)
   for the extra steps a plain clone does not give you.
 
 3. **Install dependencies with uv:**
@@ -74,7 +74,7 @@ We use `uv` to manage dependencies and development environments.
 - `pi0-policy` - PI0 policy (OpenPI). Needs more than a checkpoint. The
   `openpi` package is not on PyPI and no extra installs it: it is the
   `third_party/openpi` git submodule, which `git clone` does not fetch. See
-  [Training DPPO with PI0 (OpenPI) Policy](#training-dppo-with-pi0-openpi-policy).
+  [Training PI0 (OpenPI) with FPO](#training-pi0-openpi-with-fpo).
 
 `python -m plugrl_server.cli --help` lists the **policies** that are actually
 available in your install - with no extras it prints `{dummy-policy,fpo-policy}`,
