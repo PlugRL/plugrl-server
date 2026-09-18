@@ -63,6 +63,24 @@ def frame(ax):
     ax.tick_params(length=3)
 
 
+def save(fig, name):
+    """Write the figure, then strip what this repository's hooks would strip.
+
+    matplotlib leaves trailing spaces in its SVG output, and on Windows writes
+    CRLF. Both are rewritten by pre-commit, so writing them here would make
+    every regeneration of an unchanged figure show up as a diff.
+    """
+    path = HERE / name
+    fig.savefig(path)
+    text = path.read_text(encoding="utf-8")
+    path.write_text(
+        "\n".join(line.rstrip() for line in text.splitlines()) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    plt.close(fig)
+
+
 # --------------------------------------------------------- E6, does it learn --
 
 
@@ -99,8 +117,7 @@ def e6_learning_curve():
 
     fig.tight_layout(rect=(0, 0.045, 1, 1))
     source_note(fig, "experiments/e6-first-learning-curve/summary.tsv")
-    fig.savefig(HERE / "e6-learning-curve.svg")
-    plt.close(fig)
+    save(fig, "e6-learning-curve.svg")
 
 
 # ------------------------------------------------- E11 Stage A, the control --
@@ -158,8 +175,7 @@ def e11_stage_a():
     )
     fig.tight_layout(rect=(0, 0.045, 1, 0.94))
     source_note(fig, "experiments/e11-vla-rl-libero/results/stageA.tsv")
-    fig.savefig(HERE / "e11-stageA-control.svg")
-    plt.close(fig)
+    save(fig, "e11-stageA-control.svg")
 
 
 # -------------------------------------- E11 Stage C, the result, and it fails --
@@ -208,8 +224,7 @@ def e11_stage_c():
 
     fig.tight_layout(rect=(0, 0.07, 1, 1))
     source_note(fig, "experiments/e11-vla-rl-libero/results/stageC_eval.tsv")
-    fig.savefig(HERE / "e11-stageC-result.svg")
-    plt.close(fig)
+    save(fig, "e11-stageC-result.svg")
 
 
 # ------------------------------------------------- E11, where the hour goes --
@@ -313,8 +328,7 @@ def e11_time_breakdown():
         fig,
         'experiments/e11-vla-rl-libero/FINDINGS.md, "Where an hour of this training goes"',
     )
-    fig.savefig(HERE / "e11-time-breakdown.svg")
-    plt.close(fig)
+    save(fig, "e11-time-breakdown.svg")
 
 
 if __name__ == "__main__":
