@@ -15,6 +15,7 @@ from plugrl_server.algorithm.registration import REGISTERED_ALGO_CONFIGS, make_a
 from plugrl_server.server.websocket_agent_server import WebSocketAgentServer
 from plugrl_server.common.checkpoint_manager import CheckpointManager
 from plugrl_server.common.logging_utils import configure_logging, get_logger
+from plugrl_server.common.seeding import seed_everything
 from plugrl_server.common.metrics import (
     close_metric_sink_and_tracker,
     init_metric_sink_by_tracker,
@@ -131,6 +132,10 @@ def _main(args: Args):
     logger.info(f"plugrl_server version: {plugrl_server.__version__}")
     logger.info(f"Algorithm: {args.algo_uid}, Config: {args.algo}")
     logger.info(f"Policy: {args.policy_uid}, Config: {args.policy}")
+
+    # Before the policy is built: constructing one draws from the generators
+    # too, for instance a value head's initial weights.
+    seed_everything(args.seed)
 
     checkpoint_manager = CheckpointManager(
         args.checkpoint_dir,
