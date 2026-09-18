@@ -1,0 +1,3 @@
+cell	renderer	client_gpu	procs	episodes	successes	wall_s	mean_collect_s	mean_env_step_s	mean_infer_wait_s	mean_env_step_frac
+ten-egl	nvidia-egl	yes	10	30	30	133	96.74	7.82	88.90	0.0810
+ten-osmesa	mesa-osmesa	no	10	30	30	254	202.57	80.60	121.87	0.3979

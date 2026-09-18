@@ -1,0 +1,43 @@
+[09-18 23:21:46] waiting for a GPU with 20000 MiB free
+[09-18 23:31:47] GPU 1 has room
+[09-18 23:31:47] running ten-egl on GPU 1
+[23:31:47] cell=ten-egl backend=egl procs=10 episodes_per_proc=3 port=8151
+[23:31:47] load at start: 15.97, 27.22, 32.07
+[23:33:18] server listening
+[23:35:31] clients exit 0 after 133s
+[23:35:33] teardown clean
+[23:35:33] === per process ===
+proc 0	ep=3	sr=1.0	steps=267	collect=93.4s	step=7.3s	wait=86.1s	step_frac=0.078
+proc 1	ep=3	sr=1.0	steps=270	collect=93.0s	step=7.7s	wait=85.3s	step_frac=0.083
+proc 2	ep=3	sr=1.0	steps=291	collect=99.5s	step=7.9s	wait=91.6s	step_frac=0.079
+proc 3	ep=3	sr=1.0	steps=273	collect=94.3s	step=7.8s	wait=86.5s	step_frac=0.083
+proc 4	ep=3	sr=1.0	steps=295	collect=99.3s	step=8.3s	wait=91.0s	step_frac=0.083
+proc 5	ep=3	sr=1.0	steps=301	collect=102.7s	step=8.3s	wait=94.3s	step_frac=0.081
+proc 6	ep=3	sr=1.0	steps=269	collect=93.4s	step=7.5s	wait=85.8s	step_frac=0.081
+proc 7	ep=3	sr=1.0	steps=291	collect=99.5s	step=8.0s	wait=91.5s	step_frac=0.080
+proc 8	ep=3	sr=1.0	steps=268	collect=96.3s	step=7.6s	wait=88.7s	step_frac=0.079
+proc 9	ep=3	sr=1.0	steps=274	collect=96.0s	step=7.8s	wait=88.2s	step_frac=0.081
+[23:35:34] CELL_WALL_SECONDS 133
+[23:35:34] E13_CELL_DONE ten-egl egl
+[09-18 23:35:34] ten-egl exited 0
+[09-18 23:36:04] running ten-osmesa on GPU 1
+[23:36:04] cell=ten-osmesa backend=osmesa procs=10 episodes_per_proc=3 port=8152
+[23:36:04] load at start: 23.65, 28.35, 31.63
+[23:37:34] server listening
+[23:41:48] clients exit 0 after 254s
+[23:41:50] teardown clean
+[23:41:50] === per process ===
+proc 0	ep=3	sr=1.0	steps=275	collect=200.2s	step=80.8s	wait=119.4s	step_frac=0.403
+proc 1	ep=3	sr=1.0	steps=299	collect=210.2s	step=84.5s	wait=125.6s	step_frac=0.402
+proc 2	ep=3	sr=1.0	steps=297	collect=209.6s	step=83.4s	wait=126.1s	step_frac=0.398
+proc 3	ep=3	sr=1.0	steps=289	collect=206.5s	step=84.2s	wait=122.2s	step_frac=0.408
+proc 4	ep=3	sr=1.0	steps=298	collect=210.0s	step=83.3s	wait=126.6s	step_frac=0.397
+proc 5	ep=3	sr=1.0	steps=275	collect=198.6s	step=77.3s	wait=121.1s	step_frac=0.390
+proc 6	ep=3	sr=1.0	steps=269	collect=192.7s	step=75.2s	wait=117.4s	step_frac=0.390
+proc 7	ep=3	sr=1.0	steps=269	collect=195.3s	step=75.5s	wait=119.7s	step_frac=0.387
+proc 8	ep=3	sr=1.0	steps=270	collect=193.1s	step=76.0s	wait=117.0s	step_frac=0.394
+proc 9	ep=3	sr=1.0	steps=300	collect=209.5s	step=85.8s	wait=123.6s	step_frac=0.410
+[23:41:51] CELL_WALL_SECONDS 254
+[23:41:51] E13_CELL_DONE ten-osmesa osmesa
+[09-18 23:41:51] ten-osmesa exited 0
+[09-18 23:41:51] E13_QUEUE_DONE
