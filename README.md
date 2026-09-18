@@ -11,9 +11,10 @@ from the feedback those clients send back.
      alt="A Franka arm in LIBERO reaching for and picking up an object, seen from the policy's own camera">
 
 *The **unmodified** pi0.5, driven through this server on `libero_spatial` task
-0 - three episodes, all three successful. These are the frames the env client
-sends as observations, at the policy's native 224x224, not an outside camera.
-The fine-tuned policy is the one that scores zero, below.*
+0 - one episode of the three that ran, all three successful. These are the
+frames the env client sends as observations, at the policy's native 224x224,
+not an outside camera. The fine-tuned policy is the one that scores zero,
+below.*
 
 **A full-size pi0.5 has run end to end through it on LIBERO** - inference,
 feedback and FPO training - with the server's record of episodes and steps
