@@ -26,6 +26,8 @@ Every cell writes a per-file sha256 manifest of the source it ran, in `results/e
 
 openpi publishes 98.8 and 92.4 for these suites at 30k steps. Both cells land there.
 
+![Per-task success rates for both suites, with Wilson 95% intervals and openpi's published figures drawn as dashed lines](../figures/e11-stageA-control.svg)
+
 In both, the server's own record reconciles exactly with the clients': A1, 100 episodes and 10,632 steps on each side; A2, 200 episodes and 53,945 steps. Zero missing-step-state warnings, zero reconnects, every client exited zero.
 
 ## Stage B: the task the rule chose
@@ -64,6 +66,8 @@ Both ran one env client process over 50 episodes on task 8, with initial states 
 |---|---|---|---|---|
 | baseline | 50 | 26 | **0.520** | [0.3851, 0.6520] |
 | fine-tuned, **incomplete** - one iteration of ten | 50 | 0 | **0.000** | [0.0000, 0.0713] |
+
+![Baseline 26 of 50 against the fine-tuned policy's 0 of 50 on libero_10 task 8, with Wilson 95% intervals](../figures/e11-stageC-result.svg)
 
 Both are valid: 50 episodes and 23,735 steps on each side for the baseline, 50 and 26,000 for the fine-tuned policy, zero missing-step-state warnings, zero reconnects, both clients exited zero. The evaluated checkpoint is step 4096, sha256 `b8c25dee...`.
 
@@ -116,6 +120,13 @@ One iteration of 4,096 transitions, measured by the server:
 | — prefix forward (`obs_cache`) | 1,389 | 44.6% of the learn |
 | — per-epoch value refresh | 1,396 | 44.9% |
 | — backward and optimizer | 233 | 7.5% |
+
+![One iteration in seconds: collection against learn, and the learn split into prefix forward, per-epoch value refresh, backward and an unattributed remainder](../figures/e11-time-breakdown.svg)
+
+The figure plots the seconds, not the shares: the three learn components above
+are shares of 3,114 s, which is neither the learn's 3,490 s nor the 3,018 s
+they sum to, so the 472 s the measurement does not attribute is drawn instead
+of being folded away.
 
 Two things follow. The env clients idle for 86% of the wall clock, because the model lock serialises learning and inference. And the learn spends about four fifths of its time recomputing the prefix of a **frozen** VLM - the same observation's prefix, once per minibatch, four times per iteration. Neither is addressed here.
 
