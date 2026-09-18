@@ -1,0 +1,5 @@
+case	packages	bytes	seconds	cuda	imports
+envclient-robomimic	111	7559465900	71	yes (16 wheels)	ok
+envclient-robomimic-cpu	92	2801838077	68	no	ok
+envclient-libero	164	8229342123	79	yes (16 wheels)	ok
+envclient-libero-cpu	145	3471714406	61	no	ok

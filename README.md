@@ -36,7 +36,7 @@ the run, and one of them is falsified.
 | [E10](experiments/e10-vla-forward-cost/) | Is that cheap beside a VLA forward pass? | **Yes** - 1.3-3.6% of a step |
 | [E11](experiments/e11-vla-rl-libero/) | Can a real VLA be trained through this boundary, and does it help? | **Ran end to end; did not help** |
 
-[`experiments/`](experiments/) holds ten of these, nine of them run. Each
+[`experiments/`](experiments/) holds eleven of these, ten of them run. Each
 carries its data and a `FINDINGS.md` stating what the result does **not**
 support. The documentation, including a quickstart that trains FPO on
 HalfCheetah with no GPU and nothing to download, is at

@@ -134,6 +134,18 @@ itself, because robomimic is a deep learning library that ships its own
 policy learning code. For environments like it, "the environment side needs
 no GPU" is simply not true.
 
+**Overtaken, 2026-09-18, by [E12](../e12-cuda-free-rollout/FINDINGS.md).** The
+sentence above is true of the install measured here and not of the
+environment. On Linux `torch` ships a CUDA build whether or not CUDA is used;
+pinning the CPU build of the same version takes `envclient-robomimic` to
+**2.7G with no nvidia wheels**, and LIBERO - which this round never measured -
+from 7.8G to **3.4G**, with `import robosuite` still working. E12 reproduced
+this round's row exactly, 111 packages and 7.2G and 16 wheels on a different
+machine, so the two sets of numbers are comparable. What survives of the
+sentence is narrower: a **default** install of a robomimic-class environment
+carries CUDA, and that is a packaging default rather than a requirement of the
+environment.
+
 **So "the env client has no torch" is a statement about
 `plugrl-env-client`'s own dependencies, and does not generalise to every
 environment family.** Any argument built on footprint has to be made per
