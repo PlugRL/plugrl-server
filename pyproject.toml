@@ -4,7 +4,8 @@ version = "0.1.0"
 description = "PlugRL training server: policies, algorithms, and batched inference over WebSocket."
 authors = [
     {name = "chenhao lu", email = "luch21@mails.tsinghua.edu.cn"},
-    {name = "Zuo Gou"}
+    {name = "Zuo Gou"},
+    {name = "Zilin Kang"}
 ]
 readme = "README.md"
 license = "Apache-2.0"
