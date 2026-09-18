@@ -9,6 +9,11 @@ FPO on `HalfCheetah-v5`, three seeds, 500,000 environment steps each: episode
 return goes from **-315 ± 26** to **1928 ± 224**, in about 100 minutes per
 seed on a laptop with no GPU.
 
+![Episode return against environment steps, three seeds and their mean, rising from about -300 to roughly 2,000 over 500,000 steps](../figures/e6-learning-curve.svg)
+
+The curve is the training return the server logged. The **1928 ± 224** above is
+the separate evaluation described below, not this curve's last point.
+
 ## Why this needed doing
 
 Nothing in PlugRL had ever trained anything. Before this run:
