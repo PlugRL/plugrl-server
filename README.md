@@ -7,6 +7,14 @@ The training side of PlugRL: it holds the policy and the learning algorithm,
 batches inference across every connected env client over WebSocket, and learns
 from the feedback those clients send back.
 
+<img src="https://plugrl.github.io/media/libero-demo.gif" width="360"
+     alt="A Franka arm in LIBERO reaching for and picking up an object, seen from the policy's own camera">
+
+*The **unmodified** pi0.5, driven through this server on `libero_spatial` task
+0 - three episodes, all three successful. These are the frames the env client
+sends as observations, at the policy's native 224x224, not an outside camera.
+The fine-tuned policy is the one that scores zero, below.*
+
 **A full-size pi0.5 has run end to end through it on LIBERO** - inference,
 feedback and FPO training - with the server's record of episodes and steps
 reconciling exactly with the clients'. As a control, the unmodified checkpoint
