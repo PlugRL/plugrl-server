@@ -28,21 +28,23 @@ ACCENT = "#1E4CA8"
 MUTED = "#59626B"
 FAINT = "#C2C8CC"
 
-plt.rcParams.update({
-    "font.family": "sans-serif",
-    "font.sans-serif": ["IBM Plex Sans", "Segoe UI", "DejaVu Sans"],
-    "font.size": 10,
-    "axes.edgecolor": RULE,
-    "axes.labelcolor": INK,
-    "axes.titlecolor": INK,
-    "text.color": INK,
-    "xtick.color": MUTED,
-    "ytick.color": MUTED,
-    "figure.facecolor": PAPER,
-    "axes.facecolor": PAPER,
-    "savefig.facecolor": PAPER,
-    "svg.fonttype": "none",
-})
+plt.rcParams.update(
+    {
+        "font.family": "sans-serif",
+        "font.sans-serif": ["IBM Plex Sans", "Segoe UI", "DejaVu Sans"],
+        "font.size": 10,
+        "axes.edgecolor": RULE,
+        "axes.labelcolor": INK,
+        "axes.titlecolor": INK,
+        "text.color": INK,
+        "xtick.color": MUTED,
+        "ytick.color": MUTED,
+        "figure.facecolor": PAPER,
+        "axes.facecolor": PAPER,
+        "savefig.facecolor": PAPER,
+        "svg.fonttype": "none",
+    }
+)
 
 
 def read_tsv(path):
@@ -63,6 +65,7 @@ def frame(ax):
 
 # --------------------------------------------------------- E6, does it learn --
 
+
 def e6_learning_curve():
     src = EXPERIMENTS / "e6-first-learning-curve" / "summary.tsv"
     rows = read_tsv(src)
@@ -72,15 +75,24 @@ def e6_learning_curve():
 
     fig, ax = plt.subplots(figsize=(7.6, 4.0))
     for i, y in enumerate(seeds):
-        ax.plot(steps, y, color=FAINT, linewidth=1.0,
-                label="individual seeds" if i == 0 else None)
+        ax.plot(
+            steps,
+            y,
+            color=FAINT,
+            linewidth=1.0,
+            label="individual seeds" if i == 0 else None,
+        )
     ax.plot(steps, mean, color=ACCENT, linewidth=2.2, label="mean of 3 seeds")
     ax.axhline(0, color=RULE, linewidth=1.0, linestyle=(0, (4, 4)))
 
     ax.set_xlabel("environment steps")
     ax.set_ylabel("episode return")
-    ax.set_title("FPO on HalfCheetah-v5, through the process boundary",
-                 loc="left", fontsize=12, pad=12)
+    ax.set_title(
+        "FPO on HalfCheetah-v5, through the process boundary",
+        loc="left",
+        fontsize=12,
+        pad=12,
+    )
     ax.set_xlim(0, max(steps))
     ax.legend(frameon=False, loc="upper left", fontsize=9)
     frame(ax)
@@ -113,21 +125,37 @@ def e11_stage_a():
 
         ref = PUBLISHED[suite]
         ax.bar(tasks, sr, color=ACCENT, width=0.62, zorder=3)
-        ax.errorbar(tasks, sr, yerr=[lo, hi], fmt="none",
-                    ecolor=INK, elinewidth=1.1, capsize=3, zorder=4)
+        ax.errorbar(
+            tasks,
+            sr,
+            yerr=[lo, hi],
+            fmt="none",
+            ecolor=INK,
+            elinewidth=1.1,
+            capsize=3,
+            zorder=4,
+        )
         ax.axhline(ref, color=INK, linewidth=1.2, linestyle=(0, (5, 3)), zorder=5)
 
-        ax.set_title(f"{suite}  -  {successes} of {episodes}\n"
-                     f"dashed: openpi reports {ref:.3f}",
-                     loc="left", fontsize=10.5, pad=10, color=INK)
+        ax.set_title(
+            f"{suite}  -  {successes} of {episodes}\ndashed: openpi reports {ref:.3f}",
+            loc="left",
+            fontsize=10.5,
+            pad=10,
+            color=INK,
+        )
         ax.set_xlabel("task")
         ax.set_ylim(0, 1.08)
         ax.set_xticks(tasks)
         frame(ax)
 
     axes[0].set_ylabel("success rate, Wilson 95%")
-    fig.suptitle("pi0.5 through PlugRL, unmodified: the control",
-                 x=0.012, ha="left", fontsize=12.5)
+    fig.suptitle(
+        "pi0.5 through PlugRL, unmodified: the control",
+        x=0.012,
+        ha="left",
+        fontsize=12.5,
+    )
     fig.tight_layout(rect=(0, 0.045, 1, 0.94))
     source_note(fig, "experiments/e11-vla-rl-libero/results/stageA.tsv")
     fig.savefig(HERE / "e11-stageA-control.svg")
@@ -135,6 +163,7 @@ def e11_stage_a():
 
 
 # -------------------------------------- E11 Stage C, the result, and it fails --
+
 
 def e11_stage_c():
     src = EXPERIMENTS / "e11-vla-rl-libero" / "results" / "stageC_eval.tsv"
@@ -146,13 +175,21 @@ def e11_stage_c():
         sr.append(float(r["sr"]))
         lo.append(float(r["sr"]) - float(r["ci_lo"]))
         hi.append(float(r["ci_hi"]) - float(r["sr"]))
-        counts.append(f'{r["successes"]} of {r["episodes"]}')
+        counts.append(f"{r['successes']} of {r['episodes']}")
 
     y = list(range(len(names)))[::-1]
     fig, ax = plt.subplots(figsize=(7.6, 2.5))
     ax.barh(y, sr, color=[INK, ACCENT], height=0.44, zorder=3)
-    ax.errorbar(sr, y, xerr=[lo, hi], fmt="none",
-                ecolor=INK, elinewidth=1.1, capsize=3, zorder=4)
+    ax.errorbar(
+        sr,
+        y,
+        xerr=[lo, hi],
+        fmt="none",
+        ecolor=INK,
+        elinewidth=1.1,
+        capsize=3,
+        zorder=4,
+    )
     for yi, value, upper, text in zip(y, sr, hi, counts):
         ax.text(value + upper + 0.025, yi, text, va="center", fontsize=10, color=INK)
 
@@ -160,8 +197,12 @@ def e11_stage_c():
     ax.set_ylim(-0.6, 1.6)
     ax.set_xlim(0, 1.0)
     ax.set_xlabel("success rate on libero_10 task 8, Wilson 95%")
-    ax.set_title("The reinforcement learning result is negative",
-                 loc="left", fontsize=12.5, pad=12)
+    ax.set_title(
+        "The reinforcement learning result is negative",
+        loc="left",
+        fontsize=12.5,
+        pad=12,
+    )
     frame(ax)
     ax.spines["left"].set_visible(False)
 
@@ -189,20 +230,43 @@ TIMING = {
 
 def e11_time_breakdown():
     total = TIMING["collection"] + TIMING["learn"]
-    parts = ["prefix forward (obs_cache)", "per-epoch value refresh",
-             "backward and optimizer"]
+    parts = [
+        "prefix forward (obs_cache)",
+        "per-epoch value refresh",
+        "backward and optimizer",
+    ]
     measured = sum(TIMING[p] for p in parts)
     remainder = TIMING["learn"] - measured
 
     fig, ax = plt.subplots(figsize=(8.8, 3.2))
 
     ax.barh([1], [TIMING["collection"]], color=FAINT, height=0.42, zorder=3)
-    ax.barh([1], [TIMING["learn"]], left=[TIMING["collection"]],
-            color=INK, height=0.42, zorder=3)
-    ax.text(TIMING["collection"] / 2, 1, "collection", ha="center", va="center",
-            fontsize=9, color=INK)
-    ax.text(TIMING["collection"] + TIMING["learn"] / 2, 1, "learn",
-            ha="center", va="center", fontsize=9, color=PAPER)
+    ax.barh(
+        [1],
+        [TIMING["learn"]],
+        left=[TIMING["collection"]],
+        color=INK,
+        height=0.42,
+        zorder=3,
+    )
+    ax.text(
+        TIMING["collection"] / 2,
+        1,
+        "collection",
+        ha="center",
+        va="center",
+        fontsize=9,
+        color=INK,
+    )
+    ax.text(
+        TIMING["collection"] + TIMING["learn"] / 2,
+        1,
+        "learn",
+        ha="center",
+        va="center",
+        fontsize=9,
+        color=PAPER,
+    )
 
     left = TIMING["collection"]
     shades = [ACCENT, "#4A7BD0", "#8AA6D8", FAINT]
@@ -210,26 +274,45 @@ def e11_time_breakdown():
         width = remainder if name == "unattributed" else TIMING[name]
         ax.barh([0], [width], left=[left], color=colour, height=0.42, zorder=3)
         if width > 260:
-            ax.text(left + width / 2, 0, f"{width:,} s", ha="center",
-                    va="center", fontsize=8.5,
-                    color=PAPER if colour in (ACCENT, "#4A7BD0") else INK)
+            ax.text(
+                left + width / 2,
+                0,
+                f"{width:,} s",
+                ha="center",
+                va="center",
+                fontsize=8.5,
+                color=PAPER if colour in (ACCENT, "#4A7BD0") else INK,
+            )
         left += width
 
     handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in shades]
-    ax.legend(handles, parts + [f"unattributed ({remainder:,} s)"],
-              frameon=False, fontsize=8.5, ncol=2,
-              loc="upper center", bbox_to_anchor=(0.5, -0.30))
+    ax.legend(
+        handles,
+        parts + [f"unattributed ({remainder:,} s)"],
+        frameon=False,
+        fontsize=8.5,
+        ncol=2,
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.30),
+    )
 
     ax.set_yticks([1, 0], ["one iteration", "inside the learn"])
     ax.set_xlim(0, total)
-    ax.set_title("One iteration of 4,096 transitions, in seconds:\n"
-                 "86% of the wall clock is the learn",
-                 loc="left", fontsize=12, pad=12)
+    ax.set_title(
+        "One iteration of 4,096 transitions, in seconds:\n"
+        "86% of the wall clock is the learn",
+        loc="left",
+        fontsize=12,
+        pad=12,
+    )
     frame(ax)
     ax.spines["left"].set_visible(False)
 
     fig.tight_layout(rect=(0, 0.26, 1, 1))
-    source_note(fig, 'experiments/e11-vla-rl-libero/FINDINGS.md, "Where an hour of this training goes"')
+    source_note(
+        fig,
+        'experiments/e11-vla-rl-libero/FINDINGS.md, "Where an hour of this training goes"',
+    )
     fig.savefig(HERE / "e11-time-breakdown.svg")
     plt.close(fig)
 
@@ -240,4 +323,6 @@ if __name__ == "__main__":
     e11_stage_c()
     e11_time_breakdown()
     for svg in sorted(HERE.glob("*.svg")):
-        print(f"wrote {svg.relative_to(EXPERIMENTS.parent)}  {svg.stat().st_size:,} bytes")
+        print(
+            f"wrote {svg.relative_to(EXPERIMENTS.parent)}  {svg.stat().st_size:,} bytes"
+        )
