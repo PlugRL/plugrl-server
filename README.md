@@ -59,10 +59,10 @@ We use `uv` to manage dependencies and development environments.
 1. **Install uv** (if not already installed):
 
     ```bash
-  curl -LsSf https://astral.sh/uv/install.sh | sh
+    curl -LsSf https://astral.sh/uv/install.sh | sh
     ```
 
-  Or use your package manager (e.g., `brew install uv` on macOS).
+    Or use your package manager (e.g., `brew install uv` on macOS).
 
 2. **Clone the repository:**
 
@@ -71,22 +71,23 @@ We use `uv` to manage dependencies and development environments.
     cd plugrl-server
     ```
 
-  Nothing in the default install needs a git submodule. `pi0-policy` does -
-  see [Training PI0 (OpenPI) with FPO](#training-pi0-openpi-with-fpo)
-  for the extra steps a plain clone does not give you.
+    Nothing in the default install needs a git submodule. `pi0-policy` does -
+    see [Training PI0 (OpenPI) with FPO](#training-pi0-openpi-with-fpo)
+    for the extra steps a plain clone does not give you.
 
 3. **Install dependencies with uv:**
 
     ```bash
-  uv sync
+    uv sync
     ```
 
-  This will create a virtual environment at `.venv/` and install all dependencies specified in `pyproject.toml`.
+    This creates a virtual environment at `.venv/` and installs everything
+    `pyproject.toml` asks for.
 
 4. **Run commands via uv:**
 
     ```bash
-  uv run python -m plugrl_server.cli --help
+    uv run python -m plugrl_server.cli --help
     ```
 
 ### 🚀 Usage
