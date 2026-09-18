@@ -1,0 +1,84 @@
+E12 behaviour check - does the CUDA-free env client behave like the other one?
+Cluster qz103, 2026-09-18. Server unchanged throughout: pi0-policy, pi05_libero,
+eval algorithm, CUDA, GPU 0. Only the client's Python differs.
+
+Harness: verify_cpu_client.sh, libero_spatial task 0, 3 episodes, initial states
+in order, seed 7, replan-steps 5, one env, one process.
+
+
+THE CHECK AS THE PROTOCOL WROTE IT: FAILED
+------------------------------------------
+PROTOCOL.md required successes and step counts to match an existing run
+exactly: 3 of 3, 301 env steps, 61 inference calls, 61 feedback calls.
+
+  run                         client  success  env_steps  infer  feedback
+  demo capture (2026-09-18)   CUDA    3/3      301        61     61
+  cpu-verify                  CPU     3/3      296        60     60
+
+296 is not 301. Prediction 4 is falsified as written.
+
+
+WHY, AND WHAT THE CONTROL SHOWS
+-------------------------------
+The premise was wrong, not the client. The protocol assumed the run is
+deterministic because the environment is seeded. The policy is not seeded:
+openpi_policy.py:119 draws fresh noise for every inference,
+
+    x = torch.randn(batch_size, self.action_horizon, self.action_dim, ...)
+
+and nothing in src/plugrl_server calls manual_seed, np.random.seed or
+torch.use_deterministic_algorithms - a search over the whole package returns
+no matches. Two runs of the same configuration therefore take different
+trajectories.
+
+A control run, the CUDA client through the same harness, confirms it:
+
+  run                         client  success  env_steps  infer  feedback
+  demo capture (2026-09-18)   CUDA    3/3      301        61     61
+  cuda-control                CUDA    3/3      300        61     61
+  cpu-verify                  CPU     3/3      296        60     60
+
+CUDA against CUDA already differs. The exact-match check could not have passed
+for any client, including the unmodified one.
+
+
+THE CHECK THAT ISOLATES THE CLIENT: PASSED
+------------------------------------------
+Designed after the failure above, and labelled as such.
+
+An episode's first observation depends on the initial state, which is fixed and
+taken in order, and not on anything the policy did. If the CUDA-free client
+sees and sends the same frames, it is behaving identically at the only place it
+can be compared free of the policy's randomness.
+
+All twelve artifacts are byte-identical between cpu-verify and cuda-control:
+
+  d5bd518b9b7116ef78fbcb311f1de8d4cde52428a21d73cc5f4a0518af5cd859  ep_000001/obs/first/images/base.png
+  7fb287ce3738d96ba1042787eb6827b19283feb43495bd3b9cb3a72c31aa6c7f  ep_000001/obs/first/images/wrist.png
+  b9d3963eb29ecb3561b29f7c62bcf9a40d6aa04c47f11ebda0823b0abd6c2fb4  ep_000001/obs/first/states/eef.npy
+  0a91f8c396de41e282d3640365a14df8f0090791bbf2c2eb917423f4779752a9  ep_000001/obs/first/text.txt
+  13408deef2859adcbf3d944913a259ae0a31ded7e1890e6aa8f9ef0272a04a85  ep_000002/obs/first/images/base.png
+  6fb25ca3e88fe998ba547ccb5bbb3c19f761849a43205e77166eb9b5cb4e8122  ep_000002/obs/first/images/wrist.png
+  f9a8c5655996e9dc4e72e839fba50cc7f8a62f55e98bad9544fa8cfc183f8301  ep_000002/obs/first/states/eef.npy
+  0a91f8c396de41e282d3640365a14df8f0090791bbf2c2eb917423f4779752a9  ep_000002/obs/first/text.txt
+  31165a760ae8a84c78b14632ef2e0e87af7f235ec6a769f42243714c4d1595d4  ep_000003/obs/first/images/base.png
+  29297e47abb3395a6d4a85159b07cf482e113939ca5f49afb3824122ea9eedfb  ep_000003/obs/first/images/wrist.png
+  732aca88715df5d932f1b6662fe62cd69b1f7ae0e7dba27dae68e48e5def49fb  ep_000003/obs/first/states/eef.npy
+  0a91f8c396de41e282d3640365a14df8f0090791bbf2c2eb917423f4779752a9  ep_000003/obs/first/text.txt
+
+Three different scenes, each identical across the two clients. Episodes 2 and 3
+match as well, so the client also resets the environment the same way after a
+trajectory that was not the same.
+
+The CUDA-free client reports:
+
+  torch 2.14.0+cpu   torch.version.cuda None   torch.cuda.is_available() False
+
+
+WHAT THIS DOES NOT SHOW
+-----------------------
+- Not that success rates are equal. Three episodes on one task, all successful
+  in both, says nothing about the rate on a suite.
+- Not that every environment behaves this way. One task of libero_spatial.
+- Not that the runs are otherwise identical: the step counts differ, and with
+  an unseeded policy there is no configuration under which they would not.
