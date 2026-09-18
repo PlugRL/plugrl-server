@@ -17,6 +17,9 @@ authors:
   - family-names: Gou
     given-names: Zuo
     alias: tactino
+  - family-names: Kang
+    given-names: Zilin
+    alias: nothingbutbut
 repository-code: https://github.com/PlugRL/plugrl-server
 license: Apache-2.0
 version: 0.1.0
