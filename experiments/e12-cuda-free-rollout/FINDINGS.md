@@ -119,6 +119,14 @@ that rerunning E11's Stage A or its evaluations will not return the same
 success rates, and nothing in that experiment says otherwise. A `--policy.seed`
 option would fix it and is not part of this experiment.
 
+**Fixed, 2026-09-18.** It turned out `--seed` already existed and reached only
+the experiment's name - two references in the whole package, both building a
+directory name, and no generator ever seeded. The server now seeds Python,
+NumPy and torch from it, before the policy is built. **A single env client is
+reproducible after that; several are not**, because the server batches
+whichever requests have arrived when the scheduler fires, so batch composition
+still depends on timing. The runs recorded above predate the fix.
+
 ## What this does not support
 
 - **Nothing about speed.** The CPU torch is not asked to compute here. If the
