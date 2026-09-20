@@ -27,3 +27,9 @@ class FPOAlgoConfig(BaseAlgoConfig):
     discretize_t_for_training: bool = True
     average_losses_before_exp: bool = True
     save_interval: int = 10
+    # Where the float32 copies of half-precision parameters live, and with
+    # them the optimizer's state. `None` keeps them beside the model. A second
+    # card takes about 3.5 GB off the first for a pi0.5 action expert, which
+    # is what a first learn step leaves behind and cannot give back. The cost
+    # is a transfer per step; measure before assuming it is worth it.
+    master_weights_device: str | None = None
