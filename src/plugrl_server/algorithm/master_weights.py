@@ -35,17 +35,41 @@ class MasterWeights:
     exactly the parameters it would otherwise get.
     """
 
-    def __init__(self, params: Iterable[torch.nn.Parameter]) -> None:
+    def __init__(
+        self,
+        params: Iterable[torch.nn.Parameter],
+        device: torch.device | str | None = None,
+    ) -> None:
+        """Keep the copies on `device` instead of beside the model.
+
+        The optimizer's state lives wherever its parameters live, so putting
+        the copies on a second card moves the copies and Adam's two moments
+        off the card holding the model. E11 could not fit a second learn step
+        on 24 GB because that state, which does not exist until the first
+        step, has to fit beside everything the first step needed.
+
+        The cost is a transfer per step: gradients out to the copies, updated
+        weights back. Whether that is worth paying is measured, not assumed.
+
+        `None` keeps them where the model is, which is what happened before
+        this argument existed.
+        """
+        self.device = None if device is None else torch.device(device)
         self.pairs: list[tuple[torch.nn.Parameter, torch.nn.Parameter]] = []
         self.optimizer_params: list[torch.nn.Parameter] = []
         for param in params:
             if not param.requires_grad:
                 continue
             if param.dtype in _HALF_PRECISION:
-                master = torch.nn.Parameter(param.detach().to(torch.float32).clone())
+                target = self.device if self.device is not None else param.device
+                master = torch.nn.Parameter(
+                    param.detach().to(dtype=torch.float32, device=target).clone()
+                )
                 self.pairs.append((param, master))
                 self.optimizer_params.append(master)
             else:
+                # A float32 parameter is stepped in place, so its optimizer
+                # state stays on the model's card whatever `device` says.
                 self.optimizer_params.append(param)
 
     def clear_model_grads(self) -> None:
@@ -58,7 +82,9 @@ class MasterWeights:
             if param.grad is None:
                 master.grad = None
                 continue
-            master.grad = param.grad.detach().to(torch.float32)
+            master.grad = param.grad.detach().to(
+                dtype=torch.float32, device=master.device
+            )
             param.grad = None
 
     @torch.no_grad()

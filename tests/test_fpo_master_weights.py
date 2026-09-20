@@ -128,6 +128,56 @@ class TestMasterWeights:
         assert torch.equal(copy.detach(), torch.full_like(copy, 0.5))
 
 
+class TestMasterWeightsPlacement:
+    """The copies, and so the optimizer's state, can live off the model's card.
+
+    Two cards are what this is for and CI has none, so these pin the contract
+    on CPU: the requested device is recorded and honoured, the default is
+    unchanged, and the round trip still reaches the model. That the transfer
+    is correct across a real pair of GPUs is measured on the cluster, not
+    here.
+    """
+
+    def test_default_keeps_the_copies_beside_the_model(self):
+        layer = _bf16_linear()
+        master = MasterWeights(layer.parameters())
+        assert master.device is None
+        (copy,) = master.optimizer_params
+        assert copy.device == layer.weight.device
+
+    def test_a_requested_device_is_recorded_and_used(self):
+        layer = _bf16_linear()
+        master = MasterWeights(layer.parameters(), device="cpu")
+        assert master.device == torch.device("cpu")
+        (copy,) = master.optimizer_params
+        assert copy.device == torch.device("cpu")
+
+    def test_the_round_trip_still_reaches_the_model(self):
+        layer = _bf16_linear()
+        before = layer.weight.detach().clone()
+        master = MasterWeights(layer.parameters(), device="cpu")
+        optimizer = torch.optim.Adam(master.optimizer_params, lr=LR)
+
+        for _ in range(STEPS):
+            optimizer.zero_grad(set_to_none=True)
+            master.clear_model_grads()
+            layer.weight.grad = torch.ones_like(layer.weight)
+            master.grads_to_masters()
+            optimizer.step()
+            master.masters_to_model()
+
+        (copy,) = master.optimizer_params
+        assert copy.grad is not None and copy.grad.device == copy.device
+        assert not torch.equal(layer.weight, before), "the model never saw the steps"
+        assert torch.equal(layer.weight, copy.detach().to(torch.bfloat16))
+
+    def test_float32_parameters_stay_where_the_model_is(self):
+        """They are stepped in place, so no device argument can move them."""
+        layer = nn.Linear(4, 4)
+        master = MasterWeights(layer.parameters(), device="cpu")
+        assert master.optimizer_params == list(layer.parameters())
+
+
 class Bf16ActorPolicy(TreeObsFlowPolicy):
     """The tree-observation policy with its actor held in bfloat16, as pi0's expert is."""
 

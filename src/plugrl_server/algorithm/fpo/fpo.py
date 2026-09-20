@@ -59,7 +59,9 @@ class FPOAlgorithm(BaseAlgorithm):
         # small learning rate rounds away. The optimizer steps float32 copies
         # of such parameters instead; see MasterWeights.
         self.master_weights = MasterWeights(
-            list(self.policy.actor.parameters()) + list(self.policy.critic.parameters())
+            list(self.policy.actor.parameters())
+            + list(self.policy.critic.parameters()),
+            device=config.master_weights_device,
         )
         self.optimizer = torch.optim.Adam(
             self.master_weights.optimizer_params,
