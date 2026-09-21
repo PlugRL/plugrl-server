@@ -131,3 +131,40 @@ The consequence was harmless, and is kept rather than discarded. What the queue
 started was `eval-baseline`, which evaluates the unmodified checkpoint and
 needs no trained one; the protocol requires that cell regardless. It ran on
 GPUs 0 and 1, which the training had just vacated.
+
+---
+
+## 3. The machine filled up, so the run waits and no longer names its cards
+
+**2026-09-21, an hour after amendment 2. Still no registered data.**
+
+Amendment 2 said the run had moved to GPUs 5, 6 and 7. That was true for about
+forty minutes. At 17:50 an eight-process job took **15,876 MiB on every one of
+the eight cards**, leaving roughly 8,700 MiB free on each. The run's model card
+alone needs 24,095 MiB. There was nowhere on the machine to put it, and the
+high indices were worth nothing, because the neighbour was on all of them.
+
+The protocol had already written the rule:
+
+> If the cluster's GPUs are occupied by other work, the run waits rather than
+> squeezing beside it.
+
+So it waits. The orchestrator was replaced before it could launch into a full
+machine: it no longer names cards in advance. It polls until three cards are
+each under 500 MiB in use, takes the three highest of those, and has **no
+timeout and no fallback that starts anyway** - because a fallback that starts
+anyway is the thing the rule forbids.
+
+What amendment 2 got right is the reason for preferring high indices, and that
+still applies when the choice exists. What it got wrong was naming them: a
+fixed choice made at 17:42 was already wrong at 17:50. The cards are now chosen
+at the moment the run starts, and the choice is logged.
+
+### One more thing the move would have broken
+
+The memory recorder samples `nvidia-smi -i 0` and `-i 1` from outside the
+server, because nothing inside records it and **which card holds what is the
+point**. `CUDA_VISIBLE_DEVICES` does not remap that. Had the run moved to cards
+5 and 6 with the recorder untouched, `results/train.tsv`'s peak memory per card
+- the evidence prediction 1 turns on - would have been two idle cards. The
+recorder now follows the cards the run is given.
