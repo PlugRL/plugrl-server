@@ -160,6 +160,29 @@ still applies when the choice exists. What it got wrong was naming them: a
 fixed choice made at 17:42 was already wrong at 17:50. The cards are now chosen
 at the moment the run starts, and the choice is logged.
 
+### `eval-baseline` ran beside that job, and its row is kept
+
+The cell started at 17:39, when GPU 0 was empty. The eight-process job arrived
+at 17:50, while it was running. It finished at 18:50 with **29 of 50**, exit
+status 0, and the post-processor reconciled the server's episode record with
+the client's, so the row is marked valid.
+
+It took 4,101 s where E11's equivalent took 1,937 s - 2.1x, from sharing the
+card. That is a fact about the clock, not about the policy: the cell replays 50
+fixed initial states under a fixed seed, and contention changes neither the
+actions nor the environment's dynamics. Prediction 6, the only one about wall
+clock, is about training.
+
+This is recorded now, before the remaining cells are run and before it is known
+whether the number helps or hurts. The alternative reading - that the cell
+squeezed beside other work and should be discarded - is available to a reader,
+and the evidence for it is here rather than left out.
+
+For the record, E11 measured **26 of 50** on this task. The protocol required
+re-measuring rather than reusing that number, because E11's evaluations predate
+the seeding fix. The two intervals overlap heavily, so this is not a
+contradiction; it is the reason the protocol asked.
+
 ### One more thing the move would have broken
 
 The memory recorder samples `nvidia-smi -i 0` and `-i 1` from outside the
