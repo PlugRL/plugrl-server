@@ -303,3 +303,59 @@ at about 22:50 and did not return until the afternoon; the watcher installed
 the recorder on reconnect, by which time the run was over. The timings above
 survive because they come from checkpoint mtimes on disk. The CPU timeline
 cannot be reconstructed, and no claim in the findings will rest on one.
+
+---
+
+## 5. Prediction 5 is about to pass without testing anything, so a second baseline was added
+
+**2026-09-22 19:05, written before the added cell has run and before the
+registered repeat has returned.**
+
+### The registered test has gone vacuous
+
+Prediction 5 reads:
+
+> **`eval-iter10-repeat` returns exactly the same successes as `eval-iter10`.**
+> Falsified by any difference. This is the seeding fix or it is not.
+
+Its purpose is stated in the protocol: the repeat "is not about the policy",
+it checks the seeding fix under real conditions. E12 found that `--seed`
+reached only the run's name, and the fix in #31 is what makes a single-client
+evaluation reproducible at all.
+
+The trained policy scores **0 of 50** at iterations 1, 2, 5 and 9. So the
+repeat will score 0 of 50, and the prediction will hold. But a policy that
+fails every episode agrees with itself under any seed, under a different seed,
+or under no seeding at all. **Nothing about reproducibility can be inferred
+from two zeros.** The prediction as registered will pass and will have tested
+nothing, and reporting it as a confirmation of the seeding fix would be
+claiming evidence that does not exist.
+
+### What was added
+
+`eval-baseline-repeat`: the unmodified checkpoint, a second time, same seed,
+same 50 initial states in the same order. The baseline's 29 of 50 is the only
+non-degenerate number this experiment has, and repeating it is the test the
+registered repeat was meant to be.
+
+It is **additive**. It changes no registered value, discards no measurement,
+and replaces nothing - `eval-iter09-repeat` still runs, and is still reported
+with the note that it is vacuous. The cost is about 45 minutes on cards that
+are otherwise idle.
+
+Whether it returns 29 is not known as this is written. If it does, the seeding
+fix does what E12's finding said it must. If it returns anything else, that is
+a real result and a more important one than anything else in this experiment,
+because it would mean the single-client evaluations this project has been
+reporting - including E11's 26 of 50 and this run's own baseline - are not
+reproducible after all.
+
+### The general point, since this is the third time
+
+A pre-registered prediction can be satisfied by a degenerate outcome. Writing
+predictions before the data is what keeps them honest; it does not guarantee
+they remain informative once the data arrives. This one was written expecting
+a policy with a non-zero success rate at iteration 10, and the collapse to
+zero took its content away. The protocol could not have known that - it
+predicted the collapse in the same document - but the findings have to say
+which predictions were tested and which merely passed.
