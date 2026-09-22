@@ -191,3 +191,115 @@ point**. `CUDA_VISIBLE_DEVICES` does not remap that. Had the run moved to cards
 5 and 6 with the recorder untouched, `results/train.tsv`'s peak memory per card
 - the evidence prediction 1 turns on - would have been two idle cards. The
 recorder now follows the cards the run is given.
+
+---
+
+## 4. The run reached step 40,960 and lost the checkpoint, and iteration 9 stands in for iteration 10
+
+**2026-09-22, after the run ended. This is the first amendment written with
+registered data in hand, and it changes no registered value.**
+
+### What happened
+
+The run ended at 07:08:22 on 2026-09-22 after 43,206 s. Not from memory, and
+not from any neighbour:
+
+```
+[07:08:22] clients exit 124 after 43206s (server_died=0)
+[07:08:55] teardown clean
+           === out of memory? ===
+           0
+           === peak memory, GPU0 and GPU1 ===
+           gpu0_peak_mib=20919  gpu1_peak_mib=9925
+```
+
+Exit status 124 is `timeout`. The env clients run under `timeout 43200` in
+`e14_train.sh` - a **twelve-hour budget in our own harness**. The run needed
+about thirteen. The server was alive throughout and shut down cleanly.
+
+### The tenth iteration computed and its checkpoint did not survive
+
+Step 40,960 is exactly ten iterations of the 4,096-transition buffer, and the
+run got there: the tenth learn step finished and the server was writing
+`tmp_40960/` when the clients were killed. That directory holds a single file,
+short of its own declared length:
+
+```
+4100        COMPLETE    expected=8528818570  actual=8528818570  missing=0
+36870       COMPLETE    expected=8528818570  actual=8528818570  missing=0
+tmp_40960   TRUNCATED   expected=8528818570  actual=8355110912  missing=173707658
+```
+
+The expected size is computed from the safetensors header's own declared
+tensor offsets, not guessed from the other files. `config.yaml`, `metadata.pt`
+and `optimizer.pt` were never written at all.
+
+**So `eval-iter10` has nothing to evaluate.** Iteration 9 at step 36,870 is the
+last complete checkpoint, and the evaluation cell is labelled **`iter09`**, not
+`iter10`, so that no row in `results/eval.tsv` claims to be a checkpoint that
+does not exist. `eval-iter10-repeat` becomes `eval-iter09-repeat` and still
+does its job, which was never about the policy: it tests whether the seeding
+fix makes an evaluation reproducible.
+
+The alternative - resuming from step 36,870 to produce a tenth checkpoint -
+was rejected. The cause here is internal, our own budget, so the protocol's
+one restart for an external cause does not cover it and is spent besides. A
+resumed run would also be a different run: fresh clients, different batch
+composition by arrival. Nine iterations documented beats ten assembled from
+two runs.
+
+### What the run did establish
+
+**No `OutOfMemoryError`, across all ten iterations.** Per iteration, from
+`results/train.tsv` - wall clock checkpoint to checkpoint, with iteration 1
+measured from `server listening`, and peak memory per card:
+
+| iteration | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+|---|---|---|---|---|---|---|---|---|---|
+| wall s | 4696 | 4629 | 4680 | 4603 | 4639 | 4642 | 4636 | 4645 | 4660 |
+| card 1 MiB | 18504 | 19946 | **20919** | 20086 | 19966 | 20066 | 20046 | 19986 | 19986 |
+| card 2 MiB | 9071 | 9071 | **9925** | 9071 | 9071 | 9071 | 9071 | 9071 | 9071 |
+
+Every wall clock is under prediction 6's bound of 4,862 s, and the spread
+across nine iterations is 93 s - 2%. **Prediction 6 holds.**
+
+On memory, prediction 1's stated worry was that "ten allocate no more state,
+but the allocator may still grow". It grew for three iterations, touched
+20,919 MiB in iteration 3, and then **came back down** to about 20,000 and
+stayed within 120 MiB of that for the remaining six. The high-water mark of
+20,919 is a single iteration's transient, not the level the run sits at, and
+quoting it as "the peak" without that sentence would overstate how close to
+the card this configuration actually runs.
+
+That table bears on a question this amendment series raised, without settling
+it. Iteration 2 ran while the neighbouring jobs on the other cards were down
+and iteration 3 while all three were up, and the difference is 51 s, inside
+the natural spread; the machine ran at a load average near 193 on 128 cores
+for much of the night, including a root process at roughly 61 cores.
+
+**That is one pair of iterations, not a controlled test.** The comparison
+rests on two snapshots of the GPU process table taken an hour apart, and the
+load timeline that would turn it into evidence does not exist - see the second
+failure recorded below. What can be said without it is narrower and still
+worth saying: across nine iterations spanning a whole night on a shared
+machine, the spread is 93 s, so whatever the load was doing, this run's wall
+clock did not follow it.
+
+### Two failures of ours, recorded
+
+**The budget was checkable before the run started, and was not checked.** The
+two-iteration probe took 9,044 s, which is 4,522 s per iteration; ten
+iterations plus startup was therefore always going to need about 45,600 s
+against a 43,200 s budget. That arithmetic needed the probe's own number and
+nothing else. It would not have changed what was allowed - restarting for an
+internal cause is not permitted and the allowance was spent - but it would
+have turned a discovery into a plan, and the substitution of iteration 9 would
+have been declared in advance instead of after the fact.
+
+**The load timeline for this run does not exist.** Amendment 3 promised a
+recorder sampling load average and per-process CPU on a fixed interval so that
+attribution would have something under it. The tunnel to the cluster dropped
+at about 22:50 and did not return until the afternoon; the watcher installed
+the recorder on reconnect, by which time the run was over. The timings above
+survive because they come from checkpoint mtimes on disk. The CPU timeline
+cannot be reconstructed, and no claim in the findings will rest on one.
