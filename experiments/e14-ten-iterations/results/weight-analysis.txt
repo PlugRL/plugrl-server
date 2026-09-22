@@ -1,0 +1,64 @@
+Are the evaluated checkpoints finite, and did training move them?
+Run 2026-09-22 on the cluster, against the checkpoints the evaluations loaded.
+
+The question these answer: four cells returned 0 of 50, which would also be
+the result if no checkpoint had been loaded, if the same one had been loaded
+four times, or if training had driven the weights to NaN.
+
+
+weight_health.py - non-finite values, and the global L2 over all float tensors
+
+  checkpoint   nonfinite_tensors   tensors   global_l2   max_abs
+  4100         0                   821       6426.49     284
+  8200         0                   821       6426.50     284
+  20480        0                   821       6426.52     284
+  36870        0                   821       6426.54     284
+
+No NaN and no Inf anywhere, so the collapse is not numerical divergence.
+
+The global norm is equal across checkpoints to about eight parts per million.
+That is NOT evidence that the weights did not move - a norm is preserved by
+any rotation - and it should not be read as such. The measurement that
+answers the question is the norm of the difference, below.
+
+
+weight_diff.py - relative distance between checkpoints
+
+  4100 -> 36870
+    relative distance ||b-a||/||a||   0.00445225
+    largest per-tensor relative       0.545351  (critic.mlp.0.bias)
+    tensors compared                  821
+    only in a / only in b / reshaped  0 / 0 / 0
+
+Eight iterations move the weights by 0.45% overall. The tensor that moves
+furthest is the value head's first bias, by 55%: the critic starts from a
+random initialisation and is still moving long after the policy has collapsed.
+
+  ckpt/pi05_libero -> 4100
+    tensors compared                  0
+    only in a / only in b / reshaped  812 / 821 / 0
+
+The base openpi checkpoint and a PlugRL checkpoint share no tensor names at
+all - different serialisations, converted when the policy is constructed - so
+the distance from the base weights to iteration 1 cannot be measured this way
+and is not reported. That gap is why the code-path argument in FINDINGS.md is
+an argument and not a measurement.
+
+
+ckpt_dtypes.py - what dtypes are stored, read from the safetensors header
+
+  4100         {'F32': 122, 'BF16': 699}
+  36870        {'F32': 122, 'BF16': 699}
+  pi05_libero  {'BF16': 812}
+
+This closes the last place a strict, correctly-keyed round trip could still
+lose something. load_state_dict copies into the existing parameter and casts
+to ITS dtype, so a float32 tensor stored into a bfloat16 parameter would drop
+sixteen bits of mantissa per element. That does not happen here: what was
+saved is the policy's own state_dict, so the 122 float32 and 699 bfloat16
+tensors are the policy's own mixture and each lands in a parameter of the
+same dtype.
+
+The base openpi checkpoint is uniformly bfloat16 with 812 tensors against
+821, consistent with it having no critic - a separate serialisation, not a
+comparable file.

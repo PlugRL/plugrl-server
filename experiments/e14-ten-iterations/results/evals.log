@@ -1,0 +1,46 @@
+[09-22 15:26:50] five cells to run; baseline is already recorded
+[09-22 15:26:50] START eval-iter01 label=iter01 step=4100
+[09-22 16:19:58] END eval-iter01 rc=0
+[16:19:41] client exited with 0 after 2568s
+[16:19:58] STAGEC_EVAL_DONE eval-iter01
+[09-22 16:19:58] START eval-iter02 label=iter02 step=8200
+[09-22 17:17:15] END eval-iter02 rc=0
+[17:16:54] client exited with 0 after 2975s
+[17:17:15] STAGEC_EVAL_DONE eval-iter02
+[09-22 17:17:15] START eval-iter05 label=iter05 step=20480
+[09-22 18:04:06] END eval-iter05 rc=0
+[18:03:52] client exited with 0 after 2277s
+[18:04:06] STAGEC_EVAL_DONE eval-iter05
+[09-22 18:04:06] START eval-iter09 label=iter09 step=36870
+[09-22 18:45:38] END eval-iter09 rc=0
+[18:45:32] client exited with 0 after 2233s
+[18:45:38] STAGEC_EVAL_DONE eval-iter09
+[09-22 18:45:38] START eval-iter09-repeat label=iter09-repeat step=36870
+[09-22 19:05:14] baseline-repeat queued, waiting for the registered cells to finish
+[09-22 19:13:12] baseline-repeat queued, waiting for the registered cells to finish
+[09-22 19:55:17] END eval-iter09-repeat rc=0
+[19:54:58] client exited with 0 after 3964s
+[19:55:17] STAGEC_EVAL_DONE eval-iter09-repeat
+[09-22 19:55:17] === rows ===
+policy	task_id	episodes	successes	sr	ci_lo	ci_hi	valid
+baseline	8	50	29	0.5800	0.4423	0.7062	true
+iter01	8	50	0	0.0000	0.0000	0.0713	true
+iter02	8	50	0	0.0000	0.0000	0.0713	true
+iter05	8	50	0	0.0000	0.0000	0.0713	true
+iter09	8	50	0	0.0000	0.0000	0.0713	true
+iter09-repeat	8	50	0	0.0000	0.0000	0.0713	true
+[09-22 19:55:17] EVALS_DONE
+[09-22 19:55:20] registered cells done, starting baseline-repeat
+[09-22 21:04:44] END eval-baseline-repeat rc=0
+[21:04:28] client exited with 0 after 3694s
+[21:04:44] STAGEC_EVAL_DONE eval-baseline-repeat
+[09-22 21:04:44] === rows ===
+policy	task_id	episodes	successes	sr	ci_lo	ci_hi	valid
+baseline	8	50	29	0.5800	0.4423	0.7062	true
+iter01	8	50	0	0.0000	0.0000	0.0713	true
+iter02	8	50	0	0.0000	0.0000	0.0713	true
+iter05	8	50	0	0.0000	0.0000	0.0713	true
+iter09	8	50	0	0.0000	0.0000	0.0713	true
+iter09-repeat	8	50	0	0.0000	0.0000	0.0713	true
+baseline-repeat	8	50	29	0.5800	0.4423	0.7062	true
+[09-22 21:04:44] BASELINE_REPEAT_DONE
