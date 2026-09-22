@@ -1,15 +1,24 @@
-# E14: one FPO iteration destroys the policy, and eight more do not recover it
+# E14: a pi0.5 policy collapses in one FPO iteration, and the cause is ours
 
-**The baseline scores 29 of 50. After one iteration of FPO it scores 0 of 50,
-and it is still 0 of 50 after nine. Every prediction registered here held,
-which makes this the duller of the two outcomes the protocol allowed for and
-the one that settles the question: E11's negative result was a single
-incomplete iteration measured by an evaluation that was not reproducible, and
-it now stands on nine complete iterations measured by one that is - the
-baseline was run twice, twenty-six hours and two very different machine loads
-apart, and returned 29 both times. The run itself did not finish as planned:
-it was killed at nine iterations by a twelve-hour timeout in our own harness,
-not by memory, and the tenth checkpoint was truncated mid-write.**
+> **Corrected 2026-09-22, after this document was merged.** The version that
+> merged was titled "one FPO iteration destroys the policy" and read as a
+> result about FPO. It should not have. This project did not write FPO and did
+> not train pi0.5; when a published algorithm applied to a working model
+> destroys it, the first hypothesis is a defect in how we are applying it, and
+> that hypothesis was missing from the list of explanations this document
+> checked. It is now the leading one, with a specific defect named below.
+> Nothing measured has changed. What changed is what the measurements are
+> allowed to mean.
+
+**The baseline scores 29 of 50. After one iteration of FPO as configured here
+it scores 0 of 50, and it is still 0 of 50 after nine. The training run's own
+metrics - not read until after this document first merged - show the collapse
+happening live: `rollout/success` goes 0.65, 0.026, 0, with no saving or
+reloading involved. They also show why: advantages were normalised per
+minibatch, and memory forces a minibatch of 8, at which dividing by the
+sample standard deviation is not a rescaling but a source of signal.
+`fpo/advantages_std` is exactly 1.000 at every iteration, including the seven
+where no episode anywhere in the buffer earned a reward.**
 
 Pre-registered in [`PROTOCOL.md`](PROTOCOL.md) on 2026-09-21. Five amendments,
 each dated and written before the data it bears on, are in
@@ -50,6 +59,15 @@ than presented as what was asked for.
 Four identical numbers invite a dull explanation - that no checkpoint was
 loaded, that the same one was loaded four times, or that saving and reloading
 a policy damages it. Each was checked.
+
+**A fifth explanation was not on that list and should have been the first
+one: that our own use of the algorithm is defective.** Ruling out four
+alternatives is worth nothing if the likely fifth is absent, and it was
+absent here because the document was framing the result as a fact about FPO
+rather than about this implementation of it. It is addressed in
+[What the training metrics show](#what-the-training-metrics-show-and-the-defect-they-point-to),
+and it is now the leading explanation. The checks below stand; they were just
+not the whole list.
 
 **Four different checkpoints were loaded.** The harness records a sha256 per
 cell and they differ:
@@ -122,6 +140,71 @@ two-iteration probe's 4,522 s per iteration put ten iterations plus startup at
 about 45,600 s against a 43,200 s bound. It is recorded as our failure in
 amendment 4, not as a property of the method.
 
+## What the training metrics show, and the defect they point to
+
+The run wrote 46 scalar series to tensorboard throughout. The console was
+quiet because the harness passes `--no-show-metric-table`, and this document
+was first written without reading any of them - every claim in it was
+reconstructed from checkpoints on disk while the record of what happened
+inside the training loop sat beside them. The protocol asked for training
+dynamics. They existed.
+
+**The collapse is visible live, with no checkpoint involved:**
+
+| per iteration | 1 | 2 | 3 | 4 | ... | 9 |
+|---|---|---|---|---|---|---|
+| `rollout/success` | **0.65** | **0.026** | **0** | 0 | 0 | 0 |
+| `rollout/length` | 461.6 | 519.5 | 520 | 520 | 520 | 520 |
+| `losses/value_loss` | 0.880 | 0.033 | 0.0019 | 0.0011 | | 0.000093 |
+
+Iteration 1's rollouts are collected by the unmodified policy, before any
+update, and score 0.65 - the baseline's 0.58, on different episodes. Iteration
+2's are collected after exactly one learn step, and score 0.026. From
+iteration 3 on, every episode runs to the 520-step limit and earns nothing.
+The value loss falling to 9.3e-05 is not the critic learning; it is the critic
+running out of anything to predict.
+
+**The defect.** Advantages were normalised inside `_compute_loss`, which
+receives one minibatch:
+
+```python
+advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
+```
+
+That is the ordinary arrangement, and it is sound at the batch sizes FPO
+assumes - its own default `batch_size` is **1024**. A pi0.5-sized policy does
+not fit those. This run used **8**, which `PROTOCOL.md` records as "forced by
+memory". At 8, two things go wrong at once: the standard deviation of eight
+samples estimates nothing, so dividing by it injects noise; and subtracting
+their mean forces roughly half of every eight samples positive and half
+negative, at unit scale, whatever the rewards were.
+
+The metrics carry the signature. `fpo/advantages_std` is **exactly 1.000 at
+every one of the nine iterations** - including the seven where
+`rollout/reward` is 0 for every episode in the buffer. It could not have been
+anything else: it was measured after the division. That is also why nine
+iterations of metrics could not show that the buffer had stopped carrying any
+signal at all.
+
+`fpo/clipped_ratio_mean` sits at 0.34 to 0.44, so a third to nearly half of
+every minibatch hits the clipping boundary at `clipping_epsilon` 0.05, and
+`fpo/policy_ratio_mean` sits at 0.95 to 0.98, pressed against the lower bound.
+`fpo/initial_cfm_loss_mean` rises 65-fold after the first learn step, from
+0.00049 to 0.032, and keeps climbing to 0.135: the policy is drifting away
+from the flow-matching solution it was pretrained to.
+
+This run also sits far from FPO's design point in every direction that memory
+forces: `buffer_size` 4,096 against a default of 983,040, `batch_size` 8
+against 1,024, and 0.5 gradient updates per collected sample against 0.016.
+Any of those could matter. The advantage normalisation is the one that can be
+pointed at in a specific line and matched to a specific metric.
+
+**What has not been established.** That fixing it rescues the policy. A change
+that normalises over the buffer instead of the minibatch is in
+`fix/advantage-normalisation-scope`, and a two-iteration run under this
+experiment's exact configuration is the test. Until that returns, the defect
+is a located candidate cause, not a demonstrated one.
+
 ## The predictions
 
 | | prediction | outcome |
@@ -179,9 +262,17 @@ It also settles what the zeros mean. A baseline that repeats exactly makes
 
 ## What this does not support
 
-- **One task, one seed, one set of hyperparameters.** Nothing here is a claim
-  about FPO in general, or about RL on VLAs in general. It is a claim about
-  `pi05_libero` on `libero_10` task 8 at batch size 8.
+- **Nothing about FPO.** This is the important one, and the merged version of
+  this document failed it. FPO is published work that this project did not
+  write, and pi0.5 is a model this project did not train. A collapse here is
+  in the first instance a statement about *this implementation of FPO at this
+  configuration*, and a defect in it has since been located. Nothing in this
+  experiment supports a claim about the algorithm, and it would not even if no
+  defect had been found: one task, one seed, no tuning, and no comparison
+  against a known-good run of the same algorithm.
+- **One task, one seed, one set of hyperparameters.** It is a statement about
+  `pi05_libero` on `libero_10` task 8 at batch size 8 - where 8 is itself the
+  thing that broke the advantage normalisation.
 - **Nine iterations is not many.** 36,864 sampled actions of gradient signal
   is small, and the protocol said so before the data. A collapse this complete
   at iteration 1 is not obviously a question of scale, but this run cannot
