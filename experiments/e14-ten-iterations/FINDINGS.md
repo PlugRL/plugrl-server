@@ -1,0 +1,182 @@
+# E14: one FPO iteration destroys the policy, and eight more do not recover it
+
+**The baseline scores 29 of 50. After one iteration of FPO it scores 0 of 50,
+and it is still 0 of 50 after nine. Every prediction registered here held,
+which makes this the duller of the two outcomes the protocol allowed for and
+the one that settles the question: E11's negative result was a single
+incomplete iteration measured by an evaluation that was not reproducible, and
+it now stands on nine complete iterations measured by one that is - the
+baseline was run twice, twenty-six hours and two very different machine loads
+apart, and returned 29 both times. The run itself did not finish as planned:
+it was killed at nine iterations by a twelve-hour timeout in our own harness,
+not by memory, and the tenth checkpoint was truncated mid-write.**
+
+Pre-registered in [`PROTOCOL.md`](PROTOCOL.md) on 2026-09-21. Five amendments,
+each dated and written before the data it bears on, are in
+[`AMENDMENT.md`](AMENDMENT.md).
+
+## What ran
+
+| | |
+|---|---|
+| Server | `pi0-policy` / `pi05_libero` / `fpo`, buffer 4096, batch 8, 4 samples, `--seed 7` |
+| Master copies | `master_weights_device=cuda:1`, the second card, which is what made a second learn step possible at all |
+| Clients | 10 processes, one environment each, `libero_10` task 8, `replan_steps` 5, seed 7 |
+| Server code | `main` at 32bc21a, which **deploys #20** - E11 did not have it (amendment 1) |
+| Evaluations | one client process, 50 episodes, initial states 0-49 in order, seed 7 |
+| Machine | cluster `qz103`, three cards chosen at launch from those actually free. Shared throughout with other users' jobs |
+
+## The measurement
+
+| policy | episodes | successes | rate | Wilson 95% |
+|---|---|---|---|---|
+| **baseline** | 50 | **29** | 0.580 | 0.442 - 0.706 |
+| iter01 | 50 | **0** | 0.000 | 0.000 - 0.071 |
+| iter02 | 50 | **0** | 0.000 | 0.000 - 0.071 |
+| iter05 | 50 | **0** | 0.000 | 0.000 - 0.071 |
+| iter09 | 50 | **0** | 0.000 | 0.000 - 0.071 |
+| iter09-repeat | 50 | **0** | 0.000 | 0.000 - 0.071 |
+| baseline-repeat | 50 | **29** | 0.580 | 0.442 - 0.706 |
+
+Rows in [`results/eval.tsv`](results/eval.tsv). Training in
+[`results/train.tsv`](results/train.tsv).
+
+`iter09` stands in for the registered `iter10`; the tenth checkpoint does not
+exist as a usable file, and the substitution is recorded in amendment 4 rather
+than presented as what was asked for.
+
+### The zeros are not a loading failure
+
+Four identical numbers invite a dull explanation - that no checkpoint was
+loaded, that the same one was loaded four times, or that saving and reloading
+a policy damages it. Each was checked.
+
+**Four different checkpoints were loaded.** The harness records a sha256 per
+cell and they differ:
+
+```
+iter01  3d7593ebd9dc582f        iter05  795bbc92123186a9
+iter02  48d3e67263d96794        iter09  19a551f527520544
+```
+
+The servers logged the paths they were given (`.../4100`, `.../36870`), the
+baseline cell logged `policy_checkpoint_path=None`, and that cell - same
+harness, same task, same 50 states - returned 29.
+
+**The weights are finite and they moved.** Across the four evaluated
+checkpoints, 0 of 821 tensors hold a NaN or an Inf, so this is not numerical
+divergence. Between iteration 1 and iteration 9 the relative distance
+`||b-a|| / ||a||` over all 821 shared tensors is **0.0045**, and the tensor
+that moved furthest is **`critic.mlp.0.bias`, by 55%**. Training is changing
+the policy, and the value head - which starts from a random initialisation -
+is still moving long after the policy has collapsed.
+
+**The round trip is symmetric and strict.** FPO's `create_checkpoint` saves
+`self.policy.state_dict()`, the live policy that generated the rollouts, not
+the float32 master copies. `Evaluation.load_checkpoint` calls
+`self.policy.load_state_dict(...)` on the same kind of object with PyTorch's
+default `strict=True`, so a missing or unexpected key raises rather than
+passing silently - and the checkpoints include `critic.*` keys, which the
+evaluated policy therefore also has, or the load would have failed. Every
+evaluation exited 0.
+
+This last point is an argument from the code path, not a measurement. The
+measurement that would close it completely - saving an untrained policy
+through the same path, reloading it, and checking that it still scores 29 -
+was not run. It is worth stating plainly rather than implying a control that
+does not exist.
+
+## The training run
+
+Nine complete iterations, and a tenth that computed and lost its checkpoint.
+
+| iteration | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+|---|---|---|---|---|---|---|---|---|---|
+| wall s | 4696 | 4629 | 4680 | 4603 | 4639 | 4642 | 4636 | 4645 | 4660 |
+| card 1 MiB | 18504 | 19946 | 20919 | 20086 | 19966 | 20066 | 20046 | 19986 | 19986 |
+| card 2 MiB | 9071 | 9071 | 9925 | 9071 | 9071 | 9071 | 9071 | 9071 | 9071 |
+
+**No `OutOfMemoryError` occurred.** Memory grew for three iterations, touched
+20,919 MiB, and then came back to about 20,000 and stayed within 120 MiB of it
+for the remaining six. The high-water mark is one iteration's transient, not
+the level the run sits at.
+
+The run ended at 43,206 s with exit status 124 - `timeout`. The env clients run
+under `timeout 43200` in the harness, a twelve-hour budget, and the run needed
+about thirteen. The server was alive throughout and shut down cleanly. The
+tenth learn step finished and the checkpoint write was interrupted, leaving a
+file 173,707,658 bytes short of the length its own header declares.
+
+**That budget was checkable before the run and was not checked**: the
+two-iteration probe's 4,522 s per iteration put ten iterations plus startup at
+about 45,600 s against a 43,200 s bound. It is recorded as our failure in
+amendment 4, not as a property of the method.
+
+## The predictions
+
+| | prediction | outcome |
+|---|---|---|
+| 1 | all ten iterations complete; falsified by any `OutOfMemoryError` or the server exiting before step 40,960 | **held, with a caveat**: no OOM, the server did not exit, step 40,960 was reached - but the tenth checkpoint did not survive the write |
+| 2 | iteration 10 does not beat the baseline | **held** (on `iter09`): 0 of 50 against 29 |
+| 3 | the collapse is already complete at iteration 1, at or below 2 of 50 | **held**: 0 of 50 |
+| 4 | nothing recovers - no iteration above the baseline's lower bound of 0.3851 | **held**: every evaluated iteration is 0.000 |
+| 5 | the repeat returns exactly the same successes | **held vacuously** - see below |
+| 6 | per-iteration wall clock under 4,862 s | **held**: maximum 4,696 s, spread 93 s across nine |
+
+Nothing was falsified. The protocol said of predictions 2, 3 and 4 that "if any
+is falsified the result is more interesting, not less"; none was, so this is
+the less interesting result, and the one that removes the doubt E11 left.
+
+### Prediction 5 passed without testing anything
+
+The registered repeat exists to test the seeding fix, not the policy. It
+compares `iter09-repeat` against `iter09`, and both are 0 of 50 - but a policy
+that fails every episode agrees with itself under any seed, a different seed,
+or no seeding at all. The equality is guaranteed by the collapse and says
+nothing about reproducibility.
+
+This was noticed and written down in amendment 5 **before the cell ran**,
+along with the remedy: re-run the one non-degenerate number the experiment
+has, the baseline's 29 of 50, under the same seed and the same 50 states.
+
+### The replacement test passed, under conditions that make it a stronger one
+
+`eval-baseline-repeat` returned **29 of 50**. Identical to the original
+baseline, on the same 50 initial states under the same seed.
+
+The two runs were not close together and not alike. The first ran on
+2026-09-21 from 17:39, finishing in 4,101 s at a machine load near 193, beside
+another user's 16 GB job. The second ran on 2026-09-22 from 19:55, finishing
+in 3,694 s at a load near 290, beside six shards of a different job. Twenty-six
+hours apart, different cards' neighbours, wall clock differing by 11%, and the
+same 29.
+
+That is a better test than the registered one would have been even if the
+policy had not collapsed, because the two runs differ in everything except the
+things that are supposed to determine the result. **The seeding fix does what
+E12's finding said it must**, and every single-client evaluation this project
+reports - E11's 26 of 50 included, though that one predates the fix and is not
+covered by this - rests on a measurement that has now been shown to repeat.
+
+It also settles what the zeros mean. A baseline that repeats exactly makes
+29 against 0 a difference between policies, not a spread between runs.
+
+## What this does not support
+
+- **One task, one seed, one set of hyperparameters.** Nothing here is a claim
+  about FPO in general, or about RL on VLAs in general. It is a claim about
+  `pi05_libero` on `libero_10` task 8 at batch size 8.
+- **Nine iterations is not many.** 36,864 sampled actions of gradient signal
+  is small, and the protocol said so before the data. A collapse this complete
+  at iteration 1 is not obviously a question of scale, but this run cannot
+  rule it out.
+- **Not a tuned baseline.** No hyperparameter search was run. The collapse may
+  be a learning rate away from something else entirely, and nothing here
+  bounds how far.
+- **Training is not reproducible** even with `--seed 7`, because ten clients
+  batch by arrival time. Only the single-client evaluations are.
+- **The load timeline for the run does not exist.** The cluster was shared
+  throughout, the tunnel to it was down from 22:50 to the following afternoon,
+  and the recorder that would have attributed wall clock to neighbours never
+  covered the run. The 93 s spread across nine iterations is the evidence that
+  contention did not matter here; there is no finer-grained account.

@@ -1,0 +1,30 @@
+[09-21 17:44:25] orchestrator started
+[09-21 17:51:00] orchestrator started
+[09-21 18:06:05] still waiting on the baseline evaluation queue (900s)
+[09-21 18:21:10] still waiting on the baseline evaluation queue (1800s)
+[09-21 18:36:16] still waiting on the baseline evaluation queue (2700s)
+[09-21 18:51:22] our own processes are done
+[09-21 18:51:22] waiting for 3 free cards, 1 free now [0]
+[09-21 19:01:23] cards free: 0 1 3 - taking the three highest
+[09-21 19:01:23] using gpus 0,1 for the server and 3 for the clients
+[09-22 07:08:55] training wrapper exited rc=0
+[09-22 07:08:55] checkpoints=9 [4100 8200 12290 16390 20480 24580 28680 32770 36870]
+[09-22 07:08:55] TRAINING_INCOMPLETE - the one allowed restart is spent, stopping for a human
+[19:01:23] cell=ten-iter iterations=10 master_device=cuda:1 srv_gpus=0,1 cli_gpu=3 buffer=4096 batch=8
+[19:08:16] server listening
+[07:08:22] clients exit 124 after 43206s (server_died=0)
+[07:08:55] teardown clean
+[07:08:55] === learn steps seen ===
+39
+[07:08:55] === out of memory? ===
+0
+[07:08:55] === peak memory, GPU0 and GPU1 ===
+gpu0_peak_mib=20919  gpu1_peak_mib=9925
+[07:08:55] === checkpoints ===
+06:45 8528818570 /home/gotham/tmp/plugrl/e14/ten-iter/ck/fpo/pi0-policy/ten-iter/36870/model.safetensors
+07:08 8355110912 /home/gotham/tmp/plugrl/e14/ten-iter/ck/fpo/pi0-policy/ten-iter/tmp_40960/model.safetensors
+20:26 8528818570 /home/gotham/tmp/plugrl/e14/ten-iter/ck/fpo/pi0-policy/ten-iter/4100/model.safetensors
+21:43 8528818570 /home/gotham/tmp/plugrl/e14/ten-iter/ck/fpo/pi0-policy/ten-iter/8200/model.safetensors
+23:01 8528818570 /home/gotham/tmp/plugrl/e14/ten-iter/ck/fpo/pi0-policy/ten-iter/12290/model.safetensors
+[07:08:55] E14_FEASIBILITY_DONE ten-iter
+[09-22 07:08:55] RUN_REST_ABORTED

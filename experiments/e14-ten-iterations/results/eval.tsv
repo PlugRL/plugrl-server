@@ -1,0 +1,8 @@
+policy	task_id	episodes	successes	sr	ci_lo	ci_hi	valid
+baseline	8	50	29	0.5800	0.4423	0.7062	true
+iter01	8	50	0	0.0000	0.0000	0.0713	true
+iter02	8	50	0	0.0000	0.0000	0.0713	true
+iter05	8	50	0	0.0000	0.0000	0.0713	true
+iter09	8	50	0	0.0000	0.0000	0.0713	true
+iter09-repeat	8	50	0	0.0000	0.0000	0.0713	true
+baseline-repeat	8	50	29	0.5800	0.4423	0.7062	true
