@@ -80,11 +80,21 @@ passing silently - and the checkpoints include `critic.*` keys, which the
 evaluated policy therefore also has, or the load would have failed. Every
 evaluation exited 0.
 
-This last point is an argument from the code path, not a measurement. The
-measurement that would close it completely - saving an untrained policy
-through the same path, reloading it, and checking that it still scores 29 -
-was not run. It is worth stating plainly rather than implying a control that
-does not exist.
+A strict load either reconstructs the stored tensors or raises; the place such
+a round trip can still lose something is **tolerance** in the path - a
+`strict=False`, a key remapping, or a dtype cast, since `load_state_dict`
+copies into the existing parameter and casts to its dtype. There is no
+remapping and no `strict=False`, and the cast is ruled out by measurement: the
+stored dtypes are 122 float32 and 699 bfloat16 tensors, which is the policy's
+own mixture, because what was saved is that policy's `state_dict()`. Storage
+and destination match element for element.
+
+Even so, this is reasoning about the code path. The measurement that would
+close it outright - saving an untrained policy through the same path,
+reloading it, and checking that it still scores 29 - was not run, on the
+judgement that an hour of contended GPU was not worth confirming what a strict
+load with matching dtypes already forces. That is a judgement, and it is
+recorded here rather than left as an implied control.
 
 ## The training run
 
@@ -139,7 +149,13 @@ This was noticed and written down in amendment 5 **before the cell ran**,
 along with the remedy: re-run the one non-degenerate number the experiment
 has, the baseline's 29 of 50, under the same seed and the same 50 states.
 
-### The replacement test passed, under conditions that make it a stronger one
+### The replacement test passed, and it is stronger than the one it replaced
+
+**`eval-baseline-repeat` was not pre-registered.** It was added on 2026-09-22,
+after the collapse had made the registered repeat vacuous, and both halves of
+that sentence matter: a cell added once the data is in is normally the weaker
+kind of evidence, and this one is not, for a reason that has nothing to do
+with how it turned out.
 
 `eval-baseline-repeat` returned **29 of 50**. Identical to the original
 baseline, on the same 50 initial states under the same seed.

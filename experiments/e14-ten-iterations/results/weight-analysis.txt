@@ -43,3 +43,22 @@ all - different serialisations, converted when the policy is constructed - so
 the distance from the base weights to iteration 1 cannot be measured this way
 and is not reported. That gap is why the code-path argument in FINDINGS.md is
 an argument and not a measurement.
+
+
+ckpt_dtypes.py - what dtypes are stored, read from the safetensors header
+
+  4100         {'F32': 122, 'BF16': 699}
+  36870        {'F32': 122, 'BF16': 699}
+  pi05_libero  {'BF16': 812}
+
+This closes the last place a strict, correctly-keyed round trip could still
+lose something. load_state_dict copies into the existing parameter and casts
+to ITS dtype, so a float32 tensor stored into a bfloat16 parameter would drop
+sixteen bits of mantissa per element. That does not happen here: what was
+saved is the policy's own state_dict, so the 122 float32 and 699 bfloat16
+tensors are the policy's own mixture and each lands in a parameter of the
+same dtype.
+
+The base openpi checkpoint is uniformly bfloat16 with 812 tensors against
+821, consistent with it having no critic - a separate serialisation, not a
+comparable file.
