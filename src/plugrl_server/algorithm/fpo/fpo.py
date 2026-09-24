@@ -31,6 +31,12 @@ from .fpo_config import FPOAlgoConfig, UID
 from .utils import compute_cfm_loss
 
 
+# How many recent minibatches the drift stop averages over. Small enough to
+# react within an iteration, large enough that one noisy minibatch does not
+# end it.
+_DRIFT_WINDOW = 8
+
+
 def _sync_cuda_if_needed(device: torch.device) -> None:
     if device.type == "cuda":
         torch.cuda.synchronize(device)
@@ -275,6 +281,27 @@ class FPOAlgorithm(BaseAlgorithm):
         ret = torch.from_numpy(self.rollout_buffer.returns[:idx]).to(self.policy.device)
         return value, advantage, ret
 
+    def _policy_has_drifted(self, metric_history: dict[str, list[float]]) -> bool:
+        """Has the policy moved too far from the one that collected the data?
+
+        Clipping bounds what one sample contributes to one update. It does not
+        bound where a few thousand updates end up, and PPO implementations
+        pair it with a stop for exactly that. Measured here: the mean policy
+        ratio stays at 0.99 and the clipped fraction falls while the policy
+        walks away from a solution it had already found.
+
+        The recent window rather than the whole history, because the early
+        minibatches of an iteration sit at a ratio of 1 by construction and
+        would mask a late excursion.
+        """
+        limit = self.config.max_policy_drift
+        if limit <= 0:
+            return False
+        recent = metric_history["policy_ratio_mean"][-_DRIFT_WINDOW:]
+        if len(recent) < _DRIFT_WINDOW:
+            return False
+        return abs(1.0 - float(np.mean(recent))) > limit
+
     def _compute_loss(
         self,
         obs,
@@ -382,6 +409,7 @@ class FPOAlgorithm(BaseAlgorithm):
         )
         batch_to_device_total = 0.0
         compute_loss_total = 0.0
+        stopped_early = False
         backward_step_total = 0.0
         dataloader_total = 0.0
         obs_cache_total = 0.0
@@ -466,6 +494,12 @@ class FPOAlgorithm(BaseAlgorithm):
                 self.report_learn_progress(learn_progress_current, learn_progress_total)
                 for key, value in batch_metrics.items():
                     metric_history[key].append(value)
+
+                if self._policy_has_drifted(metric_history):
+                    stopped_early = True
+                    break
+            if stopped_early:
+                break
 
         if not metric_history["policy_loss"]:
             raise RuntimeError("FPO learn_impl produced no minibatch metrics.")
