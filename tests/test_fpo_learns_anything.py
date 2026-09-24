@@ -1,26 +1,41 @@
-"""Does this FPO implementation improve a policy on a problem with an answer?
+"""FPO learns a bandit and then does not hold it.
 
-Every FPO test in this repository feeds `reward=1.0`. That checks the
-machinery runs - buffers fill, losses are finite, weights move - and it cannot
-distinguish learning from drift, because a constant reward carries no signal
-about which action was better.
+Every other FPO test in this repository feeds `reward=1.0`. That checks the
+machinery turns - buffers fill, losses are finite, weights move - and cannot
+tell learning from drift, because a constant reward carries no signal about
+which action was better. So nothing here had ever shown FPO makes a policy
+better at anything, or keeps it better.
 
-So nothing here has ever shown that FPO makes a policy better at anything.
-E14 spent thirteen hours finding that it makes pi0.5 much worse, and five
-hypotheses about why have been refuted one hyperparameter at a time. This is
-the control those five were missing: a problem small enough to run on a CPU in
-seconds, where the right answer is known and the reward says how close the
-policy got.
+The task below is a bandit on a two-layer flow policy: the reward is the
+negative squared distance from the action to a fixed target, so the answer is
+known and the reward says how close the policy got. It runs on a CPU in about
+a minute.
 
-The task is a bandit. The observation is ignored, the reward is the negative
-squared distance from the action to a fixed target, and a policy that learns
-moves toward the target. If FPO cannot do that here, the defect is in FPO and
-not in anything specific to a VLA.
+Two things come out of it, and the second is the defect:
+
+  FPO learns.        From about -1.5 to about -0.06 within twenty iterations,
+                     on every seed and in both precisions.
+  FPO does not hold. On most seeds the policy then degrades, by up to nine
+                     times its best, while still being trained on the same
+                     reward.
+
+That is E14's shape - a pi0.5 policy went from 29 of 50 to 0 of 50 across one
+iteration and stayed there - reproduced with no VLA, no half precision
+required, no batch size forced by memory and no trust region subtlety.
+
+**On dtype.** An earlier version of this file asserted that a bfloat16 actor
+collapses where a float32 one holds, on the strength of one seed where the
+bfloat16 run ended nine times worse than its best. Five seeds do not support
+that. float32 ends 4.59x worse than its best on seed 4 and 2.72x on seed 2,
+and on seeds 2, 3 and 4 the bfloat16 run held *better* than the float32 one.
+There is no dtype effect here; the instability is in the algorithm as
+configured, and the bfloat16 case is kept as the control that shows so.
 """
 
 from __future__ import annotations
 
 import numpy as np
+import pytest
 import torch
 
 from plugrl_server.algorithm.fpo.fpo import FPOAlgorithm
@@ -30,19 +45,45 @@ from test_fpo_tree_observations import TreeObsFlowPolicy, _config, _tree_env_obs
 
 TARGET = 0.5
 ENVS = 2
-# The fixture config runs an 8-transition buffer, which is fine for "does
-# the machinery turn" and far too little to tell a policy that is not
-# learning from one that has not been given enough to learn from. These
-# give the algorithm about 7,700 transitions and still run in seconds.
+# The fixture config runs an 8-transition buffer, which is fine for "does the
+# machinery turn" and far too little to tell a policy that is not learning
+# from one that has not been given enough to learn from. These give the
+# algorithm about 7,700 transitions and still run in seconds.
 BUFFER = 256
 ITERATIONS = 30
+SEEDS = (0, 1, 2, 3, 4)
 
 
-def _algo(**overrides) -> FPOAlgorithm:
+class Bf16ActorTreePolicy(TreeObsFlowPolicy):
+    """The same toy policy with its actor in bfloat16, as pi0.5's expert is.
+
+    Kept as a control. It brings MasterWeights into play - that class exists
+    to hold float32 copies of half-precision parameters and has nothing to do
+    for a float32 policy - and the measurements show it changes nothing about
+    whether the policy holds what it learns.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.actor = self.actor.to(torch.bfloat16)
+
+    def _predict_v(self, x, t, cond, *, cond_cache=None) -> torch.Tensor:
+        features = self._features(cond, cond_cache, x.shape[0])
+        inputs = torch.cat([features, x.flatten(1), t.reshape(-1, 1)], dim=1)
+        return self.actor(inputs.to(torch.bfloat16)).float().reshape(x.shape)
+
+
+POLICIES = {"float32": TreeObsFlowPolicy, "bfloat16": Bf16ActorTreePolicy}
+
+
+def _algo(policy_cls, **overrides) -> FPOAlgorithm:
     config = _config()
+    config.buffer_size = BUFFER
+    config.batch_size = 32
+    config.num_updates_per_batch = 4
     for key, value in overrides.items():
         setattr(config, key, value)
-    algo = FPOAlgorithm(config=config, policy=TreeObsFlowPolicy())
+    algo = FPOAlgorithm(config=config, policy=policy_cls())
     algo.init_optimizers()
     return algo
 
@@ -94,101 +135,46 @@ def _bandit_iteration(algo: FPOAlgorithm, rng) -> float:
     return float(np.mean(rewards))
 
 
-def test_fpo_improves_a_policy_on_a_problem_with_a_known_answer():
-    """The control every other FPO test in this repository is missing.
+def _history(dtype: str, seed: int) -> list[float]:
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    algo = _algo(POLICIES[dtype])
+    rng = np.random.default_rng(seed)
+    return [_bandit_iteration(algo, rng) for _ in range(ITERATIONS)]
 
-    Ten iterations of a bandit whose reward is how close the action got. The
-    reward collected in the first iteration comes from the untrained policy;
-    the reward in the last comes from a policy that has had nine updates. If
-    FPO works at all, the last is higher than the first.
-    """
-    torch.manual_seed(0)
-    np.random.seed(0)
-    algo = _algo(buffer_size=BUFFER, batch_size=32, num_updates_per_batch=4)
-    rng = np.random.default_rng(0)
 
-    history = [_bandit_iteration(algo, rng) for _ in range(ITERATIONS)]
-    first, last = history[0], history[-1]
-    best = max(history)
-
-    print("\nmean reward per iteration:")
-    for i, r in enumerate(history):
-        print(f"  {i + 1:2d}  {r:+.6f}")
-
+@pytest.mark.parametrize("dtype", sorted(POLICIES))
+def test_fpo_learns_a_bandit_with_a_known_answer(dtype: str):
+    """It does learn, and this has never been shown in this repository before."""
+    history = _history(dtype, seed=0)
     assert np.isfinite(history).all(), f"a reward went non-finite: {history}"
-    assert last > first, (
+    assert max(history) > 5 * history[0], (
         "FPO did not improve a policy on a bandit with a known answer.\n"
-        f"first iteration {first:+.6f}, last {last:+.6f}, best {best:+.6f}.\n"
-        "Nothing about a VLA, a batch size of 8 or a trust region is involved "
-        "here, so a failure is in FPO itself."
-    )
-    # Improving and then falling apart is what E14 looks like, and comparing
-    # only the ends cannot see it: a run that reaches -0.08 and ends at -0.72
-    # still ends above where it started. Rewards are negative, so "within
-    # twice the best" means the policy held what it found.
-    assert last > 2 * best, (
-        "the policy improved and then came apart.\n"
-        f"best {best:+.6f} at iteration {history.index(best) + 1}, "
-        f"last {last:+.6f}."
+        f"first {history[0]:+.6f}, best {max(history):+.6f}."
     )
 
 
-class Bf16ActorTreePolicy(TreeObsFlowPolicy):
-    """The same toy policy with its actor in bfloat16, as pi0.5's expert is.
+@pytest.mark.parametrize("dtype", sorted(POLICIES))
+@pytest.mark.parametrize("seed", SEEDS)
+def test_fpo_holds_what_it_learns(dtype: str, seed: int):
+    """It does not, and that is the defect. Committed failing.
 
-    This is the one structural difference between the setting FPO learns in
-    above and the setting it collapses in. A bfloat16 actor is what brings
-    MasterWeights into play at all: it exists to keep float32 copies of
-    half-precision parameters, because an Adam step at a small learning rate
-    rounds away in bfloat16. With a float32 policy it has nothing to do.
+    Rewards are negative, so "final within twice the best" is a loose bar: a
+    policy that reached -0.06 may end at -0.12 and still pass. Measured
+    final/best over thirty iterations on five seeds:
+
+        float32   1.05  1.01  2.72  1.70  4.59
+        bfloat16  9.00  1.17  1.82  1.50  2.76
+
+    Comparing only the first and last iterations cannot see this - a run that
+    reaches -0.08 and ends at -0.72 still ends above where it started.
     """
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.actor = self.actor.to(torch.bfloat16)
-
-    def _predict_v(self, x, t, cond, *, cond_cache=None) -> torch.Tensor:
-        features = self._features(cond, cond_cache, x.shape[0])
-        inputs = torch.cat([features, x.flatten(1), t.reshape(-1, 1)], dim=1)
-        return self.actor(inputs.to(torch.bfloat16)).float().reshape(x.shape)
-
-
-def test_a_bfloat16_actor_learns_the_same_bandit():
-    """The differential: identical task, identical algorithm, actor in bf16.
-
-    If float32 learns and bfloat16 does not, the defect is in the path only a
-    half-precision policy takes - the master weights and the rounding back
-    into the model - and not in FPO's objective, its advantages or its trust
-    region, all of which are shared.
-    """
-    torch.manual_seed(0)
-    np.random.seed(0)
-    config = _config()
-    config.buffer_size = BUFFER
-    config.batch_size = 32
-    config.num_updates_per_batch = 4
-    algo = FPOAlgorithm(config=config, policy=Bf16ActorTreePolicy())
-    algo.init_optimizers()
-    rng = np.random.default_rng(0)
-
-    history = [_bandit_iteration(algo, rng) for _ in range(ITERATIONS)]
-
-    print("\nbfloat16 actor, mean reward per iteration:")
-    for i, r in enumerate(history):
-        print(f"  {i + 1:2d}  {r:+.6f}")
-
-    best = max(history)
+    history = _history(dtype, seed)
+    best, final = max(history), history[-1]
     assert np.isfinite(history).all(), f"a reward went non-finite: {history}"
-    assert history[-1] > history[0], (
-        "a bfloat16 actor did not learn the bandit that a float32 one does.\n"
-        f"first {history[0]:+.6f}, last {history[-1]:+.6f}, best {best:+.6f}."
-    )
-    assert history[-1] > 2 * best, (
-        "a bfloat16 actor learned the bandit and then came apart, where a "
-        "float32 one holds what it found.\n"
+    assert final > 2 * best, (
+        "the policy improved and then came apart while still being trained on "
+        "the same reward.\n"
         f"best {best:+.6f} at iteration {history.index(best) + 1}, "
-        f"last {history[-1]:+.6f}.\n"
-        "Same task, same algorithm, same hyperparameters - the actor's dtype "
-        "is the only difference, and it is what brings MasterWeights into "
-        "play."
+        f"final {final:+.6f}, ratio {final / best:.2f}x."
     )
