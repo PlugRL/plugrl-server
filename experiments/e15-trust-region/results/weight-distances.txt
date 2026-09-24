@@ -1,0 +1,60 @@
+### grouped_base_vs_lr0
+base-statedict -> 260
+group                     tensors     rel dist  largest single tensor
+critic                          8      1.41432  1.552 (critic.mlp.6.weight)
+actor.action_in_proj            2            0  0 ()
+actor.action_out_proj           2            0  0 ()
+actor.action_expert           201            0  0 ()
+actor.backbone                604            0  0 ()
+actor.time_mlp_in               2            0  0 ()
+actor.time_mlp_out              2            0  0 ()
+ALL                           821    0.0165164
+
+### grouped_base_vs_clip0002
+base-statedict -> 4100
+group                     tensors     rel dist  largest single tensor
+critic                          8      1.41469  1.586 (critic.mlp.6.weight)
+actor.time_mlp_out              2    0.0196899  0.01969 (actor.time_mlp_out.weight)
+actor.action_out_proj           2    0.0151016  0.02435 (actor.action_out_proj.bias)
+actor.time_mlp_in               2    0.0133055  0.01331 (actor.time_mlp_in.weight)
+actor.action_expert           201   0.00871464  0.0261 (actor.paligemma_with_expert.gemma_expert.model.layers.1.input_layernorm.dense.weight)
+actor.action_in_proj            2    0.0010972  0.006366 (actor.action_in_proj.bias)
+actor.backbone                604            0  0 ()
+ALL                           821    0.0165515
+
+### grouped_base_vs_lr1e6
+base-statedict -> 4100
+group                     tensors     rel dist  largest single tensor
+critic                          8      1.41434  1.557 (critic.mlp.6.weight)
+actor.time_mlp_out              2    0.0226559  0.03072 (actor.time_mlp_out.bias)
+actor.action_out_proj           2    0.0152594  0.04598 (actor.action_out_proj.bias)
+actor.time_mlp_in               2     0.013924  0.01687 (actor.time_mlp_in.bias)
+actor.action_expert           201   0.00661239  0.02038 (actor.paligemma_with_expert.gemma_expert.model.layers.16.input_layernorm.dense.weight)
+actor.action_in_proj            2  0.000671212  0.01285 (actor.action_in_proj.bias)
+actor.backbone                604            0  0 ()
+ALL                           821    0.0165345
+
+### grouped_base_vs_updates1
+base-statedict -> 4100
+group                     tensors     rel dist  largest single tensor
+critic                          8      1.41438  1.558 (critic.mlp.6.weight)
+actor.action_out_proj           2    0.0213422  0.06118 (actor.action_out_proj.bias)
+actor.time_mlp_out              2    0.0213321  0.02564 (actor.time_mlp_out.bias)
+actor.time_mlp_in               2    0.0131461  0.01315 (actor.time_mlp_in.weight)
+actor.action_expert           201   0.00991266  0.02793 (actor.paligemma_with_expert.gemma_expert.model.layers.16.input_layernorm.dense.weight)
+actor.action_in_proj            2   0.00095724  0.01533 (actor.action_in_proj.bias)
+actor.backbone                604            0  0 ()
+ALL                           821     0.016557
+
+### grouped_lr0_vs_iter01
+260 -> 4100
+group                     tensors     rel dist  largest single tensor
+critic                          8    0.0290379  0.1183 (critic.mlp.6.weight)
+actor.time_mlp_out              2    0.0239913  0.02399 (actor.time_mlp_out.weight)
+actor.action_out_proj           2    0.0230343  0.05258 (actor.action_out_proj.bias)
+actor.time_mlp_in               2    0.0162369  0.01624 (actor.time_mlp_in.weight)
+actor.action_expert           201    0.0150883  0.03731 (actor.paligemma_with_expert.gemma_expert.model.layers.16.input_layernorm.dense.weight)
+actor.action_in_proj            2   0.00164259  0.01891 (actor.action_in_proj.bias)
+actor.backbone                604            0  0 ()
+ALL                           821   0.00177904
+
