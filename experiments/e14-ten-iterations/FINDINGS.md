@@ -1,24 +1,31 @@
-# E14: a pi0.5 policy collapses in one FPO iteration, and the cause is ours
+# E14: a pi0.5 policy collapses in one FPO iteration, and five explanations have been refuted
 
-> **Corrected 2026-09-22, after this document was merged.** The version that
-> merged was titled "one FPO iteration destroys the policy" and read as a
-> result about FPO. It should not have. This project did not write FPO and did
-> not train pi0.5; when a published algorithm applied to a working model
-> destroys it, the first hypothesis is a defect in how we are applying it, and
-> that hypothesis was missing from the list of explanations this document
-> checked. It is now the leading one, with a specific defect named below.
-> Nothing measured has changed. What changed is what the measurements are
-> allowed to mean.
+> **Corrected 2026-09-22 and again 2026-09-24, after this document was
+> merged.** The version that merged was titled "one FPO iteration destroys the
+> policy" and read as a result about FPO. It should not have. This project did
+> not write FPO and did not train pi0.5; when a published algorithm applied to
+> a working model destroys it, the first hypothesis is a defect in how we are
+> applying it, and that hypothesis was missing from the list this document
+> checked.
+>
+> The first correction named a specific defect and called it the leading
+> explanation. **It was then tested and refuted, along with four others.** The
+> second correction records that, and withdraws a claim about the
+> evaluation's reproducibility that does not survive either. No measurement
+> in this document has changed; what changed twice is what they are allowed
+> to mean.
 
 **The baseline scores 29 of 50. After one iteration of FPO as configured here
 it scores 0 of 50, and it is still 0 of 50 after nine. The training run's own
 metrics - not read until after this document first merged - show the collapse
 happening live: `rollout/success` goes 0.65, 0.026, 0, with no saving or
-reloading involved. They also show why: advantages were normalised per
-minibatch, and memory forces a minibatch of 8, at which dividing by the
-sample standard deviation is not a rescaling but a source of signal.
-`fpo/advantages_std` is exactly 1.000 at every iteration, including the seven
-where no episode anywhere in the buffer earned a reward.**
+reloading involved. Five candidate causes have since been tested one knob at
+a time and every one is refuted: advantage normalisation scope, a quarter of
+the gradient steps, a tenth of the learning rate, a trust region swept across
+25x, and a critic warmup that leaves the value head a full iteration of
+returns ahead. The cause is not known. What is characterised is the
+phenomenon, and separately a defect in the evaluation harness that the
+investigation turned up on the way.**
 
 Pre-registered in [`PROTOCOL.md`](PROTOCOL.md) on 2026-09-21. Five amendments,
 each dated and written before the data it bears on, are in
@@ -199,11 +206,38 @@ against 1,024, and 0.5 gradient updates per collected sample against 0.016.
 Any of those could matter. The advantage normalisation is the one that can be
 pointed at in a specific line and matched to a specific metric.
 
-**What has not been established.** That fixing it rescues the policy. A change
-that normalises over the buffer instead of the minibatch is in
-`fix/advantage-normalisation-scope`, and a two-iteration run under this
-experiment's exact configuration is the test. Until that returns, the defect
-is a located candidate cause, not a demonstrated one.
+**It is not the cause. Tested, and refuted.** The change that normalises over
+the buffer instead of the minibatch is in `fix/advantage-normalisation-scope`,
+and a two-iteration run under this experiment's exact configuration returned
+**0 of 50 and 0 of 50** - the same collapse. The change stands on its own
+terms, because a standard deviation of eight samples estimates nothing, but it
+is not what breaks the policy.
+
+Four more hypotheses have been refuted the same way since, each a single knob
+under E14's configuration, each evaluated over 50 episodes:
+
+| what was changed | result |
+|---|---|
+| advantage normalised over the buffer, not the minibatch | 0, 0 |
+| `num_updates_per_batch` 4 → 1, so 512 gradient steps instead of 2048 | 0 |
+| `learning_rate` 1e-5 → 1e-6 | 0 |
+| `clipping_epsilon` swept 0.05, 0.02, 0.01, 0.005, 0.002 | 0, 0, **8** (repeat 7), **2** (repeat 2), 0 |
+| one iteration of critic warmup, actor frozen, then a real update | **31** for the frozen iteration, then **0** |
+
+The clipping sweep is not monotone, so by the rule registered in
+[E15's protocol](../e15-trust-region/PROTOCOL.md) before three of its five
+points landed, it does not support a trust-region mechanism. The 8 and the 2
+are reproducible rather than noise - their repeats returned 7 and 2 - and
+remain unexplained. The critic warmup's 31 of 50 is the control working: with
+the actor's gradients zeroed its weights cannot move, and the score returns to
+the baseline's neighbourhood, which is what makes the 0 that follows readable.
+
+So the collapse survives every knob that bounds how far a single iteration
+moves the policy, and survives giving the value head a head start. **The cause
+is not known.** What is characterised is the phenomenon: the frozen backbone
+moves exactly 0, the trained parts move 0.66% to 2.4% whatever the knob, no
+tensor holds a NaN, and `rollout/success` falls 0.65, 0.026, 0 inside the
+training loop.
 
 ## The predictions
 
@@ -252,10 +286,39 @@ same 29.
 
 That is a better test than the registered one would have been even if the
 policy had not collapsed, because the two runs differ in everything except the
-things that are supposed to determine the result. **The seeding fix does what
-E12's finding said it must**, and every single-client evaluation this project
-reports - E11's 26 of 50 included, though that one predates the fix and is not
-covered by this - rests on a measurement that has now been shown to repeat.
+things that are supposed to determine the result.
+
+### The generalisation drawn from it was wrong, and is withdrawn
+
+This section originally continued: "every single-client evaluation this
+project reports rests on a measurement that has now been shown to repeat."
+**That does not follow and it is not true.**
+
+The baseline cells run with no checkpoint. Every trained-policy cell loads
+one. Those are different code paths, and only the first is reproducible:
+
+| path | runs | results |
+|---|---|---|
+| no checkpoint | 3 | **29, 29, 29** |
+| checkpoint, same file, bit-identical policy | 3 | **35, 28, 29** |
+
+The three checkpoint runs loaded the same dumped base `state_dict`, so the
+policy generating actions was identical in all three. An in-process
+comparison shows that loading changes only the critic's four weight matrices,
+leaves every actor tensor bit-identical, and touches neither the CPU RNG state
+nor any module's training mode. The spread is therefore not the weights, and
+it is not explained.
+
+What survives is the narrower claim, now on three runs instead of two: **the
+no-checkpoint evaluation repeats exactly.** What does not survive is carrying
+that across to the path every trained-policy row in this document used.
+
+The collapse is not threatened by this. A spread of seven episodes on a policy
+scoring in the high twenties does not produce 0 of 50, and 0 of 50 was
+measured eight separate times across five configurations. But every non-zero
+number this document reports from a checkpoint carries an unquantified spread,
+and that includes nothing in the table above except the baselines - which is
+the one place it does not apply.
 
 It also settles what the zeros mean. A baseline that repeats exactly makes
 29 against 0 a difference between policies, not a spread between runs.
