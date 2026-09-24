@@ -2,13 +2,8 @@ import torch
 
 from .dppo_config import SchedulerConfig
 from .dppo_scheduler import NoOpScheduler
+from .third_party.scheduler import CosineAnnealingWarmupRestarts
 
-try:
-    import dppo.util.scheduler as _dppo_scheduler
-except ImportError:
-    raise ImportError(
-        'dppo is not installed. Please install it with pip install "plugrl-server[dppo]".'
-    )
 
 
 def build_adamw(
@@ -33,7 +28,18 @@ def build_scheduler(
 ):
     if scheduler_config is None:
         return NoOpScheduler()
-    return _dppo_scheduler.CosineAnnealingWarmupRestarts(
+    # The schedule asserts this itself, with no message and no numbers. A run
+    # shorter than its own warmup is a plausible mistake - it is what a first
+    # smoke test of two iterations against the cheetah variant's ten-iteration
+    # warmup does - and a bare AssertionError from inside a vendored file is a
+    # bad way to find out.
+    if scheduler_config.warmup_steps >= train_itrs:
+        raise ValueError(
+            f"warmup_steps ({scheduler_config.warmup_steps}) must be fewer "
+            f"than the iterations being run ({train_itrs}). Either train for "
+            f"longer or lower the scheduler's warmup."
+        )
+    return CosineAnnealingWarmupRestarts(
         optimizer,
         first_cycle_steps=train_itrs,
         max_lr=max_lr,

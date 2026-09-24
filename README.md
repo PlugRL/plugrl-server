@@ -100,8 +100,8 @@ We use `uv` to manage dependencies and development environments.
 - `fpo` - Flow Policy Optimization. **The one that learns with no extras installed.**
 - `dummy` - Dummy algorithm for testing and debugging. Its `learn` is a
   `sleep`; it moves no weights.
-- `dppo` - DPPO (Diffusion Policy Policy Optimization). Requires
-  `plugrl-server[dppo]`.
+- `dppo` - DPPO (Diffusion Policy Policy Optimization). No extras needed,
+  and it runs against `fpo-policy`.
 - `dppo-dist` - Distributed DPPO (experimental)
 - `eval` - Evaluation only, no learning
 
@@ -118,16 +118,33 @@ We use `uv` to manage dependencies and development environments.
 available in your install - with no extras it prints `{dummy-policy,fpo-policy}`,
 and `dppo-policy` and `pi0-policy` are simply absent.
 
-**Algorithms do not behave the same way, and `dppo` is the trap.** With no
-`dppo` package installed, `... fpo-policy default --help` still offers
-`{fpo,dummy,eval,dppo}`: the DPPO *config* module imports cleanly and
-registers its configs, while the module carrying the algorithm class does not.
-Selecting `dppo` parses, starts up, prints the config, and then dies with
-`KeyError: 'Algorithm dppo is not registered.'`. The real signal is the
-warning on the very first line of every command,
+**`dppo` used to be a trap and no longer is.** With no `dppo` package
+installed, `... fpo-policy default --help` offered `{fpo,dummy,eval,dppo}` and
+selecting `dppo` parsed, started up, printed its config and died with
+`KeyError: 'Algorithm dppo is not registered.'` - the config module imported
+cleanly and registered its configs while the module carrying the algorithm
+class was never imported at all. Every command also began with
 `Could not import DPPO algorithm module for reason: No module named 'dppo'`.
-(`dppo-dist` is genuinely absent in that state, so the menu is inconsistent
-with itself.)
+
+Both causes are gone. The algorithm reached into the `dppo` package for two
+utilities - a running mean/variance and a learning-rate schedule - and neither
+is DPPO-specific; both are MIT and are carried in
+`algorithm/dppo/third_party/`, keeping their upstream file names and licence
+headers. `algorithm/__init__.py` now imports the classes and not only their
+configs. `dppo` and `dppo-dist` are registered on a plain install, and
+`fpo-policy default dppo cheetah` runs on HalfCheetah-v5 with nothing beyond
+`plugrl-env-client[mujoco]`.
+
+`dppo-policy` is the part that still needs `plugrl-server[dppo]`: it wraps
+DPPO's own `DiffusionModel` and builds it through DPPO's hydra configs, which
+is a dependency on that project rather than on two utility classes.
+
+A flow policy has no tractable density, which is the reason FPO exists, so it
+is worth saying why DPPO can drive one at all: `sampling_noise_level` turns
+each denoising step into a Gaussian transition, and DPPO's per-step
+log-probability is that Gaussian's. At `sampling_noise_level=None` the
+log-probability is exactly zero and DPPO would have nothing to form a ratio
+from. The shipped `dppo` configs all set it.
 
 #### Quick Start: a run that actually learns
 
