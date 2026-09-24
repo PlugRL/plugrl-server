@@ -32,9 +32,9 @@ from plugrl_server.policy.state import (
 
 from .fpo_buffer import FPOBuffer
 from .fpo_config import FPOAlgoConfig, UID
+from .utils import compute_cfm_loss
 
 logger = get_logger(__name__)
-from .utils import compute_cfm_loss
 
 
 def _sync_cuda_if_needed(device: torch.device) -> None:

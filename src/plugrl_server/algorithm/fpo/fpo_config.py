@@ -61,9 +61,7 @@ class FPOAlgoConfig(BaseAlgoConfig):
     def __post_init__(self) -> None:
         allowed = ("all", "model", "except-critic")
         if self.restore not in allowed:
-            raise ValueError(
-                f"restore must be one of {allowed}, got {self.restore!r}"
-            )
+            raise ValueError(f"restore must be one of {allowed}, got {self.restore!r}")
         if self.restore != "all" and self.policy_checkpoint_path is None:
             raise ValueError(
                 "restore only means something with policy_checkpoint_path set"

@@ -158,9 +158,9 @@ class TestExceptCritic:
         now = algo.policy.state_dict()
         for key in critic:
             assert torch.equal(now[key], before[key]), f"{key} was overwritten"
-        assert any(
-            not torch.equal(now[key], saved[key]) for key in critic
-        ), "the fresh critic happens to equal the saved one; the test proves nothing"
+        assert any(not torch.equal(now[key], saved[key]) for key in critic), (
+            "the fresh critic happens to equal the saved one; the test proves nothing"
+        )
 
     def test_normalisation_comes_with_the_actor(self, checkpoint):
         """The guard against measuring the wrong change.
@@ -174,9 +174,9 @@ class TestExceptCritic:
 
         for key in ("obs_stats_mean", "obs_stats_std", "obs_stats_count"):
             assert torch.equal(algo.policy.state_dict()[key], saved[key]), key
-            assert not torch.equal(
-                saved[key], before[key]
-            ), f"{key} is the same before and after; the test proves nothing"
+            assert not torch.equal(saved[key], before[key]), (
+                f"{key} is the same before and after; the test proves nothing"
+            )
 
     def test_the_optimizer_starts_over(self, checkpoint):
         algo, _ = _restored(checkpoint, "except-critic")
