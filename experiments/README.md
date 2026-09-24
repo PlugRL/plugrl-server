@@ -23,10 +23,15 @@ instead:
    corruption of the training buffer across a reconnect. → **E8: fixed** -
    and the first explanation of it was wrong, which the same experiment
    records.
+6. **Does it train something that matters?** → **E11 and E14: it trains a
+   3B VLA end to end, and the training makes the policy worse.** 29 of 50
+   down to 0 of 50 in a single iteration. Ten hypotheses about why have been
+   refuted. That is an open defect, not a finding about the algorithm, and it
+   is written up as one.
 
-The first of those five answers is negative, and it is the one the project
-was built on. The last one cost a bug and a retracted diagnosis, both of
-which are written down.
+The first of those six answers is negative, and it is the one the project
+was built on. The fifth cost a bug and a retracted diagnosis, both of which
+are written down. The sixth is unresolved and is the work in progress.
 
 | | Question | Answer |
 |---|---|---|
@@ -42,6 +47,8 @@ which are written down.
 | [`e11-vla-rl-libero`](e11-vla-rl-libero/) | Can a real VLA be trained through this boundary, and does it help? | **Trained, not helped** - pi0.5 ran end to end with the server's record exact against the clients'; one FPO iteration took the chosen task from 26/50 to 0/50, and the run stopped at 1 iteration of 10 because a second learn step does not fit beside the optimizer state the first one allocated |
 | [`e12-cuda-free-rollout`](e12-cuda-free-rollout/) | Does a robomimic-class rollout machine really need CUDA, as E1 concluded? | **No** - that was a packaging default. The CPU build of the same torch takes robomimic's env client from 7.2G with 16 nvidia wheels to 2.7G with none, and LIBERO from 7.8G to 3.4G, sending byte-identical observations. It also found that no run here was reproducible, the policy's noise being unseeded, which is now fixed |
 | [`e13-gpu-free-rendering`](e13-gpu-free-rendering/) | And without a GPU to render on? | **Yes, at 1.91x** - ten clients rendering entirely on the CPU, 30 of 30 episodes successful. Its own prediction that the queue would hide the cost, keeping it under 1.3x, is falsified |
+| [`e14-ten-iterations`](e14-ten-iterations/) | Over ten iterations, what does FPO do to a full-size pi0.5? | **It collapses in one, and the cause is not located.** Nine iterations ran with no OOM, their wall clocks spread over 93 s; the policy went from 29 of 50 to 0 of 50 across the first update and never recovered. Five candidate explanations were tested and refuted, and the document has been corrected twice |
+| [`e15-trust-region`](e15-trust-region/) | Is that collapse a function of how far one iteration moves the policy? | **No.** A five-point `clipping_epsilon` sweep is not monotone. Under 1% of relative movement in pi0.5's action expert takes it from 29 of 50 to 0 of 50, and halving the movement does not halve the damage - four independent ways of moving less all score zero. Its toy control shows FPO learns a bandit and does not hold it |
 
 Each directory has a `FINDINGS.md` stating what was asked, what came back,
 and what it does and does not support. E1 is the only experiment that
@@ -110,6 +117,23 @@ These live in the findings files, not in git history:
   cause was the machine suspending for 1 h 53 min. The fix that rested on the
   wrong cause was withdrawn; the fix that was read out of the code and
   reproduced in a test was kept. Both versions are in the branch history.
+- **E14 named a cause, published it, and then refuted it.** The first
+  correction reported that the collapse had a located cause and that it was
+  ours. The second refuted that cause along with four more, and the document
+  is now titled for what it actually establishes: a policy collapses in one
+  iteration and five explanations have been ruled out. Both corrections are
+  in the file, dated, rather than folded into a revised story.
+- **A dtype claim was published on one seed and withdrawn on five.** The
+  collapse was said to be specific to bfloat16 and localised to the
+  master-weights path, on the strength of a single 9.00x fall. Five seeds
+  refuted it: float32 ends 4.59x below its best on one seed and 2.72x on
+  another, and on three of five seeds bfloat16 held *better*.
+- **`value_loss_coeff` was used as an intervention when it cannot do
+  anything.** `freeze_vlm` sets `requires_grad = False` across pi0.5's trunk,
+  so the actor's and critic's parameters are disjoint, and Adam's
+  per-parameter normalisation cancels a scalar applied to a loss that reaches
+  only one of the two groups. It was varied across three settings and read as
+  evidence before anyone checked whether it was connected.
 
 Four claims on this page were themselves wrong, and are corrected above
 rather than rewritten away. The E5 round-trip spread of 0.53-1.06 ms comes
@@ -133,7 +157,17 @@ for overlapping intervals says cannot be separated, one falsified - the
 fine-tuned policy scored below its baseline rather than above it - and one that
 two crashed training runs left untestable.
 
-E3 remains pre-registered with no data, and has been for longer than either of
+E14 was pre-registered the day before it ran, with six predictions and five
+dated amendments, each amendment written before the data it bears on. One
+prediction went vacuous once the policy scored zero, and the amendment saying
+so was committed before the evaluation that made it vacuous had finished.
+
+E15 is the counter-example and labels itself as one: its runs were already in
+flight when it was written, and two of the five results were known. What it
+registers is the rule for reading the other three, which is weaker than a
+pre-registration and is described in the file as weaker.
+
+E3 remains pre-registered with no data, and has been for longer than any of
 those, which is the honest reason to treat a pre-registration as a commitment
 rather than an achievement.
 
@@ -146,14 +180,21 @@ rather than an achievement.
 - **E3 was never run.** Its protocol is pre-registered, including an explicit
   declaration of the familiarity bias that would have favoured PlugRL and
   three ranked mitigations, but no data exists.
-- **No VLA has been trained to completion through this system.** E11 trained
-  one: `pi05_libero` collected 4,096 transitions across the boundary, took
-  2,048 optimizer steps, and wrote a checkpoint - which evaluates worse than
-  its baseline, 0 of 50 against 26 of 50. What is missing is a complete run.
-  Both attempts died out of memory at the second learn step, which has to fit
-  beside the optimizer state the first one allocated, so no result exists about
-  whether RL helps a VLA here. E6 remains the only complete learning curve, and
-  it trains a 272k-parameter MLP on continuous control.
+- **No VLA has been trained through this system without being destroyed by
+  it.** The memory problem that stopped E11 at one iteration of ten is fixed
+  and is no longer what is missing: E14 ran nine iterations on one card pair
+  with no `OutOfMemoryError` at all. What E14 found instead is that the
+  policy collapses at the *first* iteration - 29 of 50 to 0 of 50 - and stays
+  there for the remaining eight. Ten hypotheses have been refuted, including
+  every one that limits how far the policy moves, and the cause is not
+  located. **This is a defect in our use of FPO until shown otherwise, not a
+  result about FPO**, and the findings files say so. E6 remains the only
+  complete learning curve, and it trains a 272k-parameter MLP on continuous
+  control.
+- **A second algorithm had never run.** Every learning result here is FPO, so
+  a defect in the FPO path and a property of this setting cannot be told
+  apart. `dppo` was on the CLI menu the whole time and died with a `KeyError`
+  when selected.
 
 ## Reproducing
 
