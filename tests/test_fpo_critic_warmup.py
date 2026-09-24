@@ -43,12 +43,12 @@ def _changed(before: dict[str, torch.Tensor], module) -> list[str]:
 
 
 def test_the_default_is_no_warmup():
-    assert FPOAlgoConfig.critic_warmup_iterations == 0
+    assert FPOAlgoConfig.n_critic_warmup_itrs == 0
     assert not _algo().in_critic_warmup()
 
 
 def test_warmup_covers_the_first_iterations_and_then_stops():
-    algo = _algo(critic_warmup_iterations=2)
+    algo = _algo(n_critic_warmup_itrs=2)
     assert algo.curr_train_itrs == 0
     assert algo.in_critic_warmup()
     algo.curr_train_itrs = 1
@@ -58,7 +58,7 @@ def test_warmup_covers_the_first_iterations_and_then_stops():
 
 
 def test_zeroing_leaves_the_critic_gradients_alone():
-    algo = _algo(critic_warmup_iterations=1)
+    algo = _algo(n_critic_warmup_itrs=1)
     for param in algo.policy.actor.parameters():
         param.grad = torch.ones_like(param)
     for param in algo.policy.critic.parameters():
@@ -74,7 +74,7 @@ def test_zeroing_leaves_the_critic_gradients_alone():
 
 def test_a_warmup_iteration_moves_the_critic_and_not_the_actor():
     """The whole point, end to end through a real learn step."""
-    algo = _algo(critic_warmup_iterations=1)
+    algo = _algo(n_critic_warmup_itrs=1)
     actor_before = _clone(algo.policy.actor)
     critic_before = _clone(algo.policy.critic)
 
@@ -92,7 +92,7 @@ def test_without_warmup_the_actor_does_move():
     Without this the test above passes just as well on a policy that never
     learns anything.
     """
-    algo = _algo(critic_warmup_iterations=0)
+    algo = _algo(n_critic_warmup_itrs=0)
     actor_before = _clone(algo.policy.actor)
 
     _collect_and_learn(algo, _tree_env_obs)

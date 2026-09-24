@@ -281,7 +281,7 @@ class FPOAlgorithm(BaseAlgorithm):
         `curr_train_itrs` counts iterations already finished, so it is 0
         throughout the first one.
         """
-        return self.curr_train_itrs < self.config.critic_warmup_iterations
+        return self.curr_train_itrs < self.config.n_critic_warmup_itrs
 
     def _zero_actor_grads(self) -> None:
         """Drop the actor's gradients between backward and the optimizer.
