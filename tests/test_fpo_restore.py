@@ -200,3 +200,98 @@ class TestRejections:
         config.restore = "model"
         with pytest.raises(FileNotFoundError):
             FPOAlgorithm(config, _policy())
+
+
+def _restored_bf16(checkpoint: pathlib.Path, restore: str):
+    """The same restore, into a policy whose actor is half precision.
+
+    `FPOPolicy` is float32 throughout, so `MasterWeights` builds no copies for
+    it - zero pairs - and `sync_from_model` iterates nothing. Casting the actor
+    to bfloat16 gives ten pairs, which is what pi0.5's action expert looks like
+    and the only way these tests reach that path at all.
+    """
+    torch.manual_seed(1)
+    policy = _policy()
+    policy.actor = policy.actor.to(torch.bfloat16)
+    config = _config()
+    config.policy_checkpoint_path = checkpoint
+    config.restore = restore
+    config.__post_init__()
+    return FPOAlgorithm(config, policy)
+
+
+def _steps_and_moves(algo) -> bool:
+    """One optimizer step through the real path; did the policy change?"""
+    before = {k: v.clone() for k, v in algo.policy.state_dict().items()}
+    algo.master_weights.clear_model_grads()
+    for group in algo.optimizer.param_groups:
+        for param in group["params"]:
+            param.grad = torch.full_like(param, 0.1)
+    algo.optimizer.step()
+    algo.master_weights.masters_to_model()
+    now = algo.policy.state_dict()
+    return any(
+        not torch.equal(now[key], before[key])
+        for key in before
+        if now[key].is_floating_point()
+    )
+
+
+class TestTheOptimizerStillPointsAtTheRestoredWeights:
+    """The silent failure this guards against.
+
+    The optimizer is built in `__init__`, from `master_weights.optimizer_params`,
+    before anything is restored. Restoring then writes into the policy and, for
+    half-precision parameters, into the master copies. That only works because
+    both writes are in place - `nn.Module.load_state_dict` copies into
+    `param.data`, and `MasterWeights.sync_from_model` does
+    `master.copy_(param)`.
+
+    Had either rebound its tensors instead, every other test in this file
+    would still pass: the weights would read back correctly, the step count
+    would be right, and the optimizer would be stepping objects nothing else
+    refers to. Training would run, log sensible losses, and change nothing.
+
+    So these take an actual optimizer step rather than comparing identities.
+    """
+
+    def test_a_step_after_a_full_resume_moves_the_policy(self, checkpoint):
+        algo, _ = _restored(checkpoint, "all")
+
+        assert _steps_and_moves(algo)
+
+    def test_a_step_after_a_weights_only_restore_moves_the_policy(self, checkpoint):
+        algo, _ = _restored(checkpoint, "model")
+
+        assert _steps_and_moves(algo)
+
+    def test_a_step_after_except_critic_moves_the_policy(self, checkpoint):
+        algo, _ = _restored(checkpoint, "except-critic")
+
+        assert _steps_and_moves(algo)
+
+
+class TestHalfPrecisionGoesThroughTheMasterCopies:
+    """The three above cannot reach `sync_from_model`; these can.
+
+    The checkpoint holds float32 weights and the actor here is bfloat16, so
+    the restored values are rounded on the way in. That is why these assert
+    movement rather than equality - the equality tests elsewhere in this file
+    would be measuring the cast, not the restore.
+    """
+
+    def test_the_actor_has_master_copies_at_all(self, checkpoint):
+        """Without this the two below would pass against an empty loop."""
+        algo = _restored_bf16(checkpoint, "all")
+
+        assert len(algo.master_weights.pairs) > 0
+
+    def test_a_step_after_a_full_resume_moves_a_bfloat16_actor(self, checkpoint):
+        algo = _restored_bf16(checkpoint, "all")
+
+        assert _steps_and_moves(algo)
+
+    def test_a_step_after_except_critic_moves_a_bfloat16_actor(self, checkpoint):
+        algo = _restored_bf16(checkpoint, "except-critic")
+
+        assert _steps_and_moves(algo)
