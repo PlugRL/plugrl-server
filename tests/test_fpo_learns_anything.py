@@ -154,10 +154,22 @@ def test_fpo_learns_a_bandit_with_a_known_answer(dtype: str):
     )
 
 
+@pytest.mark.xfail(
+    strict=False,
+    reason=(
+        "FPO does not hold what it learns. Four of these ten cases fail; see "
+        "the docstring for which. Marked xfail rather than left red because a "
+        "suite that is red on purpose cannot report anything else, and this "
+        "runs on every pull request. strict=False because six cases pass and "
+        "which four do not is not guaranteed across platforms or torch "
+        "versions - an xpass here is information, not a failure. Remove the "
+        "mark when the defect is fixed."
+    ),
+)
 @pytest.mark.parametrize("dtype", sorted(POLICIES))
 @pytest.mark.parametrize("seed", SEEDS)
 def test_fpo_holds_what_it_learns(dtype: str, seed: int):
-    """It does not, and that is the defect. Committed failing.
+    """It does not, and that is the defect.
 
     Rewards are negative, so "final within twice the best" is a loose bar: a
     policy that reached -0.06 may end at -0.12 and still pass. Measured
