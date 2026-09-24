@@ -73,6 +73,18 @@ take a pi0.5 from 29 of 50 to 0 of 50.** That is the number worth carrying
 out of E15. It is not a statement about FPO's trust region; it is a statement
 about how little room this policy has.
 
+A fourth arm, run after these and reported here because it belongs with them,
+says the same thing from a different direction. `max_policy_drift=0.01` stops
+an iteration's updates once the policy has moved 0.01 from the one that
+collected the data; it was the best of five settings swept on the CPU bandit,
+taking the worst fall over ten runs from 9.00x to 2.14x. On pi0.5 it returned
+**0 of 50 on both iterations**, exactly as E14 did without it.
+
+Four independent ways of making the policy move less - fewer gradient steps, a
+smaller learning rate, a tighter clip, and an explicit stop on measured drift -
+and all four score zero. Whatever destroys this policy, it is not the size of
+the step.
+
 The control anchors both: with the learning rate at zero the actor's 821
 tensors are bit-identical to the pretrained ones — every actor group reads
 exactly 0 — and it scores 37 of 50. So the movement above is FPO's doing, not
@@ -116,7 +128,7 @@ call the spread can flip.
 
 ## The control this experiment did not have
 
-Nine hypotheses about E14's collapse have now been refuted, five of them at
+Ten hypotheses about E14's collapse have now been refuted, five of them at
 hours each on the cluster, one knob at a time — and **none of them could have
 found a defect, because defects do not live in hyperparameters.** The sweep in
 this document is the fourth of those five.
@@ -148,6 +160,9 @@ knob; that one measures the algorithm.
 * Relative movement under 1% in pi0.5's action expert is sufficient to take it
   from 29 of 50 to 0 of 50, and roughly halving that movement does not reduce
   the damage.
+* An explicit stop on measured policy drift - `max_policy_drift=0.01`, the
+  best of five settings on the CPU bandit - returns 0 of 50 on both pi0.5
+  iterations. Four independent ways of moving the policy less all score zero.
 * With the learning rate at 0, every actor tensor is bit-identical to the
   pretrained policy and the evaluation returns 37 of 50.
 
