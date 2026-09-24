@@ -45,14 +45,11 @@ class DPPOAlgoConfig(BaseAlgoConfig):
     use_normalized_rewards: bool = False
 
     batch_size: int = 256
-    critic_batch_size: int | None = None
     train_itrs: int = 200
     save_interval: int = 10
     grad_accum_steps: int = 8
 
     def __post_init__(self):
-        if self.critic_batch_size is None:
-            self.critic_batch_size = self.batch_size
         self.global_steps = self.train_itrs * self.buffer_size
 
 
@@ -80,14 +77,12 @@ class DPPOAlgoConfigHopper(DPPOAlgoConfig):
     buffer_size: int = 40 * 500
     gae_lambda: float = 0.95
 
-    n_train_itr: int = 1000
     batch_size: int = 2048
     update_epochs: int = 5
     vf_coef: float = 0.5
     norm_adv: bool = True
     clip_ploss_coef: float = 0.01
     clip_ploss_coef_base: float = 0.01
-    n_critic_warmup_itr: int = 0
     logprob_noise_level: float = 0.1
     sampling_noise_level: float = 0.1
     use_normalized_rewards: bool = True
@@ -119,7 +114,6 @@ class DPPOAlgoConfigLibero(DPPOAlgoConfig):
     buffer_size: int = 64 * 32 * 8
     gae_lambda: float = 0.95
 
-    n_train_itr: int = 1000
     batch_size: int = 128
     grad_accum_steps: int = 16
     update_epochs: int = 4
@@ -127,7 +121,6 @@ class DPPOAlgoConfigLibero(DPPOAlgoConfig):
     norm_adv: bool = True
     clip_ploss_coef: float = 0.001
     clip_ploss_coef_base: float = 0.001
-    n_critic_warmup_itr: int = 0
 
     logprob_noise_level: float = 0.5
     sampling_noise_level: float = 0.5

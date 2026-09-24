@@ -139,6 +139,18 @@ configs. `dppo` and `dppo-dist` are registered on a plain install, and
 DPPO's own `DiffusionModel` and builds it through DPPO's hydra configs, which
 is a dependency on that project rather than on two utility classes.
 
+Seven config fields went with it, for the same reason the menu entry did:
+they were on the CLI and no code read them. `n_train_itr` and
+`n_critic_warmup_itr` were DPPO's own yaml spellings of `train_itrs` and
+`n_critic_warmup_itrs`, declared in six places and never reconciled, so
+`--algo.n-train-itr 500` parsed, printed itself in the config banner and
+changed nothing. `critic_batch_size` had a default and a `__post_init__` and
+no reader; upstream DPPO does give the critic its own minibatch size, and
+wiring that up is a change with its own validation rather than a rename.
+`tests/test_dppo_without_the_extra.py` asserts that every field on every
+`dppo` and `dppo-dist` config variant is read somewhere, so the next one is
+caught rather than shipped.
+
 A flow policy has no tractable density, which is the reason FPO exists, so it
 is worth saying why DPPO can drive one at all: `sampling_noise_level` turns
 each denoising step into a Gaussian transition, and DPPO's per-step

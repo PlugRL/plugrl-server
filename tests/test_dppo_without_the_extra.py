@@ -201,3 +201,59 @@ class TestScheduler:
         assert at_peak == pytest.approx(1e-3, rel=1e-6)
         assert lr() < at_peak
         assert lr() >= 1e-5
+
+
+class TestNoDeadConfigFields:
+    """Every knob the CLI offers has to reach the algorithm.
+
+    `DPPOAlgoConfigHopper` and the Libero and distributed variants each
+    declared `n_train_itr` and `n_critic_warmup_itr`. The algorithm reads
+    `train_itrs` and `n_critic_warmup_itrs`; the singular spellings came from
+    DPPO's own yaml naming and were never reconciled. Six field definitions in
+    total, all of them inert, all of them on the CLI - so
+    `--algo.n-train-itr 500` parsed, printed itself in the config banner, and
+    changed nothing.
+
+    That is the same shape of defect as `dppo` appearing on the algorithm menu
+    without being registered: the interface offering something the code does
+    not do. This is the general guard rather than a check for those two names,
+    so the next one is caught as well.
+    """
+
+    # Read by the server or the base algorithm rather than by DPPO's own
+    # modules. Each is listed with where it is consumed, so that adding to
+    # this set is a deliberate act with a reason attached.
+    CONSUMED_ELSEWHERE = {
+        "global_steps",  # BaseAlgorithm.get_total_training_steps
+    }
+
+    def _sources(self) -> str:
+        import pathlib
+
+        root = pathlib.Path(__file__).resolve().parent.parent / "src" / "plugrl_server"
+        skip = {"dppo_config.py", "dppo_dist_config.py"}
+        return "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in sorted(root.rglob("*.py"))
+            if path.name not in skip
+        )
+
+    def test_every_dppo_config_field_is_read_somewhere(self):
+        import dataclasses
+
+        from plugrl_server.algorithm.registration import REGISTERED_ALGO_CONFIGS
+
+        sources = self._sources()
+        dead: list[str] = []
+        for uid in ("dppo", "dppo-dist"):
+            for variant, config in REGISTERED_ALGO_CONFIGS[uid].items():
+                for field in dataclasses.fields(config):
+                    if field.name in self.CONSUMED_ELSEWHERE:
+                        continue
+                    if f".{field.name}" not in sources:
+                        dead.append(f"{uid}/{variant}.{field.name}")
+
+        assert not dead, (
+            "config fields the CLI offers and no code reads:\n  "
+            + "\n  ".join(sorted(set(dead)))
+        )
