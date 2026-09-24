@@ -7,7 +7,11 @@ import torch
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm
 from plugrl_server.algorithm.master_weights import MasterWeights
 from plugrl_server.algorithm.registration import register_algo
-from plugrl_server.common.checkpoint_manager import Checkpoint
+from plugrl_server.common.checkpoint_manager import (
+    Checkpoint,
+    load_checkpoint_from_path,
+)
+from plugrl_server.common.logging_utils import get_logger
 from plugrl_server.common.data_utils import (
     numpy_tree_to_torch,
     torch_tree_get_item,
@@ -28,6 +32,8 @@ from plugrl_server.policy.state import (
 
 from .fpo_buffer import FPOBuffer
 from .fpo_config import FPOAlgoConfig, UID
+
+logger = get_logger(__name__)
 from .utils import compute_cfm_loss
 
 
@@ -70,6 +76,8 @@ class FPOAlgorithm(BaseAlgorithm):
         self.global_step = 0
         self.curr_train_itrs = 0
         self.last_saved_itr = 0
+        if config.policy_checkpoint_path is not None:
+            self._restore_from(config.policy_checkpoint_path, config.restore)
 
     def infer(self, obs: dict) -> tuple[np.ndarray, PolicyRuntimeState]:
         with torch.inference_mode():
@@ -216,6 +224,42 @@ class FPOAlgorithm(BaseAlgorithm):
         self.global_step = checkpoint.step
         self.curr_train_itrs = int(checkpoint.meta.get("curr_train_itrs", 0))
         self.last_saved_itr = self.curr_train_itrs
+
+    def _restore_from(self, path, restore: str) -> None:
+        """Start this run from a saved one, taking as much of it as asked.
+
+        `load_checkpoint` takes everything, which is what resuming means. The
+        other two modes exist to reproduce a start that is not a resume: a
+        policy that is already good arriving in front of an optimizer, or a
+        value head, that has never seen it. E14's pi0.5 started that way and
+        lost 29 of 50 in a single iteration; nothing on the FPO path could
+        reproduce that shape on a small model, because nothing could load
+        weights into a training run at all.
+        """
+        logger.info("Restoring from %s with restore=%s", path, restore)
+        checkpoint = load_checkpoint_from_path(path)
+        if restore == "all":
+            self.load_checkpoint(checkpoint)
+            return
+
+        if checkpoint.model is None:
+            raise ValueError(f"checkpoint at {path} carries no model weights")
+        state = dict(checkpoint.model)
+        if restore == "except-critic":
+            # Dropped, not zeroed: the keys left out keep whatever the policy
+            # built for them, which is the random initialisation a fresh value
+            # head has. `obs_stats_*` are not under `critic.` and so stay.
+            dropped = [k for k in state if k.startswith("critic.")]
+            for key in dropped:
+                del state[key]
+            logger.info("Holding back %d critic tensors", len(dropped))
+        missing, unexpected = self.policy.load_state_dict(state, strict=False)
+        if unexpected:
+            raise ValueError(f"checkpoint at {path} has unknown keys: {unexpected}")
+        if restore == "model" and missing:
+            raise ValueError(f"checkpoint at {path} is missing keys: {missing}")
+        self.master_weights.sync_from_model()
+        # Optimizer, step and iteration count are deliberately left as built.
 
     def _build_train_batch_cache(self) -> tuple:
         idx = len(self.rollout_buffer)
