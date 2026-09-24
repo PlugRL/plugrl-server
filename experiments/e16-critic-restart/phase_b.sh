@@ -65,12 +65,34 @@ sys.exit(0 if hasattr(FPOAlgoConfig(), 'restore') else 1)
 # Every checkpoint must exist before any run starts. Finding this out halfway
 # through batch two would mean a seed's arms ran under different conditions
 # from the others.
+#
+# A checkpoint's directory is named for the step it was written at, and that
+# is not always the round number the save interval implies: Phase A's seed 0
+# wrote its first at 81921 where seeds 1 and 2 wrote theirs at 81920. So find
+# the nearest rather than assume the name, and refuse anything further off
+# than a single update.
+declare -A CKPT
+nearest_checkpoint() {   # $1 = seed; echoes the step, or nothing
+  local dir="$A_OUT/fpo/fpo-policy/halfcheetah-seed$1"
+  [ -d "$dir" ] || return 1
+  ls -1 "$dir" 2>/dev/null | grep -E '^[0-9]+$' | awk -v want="$FROM_STEP" '
+    { d = $1 - want; if (d < 0) d = -d; if (best == "" || d < best) { best = d; step = $1 } }
+    END { if (best != "" && best <= 4096) print step }
+  '
+}
+
 MISSING=0
 for seed in $SEEDS; do
-  ck="$A_OUT/fpo/fpo-policy/halfcheetah-seed$seed/$FROM_STEP"
-  if [ ! -f "$ck/model.safetensors" ]; then
-    echo "missing: $ck/model.safetensors" >&2
+  step="$(nearest_checkpoint "$seed")"
+  if [ -z "$step" ] || \
+     [ ! -f "$A_OUT/fpo/fpo-policy/halfcheetah-seed$seed/$step/model.safetensors" ]; then
+    echo "seed $seed: no checkpoint within one update of $FROM_STEP" >&2
+    ls -1 "$A_OUT/fpo/fpo-policy/halfcheetah-seed$seed" 2>/dev/null | tr '\n' ' ' >&2
+    echo >&2
     MISSING=$((MISSING + 1))
+  else
+    CKPT[$seed]="$step"
+    [ "$step" = "$FROM_STEP" ] || echo "seed $seed: using step $step for $FROM_STEP"
   fi
 done
 [ "$MISSING" -gt 0 ] && { echo "error: $MISSING checkpoints missing." >&2; exit 1; }
@@ -83,13 +105,13 @@ date '+start %F %T'
 run_arm() {   # $1 = seed, $2 = arm, $3 = port
   local seed="$1" arm="$2" port="$3"
   local name="b-seed$seed-$arm"
-  local ck="$A_OUT/fpo/fpo-policy/halfcheetah-seed$seed/$FROM_STEP"
+  local ck="$A_OUT/fpo/fpo-policy/halfcheetah-seed$seed/${CKPT[$seed]}"
 
   # `all` restores global_step to FROM_STEP, so its budget is the absolute
   # step it should stop at. The other two start from zero and are given the
   # same number of new steps, which is what makes the three comparable.
   local budget="$EXTRA_STEPS"
-  [ "$arm" = "all" ] && budget=$((FROM_STEP + EXTRA_STEPS))
+  [ "$arm" = "all" ] && budget=$((${CKPT[$seed]} + EXTRA_STEPS))
 
   (cd "$SERVER_DIR" && "$SERVER_PY" -m plugrl_server.cli \
       fpo-policy default fpo default \
