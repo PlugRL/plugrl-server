@@ -5,7 +5,6 @@ from .dppo_scheduler import NoOpScheduler
 from .third_party.scheduler import CosineAnnealingWarmupRestarts
 
 
-
 def build_adamw(
     parameters,
     *,

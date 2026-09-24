@@ -151,7 +151,9 @@ class TestRunningMeanStd:
 
 class TestScheduler:
     def _optimizer(self) -> torch.optim.AdamW:
-        return build_adamw([torch.nn.Parameter(torch.zeros(2))], lr=1e-3, weight_decay=0)
+        return build_adamw(
+            [torch.nn.Parameter(torch.zeros(2))], lr=1e-3, weight_decay=0
+        )
 
     def test_no_config_means_no_schedule(self):
         scheduler = build_scheduler(
