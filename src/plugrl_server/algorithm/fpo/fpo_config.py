@@ -23,6 +23,20 @@ class FPOAlgoConfig(BaseAlgoConfig):
     value_loss_coeff: float = 0.25
     clipping_epsilon: float = 0.05
     normalize_advantage: bool = True
+    # Iterations during which only the value head learns and the policy is
+    # left alone.
+    #
+    # FPO weights each policy update by an advantage, and an advantage is a
+    # return minus the value head's estimate of it. That head starts from a
+    # random initialisation, so on the first iteration the weights are noise.
+    # E14 measured `losses/value_loss` at 0.880 on its first iteration,
+    # falling to 9.3e-05 by its ninth: the critic could not predict returns at
+    # all when it supplied the advantages for the first policy update, and the
+    # policy went from 29 of 50 to 0 of 50 across that update.
+    #
+    # Whether the two facts are connected is what this exists to test. Zero
+    # keeps the behaviour every experiment so far has run with.
+    critic_warmup_iterations: int = 0
     n_samples_per_action: int = 8
     discretize_t_for_training: bool = True
     average_losses_before_exp: bool = True

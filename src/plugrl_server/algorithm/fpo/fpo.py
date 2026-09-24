@@ -275,6 +275,33 @@ class FPOAlgorithm(BaseAlgorithm):
         ret = torch.from_numpy(self.rollout_buffer.returns[:idx]).to(self.policy.device)
         return value, advantage, ret
 
+    def in_critic_warmup(self) -> bool:
+        """Is this iteration one where only the value head should learn?
+
+        `curr_train_itrs` counts iterations already finished, so it is 0
+        throughout the first one.
+        """
+        return self.curr_train_itrs < self.config.critic_warmup_iterations
+
+    def _zero_actor_grads(self) -> None:
+        """Drop the actor's gradients between backward and the optimizer.
+
+        Not `requires_grad = False` and not dropping the policy loss from the
+        total: the value loss reaches the actor as well, through the
+        observation cache its own backbone builds, so a policy-loss-free total
+        would still move the actor. Zeroing after backward is the one point
+        where every path into the actor has already been taken and none of it
+        has been applied yet.
+
+        Adam carries no momentum past this either. A parameter whose gradient
+        is zero on every step of the warmup has zero first and second moments,
+        and the optimizer runs without weight decay, so the actor comes out of
+        the warmup exactly as it went in.
+        """
+        for param in self.policy.actor.parameters():
+            if param.grad is not None:
+                param.grad.zero_()
+
     def _compute_loss(
         self,
         obs,
@@ -382,6 +409,10 @@ class FPOAlgorithm(BaseAlgorithm):
         )
         batch_to_device_total = 0.0
         compute_loss_total = 0.0
+        # Read once, here: `curr_train_itrs` is incremented at the end of this
+        # method, so asking again where the metrics are assembled would report
+        # the next iteration's answer.
+        in_warmup = self.in_critic_warmup()
         backward_step_total = 0.0
         dataloader_total = 0.0
         obs_cache_total = 0.0
@@ -457,6 +488,8 @@ class FPOAlgorithm(BaseAlgorithm):
                 self.optimizer.zero_grad(set_to_none=True)
                 self.master_weights.clear_model_grads()
                 total_loss.backward()
+                if self.in_critic_warmup():
+                    self._zero_actor_grads()
                 self.master_weights.grads_to_masters()
                 self.optimizer.step()
                 self.master_weights.masters_to_model()
@@ -485,6 +518,9 @@ class FPOAlgorithm(BaseAlgorithm):
                 clipped_ratio_mean=float(np.mean(metric_history["clipped_ratio_mean"])),
                 advantages_mean=float(np.mean(metric_history["advantages_mean"])),
                 advantages_std=float(np.mean(metric_history["advantages_std"])),
+                # 1 while only the value head was learning, so a reader of the
+                # curves can see which iterations moved the policy at all.
+                critic_warmup=float(in_warmup),
                 initial_cfm_loss_mean=float(
                     np.mean(metric_history["initial_cfm_loss_mean"])
                 ),
