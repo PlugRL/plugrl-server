@@ -23,6 +23,31 @@ class FPOAlgoConfig(BaseAlgoConfig):
     value_loss_coeff: float = 0.25
     clipping_epsilon: float = 0.05
     normalize_advantage: bool = True
+    # Iterations during which only the value head learns and the policy is
+    # left alone.
+    #
+    # Named as DPPO names it: `n_critic_warmup_itrs` is the field that
+    # algorithm has had, and the README documents it. FPO had no equivalent.
+    # The mechanism differs because the optimizers do - DPPO keeps separate
+    # actor and critic optimizers and simply does not step the actor, while
+    # FPO has one and zeroes the actor's gradients between backward and the
+    # step - but the meaning is the same.
+    #
+    # FPO weights each policy update by an advantage, and an advantage is a
+    # return minus the value head's estimate of it. That head starts from a
+    # random initialisation, so on the first iteration the weights are noise.
+    # E14 measured `losses/value_loss` at 0.880 on its first iteration,
+    # falling to 9.3e-05 by its ninth: the critic could not predict returns at
+    # all when it supplied the advantages for the first policy update, and the
+    # policy went from 29 of 50 to 0 of 50 across that update.
+    #
+    # Tested on pi0.5 and refuted: one warmup iteration, actor frozen and
+    # verified frozen by an evaluation at 31 of 50, then a real update that
+    # returned 0 of 50. Kept because the capability is worth having and
+    # because DPPO has it, not because it explains anything.
+    #
+    # Zero keeps the behaviour every experiment so far has run with.
+    n_critic_warmup_itrs: int = 0
     # Stop an iteration's updates once the policy has drifted this far from
     # the one that collected the data, measured as |1 - mean policy ratio|.
     #
@@ -36,6 +61,10 @@ class FPOAlgoConfig(BaseAlgoConfig):
     # correlation between the advantages and the reward they encode falls from
     # about 0.5 to 0.07 - the updates stop carrying information and do not
     # stop being applied.
+    #
+    # Tested on pi0.5 and refuted: 0.01, the best of five settings on that
+    # bandit, returned 0 of 50 on both iterations, exactly as E14 did without
+    # it. Kept as a detector and a capability, not as a fix.
     #
     # Zero disables it, which is what every run before this used.
     max_policy_drift: float = 0.0
