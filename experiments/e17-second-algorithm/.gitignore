@@ -1,0 +1,5 @@
+# Checkpoints and tensorboard event files: binary, and large.
+#
+# What they hold that is the result is in summary.tsv, extracted by
+# summarise.py beside it. The logs are committed whole.
+results/dppo/
