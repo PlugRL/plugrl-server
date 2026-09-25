@@ -37,6 +37,25 @@ a session cannot reach it. Every verdict reads the second attempt only.
 **What it does to P3.** The wall clock is measured by the second attempt's own
 `start` and `end`, so the lost ten minutes do not count against it.
 
+**Correction, 16:30: it was the machine restarting, not a session ending.**
+The cause named above was an inference from timing, and it was wrong. The
+Windows System log has the event:
+
+| time | event |
+| --- | --- |
+| 15:53:56 | 1074, `RuntimeBroker.exe`, on behalf of user 75128: **restart**, "Other (Unplanned)" |
+| 15:54:12 | 6006, event log service stopped |
+| 15:54:17 | 109, kernel power manager: Power Action Reboot |
+| 15:54:30 | last boot time |
+
+The failed forks at 15:53:57 are processes being started while Windows shut
+down. The restart was requested from the user's session, for work on this
+machine unrelated to E23, and it would have ended the runs however they were
+launched. So the separate console used for the restart protects against
+nothing that happened here. It is kept because it costs nothing. The
+deviation stands as declared: a run ended by something outside the
+experiment, restarted once.
+
 **Addendum, 16:10.** The restart itself took three launches. The first used
 `bash.exe` from the PATH, which on this machine is WSL's: it started one
 seed-0 server under WSL paths and then lost its script; that server was
