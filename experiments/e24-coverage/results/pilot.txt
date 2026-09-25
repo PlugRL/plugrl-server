@@ -1,0 +1,39 @@
+# E24 pilots, 2026-09-25, before PROTOCOL.md was written.
+# Output directories were in the job's scratch space; the figures are copied here.
+
+## Pilot 1, 17:29: one iteration of every new cell
+
+fpo-walker     (fpo-policy x fpo x Walker2d-v5), seeds 0 1 2: all finished rc=0
+  first iteration, from each run's tensorboard (collected before any update):
+  seed  rollout/reward  rollout/length
+  0      0.71           19.22
+  1     -0.28           18.49
+  2      0.64           19.99
+
+The five DPPO cells, seed 0 each: every server refused to start with
+
+  ValueError: warmup_steps (10) must be fewer than the iterations being run (1).
+  Either train for longer or lower the scheduler's warmup.
+
+That is DPPO's scheduler check doing its job: one iteration is shorter than
+the 10-iteration warmup. Not a defect; the pilot asked for too little.
+
+## Pilot 2, 17:34: the five DPPO cells at 11 iterations, seed 0
+
+Stopped once every cell had completed its first learning updates with no
+traceback in any server log. By then:
+
+  fpodppo-hopper  3 iterations logged, return 14.9, 17.6, 14.4
+  fpodppo-walker  3 iterations logged, return 1.6, 2.1, 1.6
+  dppo-cheetah    1 iteration logged, return -387.6, approx_kl 8.6e-06
+  dppo-hopper     1 iteration logged, return 11.6,   approx_kl 1.3e-05
+  dppo-walker     1 iteration logged, return -2.1,   approx_kl 1.7e-05
+
+  (stopped at 17:41 by ending its processes; not a clean shutdown, and not
+  meant to be one - the Walker2d pilot and every earlier run cover that)
+
+It also showed that with a buffer of 4,096 entries, a dppo-policy iteration
+is 16,384 environment steps - each entry is a chunk of 4 - about 5 minutes
+per iteration here. The protocol sets dppo-policy's buffer to 1,024 and its
+minibatch to 512 so an iteration is 4,096 steps and an epoch two
+minibatches, as elsewhere.
