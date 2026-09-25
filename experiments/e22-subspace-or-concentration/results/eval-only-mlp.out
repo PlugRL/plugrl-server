@@ -1,0 +1,11 @@
+[20:28:49] cell=e22-only-mlp policy=only-mlp suite=libero_10 task_id=8 episodes=50 procs=1 port=8493 budget=21600s checkpoint=/home/gotham/tmp/plugrl/e22/arms/only-mlp res=/home/gotham/tmp/plugrl/e22/results
+[20:28:49] ALLOW_SIBLINGS=1: not checking for other clients or servers
+[20:28:50] source manifest: 105 files, sha256 b8302e96dec23e81
+[20:29:34] checkpoint sha256: 81965bcf87fe2e6e
+[20:33:32] server listening
+[21:07:55] client exited with 0 after 2063s
+[21:08:00] teardown clean
+server scalar tags: ['episode/length', 'episode/reward', 'episode/success']
+CELL e22-only-mlp | only-mlp | task 8 | episodes 50 | successes 0 | sr 0.0000 [0.0000, 0.0713] | valid True
+correctness: warnings 0 | reconnects 0 | episodes client 50 server 50 (true) | steps client 26000 server 26000 (true)
+[21:08:00] STAGEC_EVAL_DONE e22-only-mlp

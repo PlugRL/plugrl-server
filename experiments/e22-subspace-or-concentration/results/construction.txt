@@ -1,0 +1,19 @@
+base: 821 tensors
+FPO changed 208 actor tensors; 613 left as the base
+groups: {'io': 8, 'mod': 74, 'mlp': 54, 'attn': 72}
+SVD of 167 2-D tensors; FPO's mean top-8 share: attn 0.747  mlp 0.565  mod 0.974
+
+arm             expert  other groups   | top-8 share of the realised perturbation
+fpo           0.015088  action_in_proj 0.0016 action_out_proj 0.0230 time_mlp_in 0.0162 time_mlp_out 0.0240 | 
+rot-s1        0.015150  action_in_proj 0.0016 action_out_proj 0.0230 time_mlp_in 0.0162 time_mlp_out 0.0240 | attn 0.738  mlp 0.558  mod 0.974
+rot-s2        0.015150  action_in_proj 0.0016 action_out_proj 0.0230 time_mlp_in 0.0162 time_mlp_out 0.0240 | attn 0.738  mlp 0.558  mod 0.974
+rot-s3        0.015150  action_in_proj 0.0016 action_out_proj 0.0230 time_mlp_in 0.0162 time_mlp_out 0.0240 | attn 0.738  mlp 0.558  mod 0.974
+keep-in-s1    0.015150  action_in_proj 0.0016 action_out_proj 0.0230 time_mlp_in 0.0162 time_mlp_out 0.0240 | attn 0.738  mlp 0.558  mod 0.974
+only-mod      0.007550  action_in_proj 0.0000 action_out_proj 0.0000 time_mlp_in 0.0000 time_mlp_out 0.0000 | 
+only-attn     0.007238  action_in_proj 0.0000 action_out_proj 0.0000 time_mlp_in 0.0000 time_mlp_out 0.0000 | 
+only-mlp      0.010875  action_in_proj 0.0000 action_out_proj 0.0000 time_mlp_in 0.0000 time_mlp_out 0.0000 | 
+only-io       0.000000  action_in_proj 0.0016 action_out_proj 0.0230 time_mlp_in 0.0162 time_mlp_out 0.0240 | 
+
+V1 V2 V3 V4 pass: fpo reproduces E14's actor from four disjoint groups,
+every unchanged tensor is the base's, every rotation arm moved FPO's distance
+within 5% and kept FPO's concentration within 0.05
