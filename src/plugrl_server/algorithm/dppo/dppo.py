@@ -2,7 +2,10 @@ import numpy as np
 import torch
 import math
 
-from plugrl_server.common.checkpoint_manager import Checkpoint
+from plugrl_server.common.checkpoint_manager import (
+    Checkpoint,
+    load_checkpoint_from_path,
+)
 from plugrl_server.common.data_utils import (
     numpy_tree_to_torch,
     torch_tree_to_device,
@@ -85,6 +88,46 @@ class DPPOAlgorithm(BaseAlgorithm):
             train_itrs=config.train_itrs,
             max_lr=config.critic_lr,
         )
+        if config.policy_checkpoint_path is not None:
+            self._restore_from(config.policy_checkpoint_path, config.restore)
+
+    def _restore_from(self, path, restore: str) -> None:
+        """Start this run from a saved one, taking as much of it as asked.
+
+        Mirrors FPO's (PR #39) so the two algorithms mean the same thing by
+        the same flag. The weights part is algorithm-independent and the two
+        copies should become one helper once both have merged.
+        """
+        logger.info("Restoring from %s with restore=%s", path, restore)
+        checkpoint = load_checkpoint_from_path(path)
+        if restore == "all":
+            optimizer = checkpoint.optimizer
+            if optimizer is not None and not (
+                isinstance(optimizer, dict) and {"actor", "critic"} <= optimizer.keys()
+            ):
+                raise ValueError(
+                    f"checkpoint at {path} was not written by DPPO: its optimizer "
+                    "state has no separate actor and critic, so it cannot be "
+                    "resumed. Use --algo.restore model or except-critic to take "
+                    "its weights instead."
+                )
+            self.load_checkpoint(checkpoint)
+            return
+
+        if checkpoint.model is None:
+            raise ValueError(f"checkpoint at {path} carries no model weights")
+        state = dict(checkpoint.model)
+        if restore == "except-critic":
+            dropped = [k for k in state if k.startswith("critic.")]
+            for key in dropped:
+                del state[key]
+            logger.info("Holding back %d critic tensors", len(dropped))
+        missing, unexpected = self.policy.load_state_dict(state, strict=False)
+        if unexpected:
+            raise ValueError(f"checkpoint at {path} has unknown keys: {unexpected}")
+        if restore == "model" and missing:
+            raise ValueError(f"checkpoint at {path} is missing keys: {missing}")
+        # Optimizers, schedulers, step and iteration are left as built.
 
     def infer(self, obs: dict) -> tuple[np.ndarray, PolicyRuntimeState]:
         with torch.inference_mode():
@@ -467,6 +510,42 @@ class DPPOAlgorithm(BaseAlgorithm):
             self.curr_train_itrs > self.last_saved_itr
         )
 
+    def _scheduler_states(self) -> dict:
+        """The learning-rate schedules' positions, for a checkpoint.
+
+        A resume that restores the optimizers and not the schedules is not a
+        resume. Loading an optimizer's state restores its `lr` to wherever the
+        schedule had taken it, but a freshly built schedule believes it is at
+        step -1, and its next `step()` puts the rate back to the start of the
+        warmup. The `cheetah` variant anneals over `train_itrs` with a ten
+        iteration warmup, so resuming at iteration 80 would have warmed up
+        again from `min_lr`. `NoOpScheduler` has no position to keep.
+        """
+        states = {}
+        for name, scheduler in (
+            ("actor_scheduler", self.actor_lr_scheduler),
+            ("critic_scheduler", self.critic_lr_scheduler),
+        ):
+            if hasattr(scheduler, "state_dict"):
+                states[name] = scheduler.state_dict()
+        return states
+
+    def _load_scheduler_states(self, optimizer_state: dict) -> None:
+        for name, scheduler in (
+            ("actor_scheduler", self.actor_lr_scheduler),
+            ("critic_scheduler", self.critic_lr_scheduler),
+        ):
+            if not hasattr(scheduler, "load_state_dict"):
+                continue
+            if name not in optimizer_state:
+                # A checkpoint written before schedules were saved. Carry on,
+                # but say that the schedule restarts, because it does.
+                logger.warning(
+                    "checkpoint has no %s state; that schedule starts over", name
+                )
+                continue
+            scheduler.load_state_dict(optimizer_state[name])
+
     def create_checkpoint(self) -> Checkpoint:
         self.last_saved_itr = self.curr_train_itrs
         return Checkpoint(
@@ -475,6 +554,7 @@ class DPPOAlgorithm(BaseAlgorithm):
             optimizer={
                 "actor": self.actor_optimizer.state_dict(),
                 "critic": self.critic_optimizer.state_dict(),
+                **self._scheduler_states(),
             },
             meta={
                 "train_itrs": self.curr_train_itrs,
@@ -490,6 +570,7 @@ class DPPOAlgorithm(BaseAlgorithm):
         if checkpoint.optimizer is not None:
             self.actor_optimizer.load_state_dict(checkpoint.optimizer["actor"])
             self.critic_optimizer.load_state_dict(checkpoint.optimizer["critic"])
+            self._load_scheduler_states(checkpoint.optimizer)
         if "train_itrs" in checkpoint.meta:
             self.curr_train_itrs = checkpoint.meta["train_itrs"]
         if "last_saved_itr" in checkpoint.meta:
