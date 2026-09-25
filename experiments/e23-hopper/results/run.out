@@ -1,0 +1,16 @@
+server:  /d/75128/Desktop/plugrl-work/plugrl-server/.claude/worktrees/fix-pi0-image-mask-batching/.venv/Scripts/python.exe
+client:  /d/75128/Desktop/plugrl-work/plugrl-env-client/.venv/Scripts/python.exe  (/d/75128/Desktop/plugrl-work/plugrl-env-client)
+out:     /d/75128/Desktop/plugrl-work/plugrl-server/.claude/worktrees/fix-pi0-image-mask-batching/experiments/e23-hopper/results
+steps:   409600  seeds: 0 1 2
+start 2026-09-25 16:08:14
+seed 0 finished rc=0 at 17:24:01
+seed 1 finished rc=0 at 17:24:02
+seed 2 finished rc=0 at 17:24:03
+end   2026-09-25 17:24:04
+=== checkpoints written ===
+seed 0: 81920 163841 245761 327680 409600 
+seed 1: 81920 163840 245760 327680 409601 
+seed 2: 81921 163840 245760 327680 409601 
+failed seeds: 0
+E23_DONE
+E23_EXIT rc=0
