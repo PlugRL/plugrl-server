@@ -70,7 +70,10 @@ def main() -> int:
         # The nearest logged update, because a save or a partial buffer can
         # put an update a step or two off the round number - Phase A's seeds
         # wrote checkpoints at 81921 and 327681 for exactly that reason.
-        got = [points[min(points, key=lambda s: abs(s - step))] for points in curves.values()]
+        got = [
+            points[min(points, key=lambda s: abs(s - step))]
+            for points in curves.values()
+        ]
         print(
             f"{step:>8} {statistics.fmean(published):>9.1f} "
             f"{statistics.fmean(got):>9.1f}   " + " ".join(f"{v:8.1f}" for v in got)

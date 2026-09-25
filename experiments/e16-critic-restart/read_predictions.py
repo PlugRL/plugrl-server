@@ -59,7 +59,11 @@ def main() -> int:
     print("P1 - the control rises")
     print("     'the value at 409,600 exceeds the value at 327,680 on at least")
     print("      2 of 3 seeds'")
-    rose = [s for s in SEEDS if start[s] is not None and finish[s] is not None and finish[s] > start[s]]
+    rose = [
+        s
+        for s in SEEDS
+        if start[s] is not None and finish[s] is not None and finish[s] > start[s]
+    ]
     have = [s for s in SEEDS if start[s] is not None and finish[s] is not None]
     for s in SEEDS:
         if start[s] is None or finish[s] is None:
@@ -89,7 +93,10 @@ def main() -> int:
     for s in SEEDS:
         value = arm_end[(s, "all")]
         if value is None:
-            _line("incomplete", f"seed {s} all: {arm_updates[(s, 'all')]}/{EXPECTED_UPDATES} updates")
+            _line(
+                "incomplete",
+                f"seed {s} all: {arm_updates[(s, 'all')]}/{EXPECTED_UPDATES} updates",
+            )
             continue
         seen.append(s)
         inside = lo <= value <= hi
@@ -99,9 +106,12 @@ def main() -> int:
     if not seen:
         _line("INCONCLUSIVE", "no `all` arm has finished")
     else:
-        _line("HOLDS" if not outside else "FALSIFIED",
-              "every `all` arm inside" if not outside
-              else f"seeds {outside} outside the range")
+        _line(
+            "HOLDS" if not outside else "FALSIFIED",
+            "every `all` arm inside"
+            if not outside
+            else f"seeds {outside} outside the range",
+        )
         if outside:
             # Stated here, and labelled, because the registered rule compares
             # a seed against the spread of all three rather than against its
@@ -111,8 +121,10 @@ def main() -> int:
             for s in seen:
                 own = finish[s]
                 got = arm_end[(s, "all")]
-                print(f"    seed {s}: control {own:.1f} vs all {got:.1f} "
-                      f"({100 * (got - own) / abs(own):+.1f}%)")
+                print(
+                    f"    seed {s}: control {own:.1f} vs all {got:.1f} "
+                    f"({100 * (got - own) / abs(own):+.1f}%)"
+                )
 
     print("\nP3 / P4 - does an untrained value head reproduce the collapse")
     print("     P3: 'on at least 2 of 3 seeds, `except-critic` is below its own")
@@ -122,7 +134,10 @@ def main() -> int:
         base = start[s]
         ec, al = arm_end[(s, "except-critic")], arm_end[(s, "all")]
         if base is None or ec is None or al is None:
-            _line("incomplete", f"seed {s}: {arm_updates[(s, 'except-critic')]}/{EXPECTED_UPDATES} updates")
+            _line(
+                "incomplete",
+                f"seed {s}: {arm_updates[(s, 'except-critic')]}/{EXPECTED_UPDATES} updates",
+            )
             continue
         complete.append(s)
         if ec < base and not (al < base):
@@ -152,8 +167,13 @@ def main() -> int:
         if base is None or any(v is None for v in row):
             _line("no data", f"seed {s}")
             continue
-        _line("", f"seed {s}: start {base:.1f} -> " + ", ".join(
-            f"{arm} {v:.1f} ({v - base:+.1f})" for arm, v in zip(ARMS, row)))
+        _line(
+            "",
+            f"seed {s}: start {base:.1f} -> "
+            + ", ".join(
+                f"{arm} {v:.1f} ({v - base:+.1f})" for arm, v in zip(ARMS, row)
+            ),
+        )
     return 0
 
 
