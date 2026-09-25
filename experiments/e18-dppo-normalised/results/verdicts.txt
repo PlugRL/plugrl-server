@@ -1,0 +1,15 @@
+P1  the fix took effect - obs_stats at the final checkpoint
+    seed 0: step 409601  count     409600  std 0.22..7.66  spread  34.5x  live
+    seed 1: step 409600  count     409600  std 0.23..7.64  spread  33.7x  live
+    seed 2: step 409600  count     409600  std 0.23..7.63  spread  33.7x  live
+    HOLDS  (3 of 3 seeds)
+
+P3  wall clock is read from the server logs, not from here.
+
+P2  DPPO learns: end - start > 200 on at least 2 of 3
+    seed  itrs     start      best       end     gain   null gain
+       0   100    -298.8    -274.0    -293.6     +5.2      -21.2
+       1   100    -319.9    -297.2    -299.7    +20.2       -8.4
+       2   100    -312.2    -258.6    -309.8     +2.4      -28.5
+    FALSIFIED  (0 of 3 seeds)
+
