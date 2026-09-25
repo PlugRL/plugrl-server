@@ -99,8 +99,8 @@ next question and this experiment does not answer it.
 
 ## The measurement's own defect, and what was done about it
 
-**Evaluations that load a checkpoint are not reproducible.** Measured while
-these arms were running:
+**These evaluations are not reproducible.** Measured while these arms were
+running:
 
 | path | runs | results |
 | --- | --- | --- |
@@ -110,7 +110,42 @@ these arms were running:
 An in-process comparison shows that loading changes only the critic's four
 weight matrices, leaves every actor tensor bit-identical, and touches neither
 the CPU RNG state nor any module's training mode. **The spread is not the
-weights and it is not explained.**
+weights.**
+
+**Correction, 2026-09-24: "the checkpoint path" is the wrong name for it.**
+This document originally called the spread a property of loading a
+checkpoint. It is not, and the cheap test that shows so is in
+[`results/eval-determinism.txt`](results/eval-determinism.txt): the same
+checkpoint evaluated twice with the same two seeds, through the same loading
+path, on `fpo-policy` and HalfCheetah on a CPU, returns **bit-identical
+episodes** - 1737.9939, 1269.1589, 1748.1259, 751.5823, 1784.286, twice.
+
+Three candidate explanations die with that result:
+
+* **A platform-wide property.** The checkpoint path is reproducible here.
+* **E6's observation**, which has the same shape - two re-runs of one
+  checkpoint at 1656.2 and 1565.5 - and a known cause. `--seed` reached the
+  run's name and no generator at all until E12 found it. This probe runs after
+  that fix and is the fix working.
+* **Batch composition across clients.** `common/seeding.py` documents that
+  several clients are not reproducible, because the server batches whatever
+  requests have arrived when its scheduler fires. True, and not this:
+  `results/e14_eval.sh` sets `NPROC=1` and `--num-envs 1`, so every evaluation
+  in E14 and E15 ran one environment in one process.
+
+What is left is the small set of things the LIBERO runs have and the probe
+does not. The leading one is named in `common/seeding.py` itself: **nothing
+sets `torch.use_deterministic_algorithms`**, deliberately, because it turns
+unsupported kernels into errors and would change which policies can run at
+all. Non-deterministic cuBLAS and cuDNN kernels produce exactly this shape -
+identical weights, identical seeds, different trajectories. After that come
+LIBERO's own generators through robosuite and its renderer, and pi0.5's
+sampling path.
+
+**Still unexplained**, then, but in a much smaller space, and with a cheap
+test named: the same evaluation twice on the cluster under
+`CUBLAS_WORKSPACE_CONFIG=:4096:8` with deterministic algorithms forced,
+against the same two without.
 
 Every arm above is evaluated through the checkpoint path, so every single
 number in this document carries an unquantified spread of that size. The
@@ -172,8 +207,10 @@ knob; that one measures the algorithm.
   measured, not explained.
 * Anything about `clipping_epsilon` outside [0.002, 0.05], on another task, on
   another seed, or over more than one iteration.
-* Any number here to better than the spread the checkpoint-loading defect
-  introduces, which is unquantified and at least ±4 of 50 on the baseline.
+* Any number here to better than the spread the irreproducibility introduces,
+  which is unquantified and at least ±4 of 50 on the baseline. It is not
+  caused by loading a checkpoint - see the correction above - but it is still
+  there.
 * That the weight-distance table generalises past these four arms. It does not
   include the arm that scored best.
 
