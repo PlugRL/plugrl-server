@@ -1,0 +1,17 @@
+[19:50:13] cell=e22-rot-s1 policy=rot-s1 suite=libero_10 task_id=8 episodes=50 procs=1 port=8491 budget=21600s checkpoint=/home/gotham/tmp/plugrl/e22/arms/rot-s1 res=/home/gotham/tmp/plugrl/e22/results
+[19:50:13] ALLOW_SIBLINGS=1: not checking for other clients or servers
+[19:50:14] source manifest: 105 files, sha256 b8302e96dec23e81
+[19:50:58] checkpoint sha256: 104bbd3b0963d9c4
+[19:55:53] server listening
+[20:27:15] client exited with 0 after 1882s
+[20:27:19] after teardown, env client processes: 4 process(es) alive
+  PID  PPID  PGID ELAPSED COMMAND
+32246 23516 32246    1894 timeout 21600 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8492 --num-envs 1 --
+32250 32246 32246    1894 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8492 --num-envs 1 --num-procs 1 --
+32352 23518 32352    1891 timeout 21600 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8494 --num-envs 1 --
+32356 32352 32352    1891 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8494 --num-envs 1 --num-procs 1 --
+[20:27:19] TEARDOWN_NOT_CLEAN
+server scalar tags: ['episode/length', 'episode/reward', 'episode/success']
+CELL e22-rot-s1 | rot-s1 | task 8 | episodes 50 | successes 28 | sr 0.5600 [0.4231, 0.6884] | valid True
+correctness: warnings 0 | reconnects 0 | episodes client 50 server 50 (true) | steps client 22953 server 22953 (true)
+[20:27:20] STAGEC_EVAL_DONE e22-rot-s1
