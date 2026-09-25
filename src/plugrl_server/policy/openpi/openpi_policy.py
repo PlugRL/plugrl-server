@@ -20,7 +20,10 @@ from plugrl_server.common.data_utils import (
     torch_tree_batch_size,
     unbatch_aggregate,
 )
+from plugrl_server.common.logging_utils import get_logger
+
 from .openpi_transforming import get_transform
+from ..freezing import freeze_matching
 from ..base_policy_gradient_diffusion_policy import TorchTree
 from ..base_policy_gradient_flow_policy import (
     BasePolicyGradientFlowPolicy,
@@ -40,6 +43,14 @@ class Pi0PolicyConfig(BasePolicyGradientFlowPolicyConfig):
     default_prompt: str | None = None
     denoising_steps: int = 5
     train_expert_only: bool = True
+    # Regular expressions over the action expert's parameter names
+    # (`model.layers.N.mlp.gate_proj.weight`, ...); every match is frozen.
+    # E22 located FPO's damage in the expert's MLP, so r"\.mlp\." is the case
+    # this exists for. A pattern matching nothing is an error, not a no-op.
+    freeze_expert_params: tuple[str, ...] = ()
+
+
+logger = get_logger(__name__)
 
 
 @register_policy(UID)
@@ -108,6 +119,15 @@ class Pi0Policy(BasePolicyGradientFlowPolicy):
 
         if config.train_expert_only:
             self.freeze_vlm()
+        if config.freeze_expert_params:
+            frozen = freeze_matching(
+                self.actor.paligemma_with_expert.gemma_expert,
+                config.freeze_expert_params,
+            )
+            logger.info(
+                f"Froze {len(frozen)} action-expert tensors matching "
+                f"{list(config.freeze_expert_params)}"
+            )
 
     def _get_timesteps(self) -> torch.Tensor:
         timestep = torch.linspace(
