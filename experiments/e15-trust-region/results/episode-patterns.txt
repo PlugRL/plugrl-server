@@ -1,0 +1,23 @@
+eval-baseline           29/50  11.1.111.111..111.11..1..1.....111..11.11..1.11111   [episode/success]
+eval-baseline-repeat    29/50  11.1.111.111..111.11..1..1.....111..11.11..1.11111   [episode/success]
+eval-baseline-third     29/50  11.1.111.1111.111.11..1..1.....111..11..1.11.1111.   [episode/success]
+eval-base-roundtrip     35/50  11.1.111.1111.111.11..1111..1.1111.111.11..1.11111   [episode/success]
+eval-base-roundtrip2    28/50  11.1.111.111..111.11..1..1.....111..11.11..1.1111.   [episode/success]
+eval-base-roundtrip3    29/50  11.1.1111.11..111.11..1..1.....111..11.11..1.11111   [episode/success]
+
+pairwise: positions where two runs disagree
+  eval-baseline          vs eval-baseline-repeat     0 of 50
+  eval-baseline          vs eval-baseline-third      4 of 50
+  eval-baseline          vs eval-base-roundtrip      6 of 50
+  eval-baseline          vs eval-base-roundtrip2     1 of 50
+  eval-baseline          vs eval-base-roundtrip3     2 of 50
+  eval-baseline-repeat   vs eval-baseline-third      4 of 50
+  eval-baseline-repeat   vs eval-base-roundtrip      6 of 50
+  eval-baseline-repeat   vs eval-base-roundtrip2     1 of 50
+  eval-baseline-repeat   vs eval-base-roundtrip3     2 of 50
+  eval-baseline-third    vs eval-base-roundtrip      8 of 50
+  eval-baseline-third    vs eval-base-roundtrip2     3 of 50
+  eval-baseline-third    vs eval-base-roundtrip3     6 of 50
+  eval-base-roundtrip    vs eval-base-roundtrip2     7 of 50
+  eval-base-roundtrip    vs eval-base-roundtrip3     8 of 50
+  eval-base-roundtrip2   vs eval-base-roundtrip3     3 of 50

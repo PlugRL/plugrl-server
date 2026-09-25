@@ -1,0 +1,57 @@
+Two evaluations of one checkpoint, same seeds, 2026-09-24
+=========================================================
+
+Produced by eval_determinism.sh. The question is whether an evaluation is
+reproducible when everything it is given is the same, because E15's document
+called the 35/28/29 spread on a bit-identical pi0.5 a property of the
+checkpoint path, and that framing has not been tested anywhere else.
+
+Setup: E16 Phase A's seed-0 checkpoint at step 409,600, `fpo-policy`,
+HalfCheetah-v5, CPU, --seed 0 on the server and --runner.seed 100 on the
+client, one client, one env, five episodes. Run twice on different ports.
+
+  run1  episode/reward  [1737.9939, 1269.1589, 1748.1259, 751.5823, 1784.286]
+  run2  episode/reward  [1737.9939, 1269.1589, 1748.1259, 751.5823, 1784.286]
+  run1  episode/length  [1000.0, 1000.0, 1000.0, 1000.0, 1000.0]
+  run2  episode/length  [1000.0, 1000.0, 1000.0, 1000.0, 1000.0]
+
+Bit-identical, all five episodes.
+
+What that rules out
+-------------------
+
+* **A platform-wide property.** Evaluation through the checkpoint path is
+  reproducible here, so "loading a checkpoint makes an evaluation
+  irreproducible" is not true in general.
+
+* **E6's observation, which is the same shape.** E6 reported two re-runs of
+  one checkpoint at 1656.2 and 1565.5 with the same two seeds, and concluded
+  the sampling path had a source of randomness those seeds did not pin down.
+  It did: `--seed` reached the run's name and no generator at all. E12 found
+  that and it was fixed. This probe runs after the fix and is the fix working.
+
+* **Batch composition across clients.** `common/seeding.py` documents that
+  several clients are not reproducible, because the server batches whatever
+  requests have arrived when the scheduler fires. That is real, and it is not
+  this: `e14_eval.sh` sets NPROC=1 and passes `--num-envs 1`, so every LIBERO
+  evaluation in E14 and E15 ran one env in one process.
+
+What is left
+------------
+
+The LIBERO spread is still unexplained, and now it is unexplained in a much
+smaller space. What this probe does not share with those runs:
+
+* **A GPU.** `common/seeding.py` says plainly that `torch.use_deterministic_
+  algorithms` is deliberately not set, because it turns unsupported kernels
+  into errors and would change which policies can run at all. Non-deterministic
+  cuBLAS and cuDNN kernels produce exactly this shape: identical weights,
+  identical seeds, different trajectories. This is the leading candidate and
+  it is untested.
+* **LIBERO's simulator**, which carries its own generators through robosuite
+  and its renderer.
+* **pi0.5's own sampling path**, which this policy does not share.
+
+The cheap test is on the cluster: the same evaluation twice under
+`CUBLAS_WORKSPACE_CONFIG=:4096:8` with deterministic algorithms forced, against
+the same two runs without. If the spread closes, it is the kernels.
