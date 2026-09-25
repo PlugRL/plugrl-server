@@ -1,6 +1,7 @@
 import uuid
 import numpy as np
-from dppo.util.reward_scaling import RunningMeanStd
+
+from .third_party.reward_scaling import RunningMeanStd
 
 from plugrl_server.buffer.rollout_buffer import GAEBuffer
 from plugrl_server.policy.base_policy import BasePolicy

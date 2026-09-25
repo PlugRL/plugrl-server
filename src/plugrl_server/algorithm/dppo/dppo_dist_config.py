@@ -28,14 +28,12 @@ class DPPOAlgoDistributedConfiHopper(_dppo_dist.DPPOAlgoDistributedConfig):
     buffer_size: int = 40 * 500
     gae_lambda: float = 0.95
 
-    n_train_itr: int = 1000
     batch_size: int = 2048
     update_epochs: int = 5
     vf_coef: float = 0.5
     norm_adv: bool = True
     clip_ploss_coef: float = 0.01
     clip_ploss_coef_base: float = 0.01
-    n_critic_warmup_itr: int = 0
     logprob_noise_level: float = 0.1
     sampling_noise_level: float = 0.1
 
@@ -66,7 +64,6 @@ class DPPOAlgoConfigLibero(_dppo_dist.DPPOAlgoDistributedConfig):
     buffer_size: int = 64 * 32 * 8
     gae_lambda: float = 0.95
 
-    n_train_itr: int = 1000
     batch_size: int = 128
     grad_accum_steps: int = 16
     update_epochs: int = 4
@@ -74,7 +71,6 @@ class DPPOAlgoConfigLibero(_dppo_dist.DPPOAlgoDistributedConfig):
     norm_adv: bool = True
     clip_ploss_coef: float = 0.001
     clip_ploss_coef_base: float = 0.001
-    n_critic_warmup_itr: int = 0
 
     logprob_noise_level: float = 0.5
     sampling_noise_level: float = 0.5
