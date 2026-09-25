@@ -46,9 +46,13 @@ test, and it holds.
 **The machinery works.** The critic goes from `explained_variance` −0.0004 to
 0.428 — it learns to predict returns from nothing. The actor moves too, and
 substantially: between the 81,920 and 409,600 checkpoints its ten tensors are
-**5.15e-02 apart, relative, with none identical** (the critic moves 3.92e-01;
-`obs_stats_*` are bit-identical, as they should be for a policy whose
-normalisation is frozen after warmup).
+**5.15e-02 apart, relative, with none identical** (the critic moves
+3.92e-01). `obs_stats_*` are bit-identical between the two checkpoints.
+*Corrected 2026-09-25: this sentence first said that was "as it should be for
+a policy whose normalisation is frozen after warmup". It is not. The
+statistics were never initialised at all - `obs_stats_count` is 0.0 - and
+that is the most specific defect this experiment had. See the correction
+below.*
 
 **And the policy does not get better.** That is the whole of it: gradients
 flow, weights move five per cent, and the return does not improve.
@@ -82,8 +86,41 @@ Two more configuration facts, neither established as the cause:
   gradient is **a quarter of the correct scale**. That is a defect in
   `learn_impl` independent of this experiment and is worth fixing on its own;
   a factor of four does not explain a flat curve, but it should not be there.
+  *Added 2026-09-25: it explains even less than that. The optimizers are
+  AdamW, which is invariant to a constant rescaling of every gradient except
+  through its ε term, and every step here was rescaled by exactly a quarter.
+  Measured with the fix (#49) and nothing else changed, on seed 0: identical
+  return before the first update, about 4% different after it.*
 
 ---
+
+## Correction, 2026-09-25: the defect this document missed
+
+**DPPO never maintained `fpo-policy`'s observation statistics.** `fpo-policy`
+normalises its input with running statistics it stores as buffers, and does
+not update them itself. `FPOAlgorithm.pre_learn` did, behind
+`isinstance(self.policy, FPOPolicy)`, and nothing else did - so when DPPO drove
+the same policy, the normalisation disappeared without a word.
+
+E17's final checkpoint, seed 0:
+
+| | `obs_stats_count` | `obs_stats_mean` | `obs_stats_std` |
+| --- | --- | --- | --- |
+| E17, DPPO | **0.0** | all zeros | all ones |
+| E16, FPO, same step | 409,600 samples | per dimension | **0.17 to 9.93** |
+
+The identity, for a hundred iterations, on inputs whose dimensions differ in
+scale by **59x** - raw joint velocities of 6 to 10 beside raw positions of
+0.2. This document noticed the unchanged statistics and explained them away
+in one parenthesis; they were the most specific fault the run had, and
+nothing in the three reasons above names them.
+
+It is fixed in #50, which updates the statistics after each learn rather
+than before it, so that one iteration's collection and learning share a
+normalisation and DPPO's ratio is not moved by a statistics shift. The
+fine-tuning point above still stands, but it is no longer the leading
+candidate. **E18 reruns this design unchanged on the fixed code** and asks
+whether DPPO learns once its inputs are normalised.
 
 ## What would settle it, and the gap in the way
 
@@ -129,10 +166,10 @@ outcome being predicted. Neither of these was checked.
 
 **Not supported:**
 
-* Anything about DPPO as an algorithm. It was run from a random initialisation
-  when it is a fine-tuning method, on a buffer a quarter of its configured
-  size, with a gradient mis-scaled by four. Any of those is enough to make the
-  curve uninformative about DPPO.
+* Anything about DPPO as an algorithm. It was run on **unnormalised
+  observations** with a 59x spread in scale, from a random initialisation when
+  it is a fine-tuning method, and on a buffer a fifth of its configured size.
+  Any of those is enough to make the curve uninformative about DPPO.
 * Any comparison of FPO against DPPO. The protocol registered no such
   prediction and this document makes no such claim.
 * That the actor's movement was *useful* movement. Five per cent of relative
