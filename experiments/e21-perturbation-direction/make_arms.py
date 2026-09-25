@@ -56,7 +56,9 @@ def build(kind: str, k: int, seed: int | None, base: dict, delta: dict) -> dict:
     out = dict(base)
     g = torch.Generator().manual_seed(seed) if seed is not None else None
     for key in sorted(delta):
-        theta = base[key].float()
+        # float64 throughout: in float32, b − a is exact only where b/a lies in
+        # [1/2, 2], and elsewhere θ + Δ lands a step away from b (amendment 1).
+        theta = base[key].double()
         d = delta[key]
         if kind == "fpo":
             new = theta + d
@@ -64,7 +66,7 @@ def build(kind: str, k: int, seed: int | None, base: dict, delta: dict) -> dict:
             new = theta - k * d
         else:
             r = (
-                torch.randint(0, 2, d.shape, generator=g, dtype=torch.int8).float() * 2
+                torch.randint(0, 2, d.shape, generator=g, dtype=torch.int8).double() * 2
                 - 1
             )
             new = theta + k * r * d
@@ -100,7 +102,7 @@ def main(base_path: str, fpo_path: str, out_dir: str) -> int:
             if not g.startswith("actor.") or g == "actor.backbone":
                 continue
             b = fh.get_tensor(key)
-            d = b.float() - base[key].float()
+            d = b.double() - base[key].double()
             if bool(d.any()):
                 delta[key] = d
                 fpo_changed[key] = b
