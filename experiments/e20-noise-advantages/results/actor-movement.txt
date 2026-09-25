@@ -1,0 +1,7 @@
+arm     seed  start step  end step  relative actor movement
+reward     0      327680     81920  0.1275
+reward     1      327681     81920  0.1079
+reward     2      327681     81920  0.1611
+zero       0      327680     81920  0.2141
+zero       1      327681     81920  0.1501
+zero       2      327681     81921  0.2177
