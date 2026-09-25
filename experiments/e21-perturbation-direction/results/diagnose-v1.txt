@@ -1,0 +1,3 @@
+torch.float32   changed   82 tensors,   118671392 elements | float32 path misses  81 tensors,  1463158 elements,  1463158 of them with b/a outside [1/2, 2] | float64 path misses 0 tensors
+torch.bfloat16  changed  126 tensors,   311427072 elements | float32 path misses  17 tensors,       18 elements,       18 of them with b/a outside [1/2, 2] | float64 path misses 0 tensors
+most misses in one tensor: 60992 in actor.paligemma_with_expert.gemma_expert.model.layers.0.post_attention_layernorm.dense.weight

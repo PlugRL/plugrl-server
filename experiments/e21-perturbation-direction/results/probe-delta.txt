@@ -1,0 +1,34 @@
+$ python e21/probe_delta.py e14/base-statedict/model.safetensors \
+      e14/ten-iter/ck/fpo/pi0-policy/ten-iter/4100/model.safetensors
+# run 2026-09-25 on qz103, before PROTOCOL.md was written
+
+changed tensors per group: {'actor.action_in_proj': 2, 'actor.action_out_proj': 2, 'actor.action_expert': 200, 'actor.time_mlp_in': 2, 'actor.time_mlp_out': 2}
+unchanged tensors per group: {'actor.action_expert': 1}
+  actor.action_in_proj: {'torch.float32': 2}
+  actor.action_out_proj: {'torch.float32': 2}
+  actor.action_expert: {'torch.float32': 74, 'torch.bfloat16': 126}
+  actor.time_mlp_in: {'torch.float32': 2}
+  actor.time_mlp_out: {'torch.float32': 2}
+bf16 elements, |delta| in bf16 steps (10 = 10 or more):
+   0: 0.1205
+   1: 0.2032
+   2: 0.1465
+   3: 0.1011
+   4: 0.0730
+   5: 0.0523
+   6: 0.0404
+   7: 0.0307
+   8: 0.0253
+   9: 0.0199
+  10: 0.1872
+fraction of elements changed, lowest and highest five tensors:
+  0.6667  torch.float32      3145728  actor.paligemma_with_expert.gemma_expert.model.norm.dense.weight
+  0.6667  torch.float32         3072  actor.paligemma_with_expert.gemma_expert.model.norm.dense.bias
+  0.7933  torch.bfloat16     4194304  actor.paligemma_with_expert.gemma_expert.model.layers.0.mlp.up_proj.weight
+  0.8226  torch.bfloat16      262144  actor.paligemma_with_expert.gemma_expert.model.layers.5.self_attn.v_proj.weight
+  0.8255  torch.bfloat16     4194304  actor.paligemma_with_expert.gemma_expert.model.layers.2.mlp.up_proj.weight
+  1.0000  torch.float32         3072  actor.paligemma_with_expert.gemma_expert.model.layers.8.post_attention_layernorm.dense.bias
+  1.0000  torch.float32         3072  actor.paligemma_with_expert.gemma_expert.model.layers.9.input_layernorm.dense.bias
+  1.0000  torch.float32         3072  actor.paligemma_with_expert.gemma_expert.model.layers.9.post_attention_layernorm.dense.bias
+  1.0000  torch.float32         1024  actor.time_mlp_in.bias
+  1.0000  torch.float32         1024  actor.time_mlp_out.bias

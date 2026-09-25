@@ -1,0 +1,17 @@
+base: 821 tensors
+FPO changed 208 actor tensors
+left as the base: 613 tensors
+
+arm              k  expert dist    target   ratio  other groups
+fpo              1     0.015088    0.0151  0.9992  action_in_proj 0.0016  action_out_proj 0.0230  time_mlp_in 0.0162  time_mlp_out 0.0240
+flip-s1          1     0.015087    0.0151  0.9991  action_in_proj 0.0016  action_out_proj 0.0230  time_mlp_in 0.0162  time_mlp_out 0.0240
+flip-s2          1     0.015087    0.0151  0.9991  action_in_proj 0.0016  action_out_proj 0.0230  time_mlp_in 0.0162  time_mlp_out 0.0240
+flip-s3          1     0.015087    0.0151  0.9991  action_in_proj 0.0016  action_out_proj 0.0230  time_mlp_in 0.0162  time_mlp_out 0.0240
+neg              1     0.015086    0.0151  0.9990  action_in_proj 0.0016  action_out_proj 0.0230  time_mlp_in 0.0162  time_mlp_out 0.0240
+flip-s1-x3       3     0.045265    0.0453  0.9992  action_in_proj 0.0049  action_out_proj 0.0691  time_mlp_in 0.0487  time_mlp_out 0.0720
+flip-s1-x10     10     0.150880    0.1510  0.9992  action_in_proj 0.0164  action_out_proj 0.2303  time_mlp_in 0.1624  time_mlp_out 0.2399
+flip-s1-x30     30     0.452645    0.4530  0.9992  action_in_proj 0.0493  action_out_proj 0.6910  time_mlp_in 0.4871  time_mlp_out 0.7197
+neg-x3           3     0.045266    0.0453  0.9993  action_in_proj 0.0049  action_out_proj 0.0691  time_mlp_in 0.0487  time_mlp_out 0.0720
+
+V1 V2 V3 pass: fpo reproduces E14's actor, every other tensor is the base's,
+and every arm's expert distance is within 5% of its target

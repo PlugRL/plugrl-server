@@ -1,0 +1,28 @@
+null: 7 evaluations of an unperturbed actor
+  eval-baseline            29  11.1.111.111..111.11..1..1.....111..11.11..1.11111
+  eval-baseline-repeat     29  11.1.111.111..111.11..1..1.....111..11.11..1.11111
+  eval-baseline-third      29  11.1.111.1111.111.11..1..1.....111..11..1.11.1111.
+  eval-base-roundtrip      35  11.1.111.1111.111.11..1111..1.1111.111.11..1.11111
+  eval-base-roundtrip2     28  11.1.111.111..111.11..1..1.....111..11.11..1.1111.
+  eval-base-roundtrip3     29  11.1.1111.11..111.11..1..1.....111..11.11..1.11111
+  eval-lr0-control         37  11.1.111.1111.111.11..1.11.11.111111111.1.11.11111
+unanimous states: 36 of 50 (26 always succeed, 10 always fail)
+
+leave one out: each null evaluation against the other six's unanimous states
+  eval-baseline             0 of 36
+  eval-baseline-repeat      0 of 36
+  eval-baseline-third       0 of 36
+  eval-base-roundtrip       1 of 37
+  eval-base-roundtrip2      0 of 36
+  eval-base-roundtrip3      2 of 38
+  eval-lr0-control          3 of 39
+
+arm           score  disagrees with the unanimous states
+  flip-s1       29    11 of 36  (lost 7 the base always wins, won 4 it always loses)  11...1.1..11.1.1.111....11.1.1111.1111..1..11111.1
+  flip-s2       28     5 of 36  (lost 4 the base always wins, won 1 it always loses)  11.1.11...11..1.1111..1..1.11..11...11111..1.11.11
+  flip-s3       25     9 of 36  (lost 8 the base always wins, won 1 it always loses)  .1.1.1111.11..111.11....1..111..1.1.11.11..1.1....
+  neg            0    26 of 36  (lost 26 the base always wins, won 0 it always loses)  ..................................................
+  flip-s1-x3    30     9 of 36  (lost 6 the base always wins, won 3 it always loses)  11.1.1.1...11.1..111...1.1..1111111.1.1.1.1111111.
+  flip-s1-x10   26    13 of 36  (lost 10 the base always wins, won 3 it always loses)  1..1.11....1..1.11111..111..1.1.1..1.1.1..11111.1.
+  flip-s1-x30    1    26 of 36  (lost 26 the base always wins, won 0 it always loses)  .........1........................................
+  neg-x3         0    26 of 36  (lost 26 the base always wins, won 0 it always loses)  ..................................................

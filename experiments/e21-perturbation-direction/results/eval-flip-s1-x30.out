@@ -1,0 +1,15 @@
+[18:15:25] cell=e21-flip-s1-x30 policy=flip-s1-x30 suite=libero_10 task_id=8 episodes=50 procs=1 port=8393 budget=21600s checkpoint=/home/gotham/tmp/plugrl/e21/arms/flip-s1-x30 res=/home/gotham/tmp/plugrl/e21/results
+[18:15:25] ALLOW_SIBLINGS=1: not checking for other clients or servers
+[18:15:26] source manifest: 105 files, sha256 b8302e96dec23e81
+[18:16:17] checkpoint sha256: 7a14d65399da9e2b
+[18:19:16] server listening
+[18:53:49] client exited with 0 after 2073s
+[18:53:53] after teardown, env client processes: 2 process(es) alive
+  PID  PPID  PGID ELAPSED COMMAND
+65526 58299 65526    2074 timeout 21600 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8394 --num-envs 1 --
+65530 65526 65526    2074 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8394 --num-envs 1 --num-procs 1 --
+[18:53:53] TEARDOWN_NOT_CLEAN
+server scalar tags: ['episode/length', 'episode/reward', 'episode/success']
+CELL e21-flip-s1-x30 | flip-s1-x30 | task 8 | episodes 50 | successes 1 | sr 0.0200 [0.0035, 0.1050] | valid True
+correctness: warnings 0 | reconnects 0 | episodes client 50 server 50 (true) | steps client 25827 server 25827 (true)
+[18:53:54] STAGEC_EVAL_DONE e21-flip-s1-x30

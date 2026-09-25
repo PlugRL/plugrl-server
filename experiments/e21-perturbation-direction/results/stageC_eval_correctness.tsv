@@ -1,0 +1,9 @@
+cell	policy	client_exit	wall_s	client_episodes	client_steps	server_episodes	server_length_sum	episode_accounting	step_accounting	no_step_state_warnings	reconnects	valid
+e21-flip-s1	flip-s1	0	1940	50	22900	50	22900	true	true	0	0	true
+e21-flip-s1-x3	flip-s1-x3	0	2001	50	22998	50	22998	true	true	0	0	true
+e21-flip-s2	flip-s2	0	2027	50	23404	50	23404	true	true	0	0	true
+e21-neg	neg	0	2161	50	26000	50	26000	true	true	0	0	true
+e21-flip-s3	flip-s3	0	1919	50	23451	50	23451	true	true	0	0	true
+e21-flip-s1-x10	flip-s1-x10	0	1991	50	23346	50	23346	true	true	0	0	true
+e21-flip-s1-x30	flip-s1-x30	0	2073	50	25827	50	25827	true	true	0	0	true
+e21-neg-x3	neg-x3	0	2172	50	26000	50	26000	true	true	0	0	true

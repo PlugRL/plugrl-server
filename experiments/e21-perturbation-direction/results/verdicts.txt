@@ -1,0 +1,23 @@
+V1-V3  pass (results/construction.txt)
+V4     8 of 8 evaluations valid
+
+null, an unperturbed actor: 30.9 +/- 3.6, range 28-37 (E15 correction 2)
+
+P1  random directions at FPO's size score at least 20 of 50
+    flip-s1            29
+    flip-s2            28
+    flip-s3            25
+    HOLDS - B: the size of FPO's movement is not what destroys the policy
+
+P2  FPO's update backwards scores at most 10 of 50
+    neg                 0
+    HOLDS - B2: second order; either sign of FPO's direction destroys
+
+P3  dose-response, reported
+    flip-s1            29
+    flip-s1-x3         30
+    flip-s1-x10        26
+    flip-s1-x30         1
+    neg                 0
+    neg-x3              0
+    smallest random multiple at 5 or less: flip-s1-x30
