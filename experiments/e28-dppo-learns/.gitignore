@@ -1,0 +1,3 @@
+# Checkpoints and tensorboard event files; summarise.py reads out what they hold.
+results/*/fpo/
+results/*/dppo/
