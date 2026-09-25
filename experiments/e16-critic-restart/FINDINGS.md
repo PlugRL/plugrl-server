@@ -37,6 +37,52 @@ was total and immediate.
 
 **P3 is refuted, P4 holds**, and the bisection moves to the next variable.
 
+**Correction, 2026-09-25: one run per arm cannot carry the per-seed claims in
+this document.** E20 (#52) reran the `except-critic` arm - same code, same
+checkpoint, same restore mode, same seed - and got **+104.7, +382.0, −55.7**
+against +73.0, +366.6, +28.8 here. One-client collection is deterministic on
+this machine; learning is not. Two identical runs agree until the first update
+and then drift, and their twenty-iteration gains differ by up to **85**.
+
+What survives and what does not:
+
+* **The headline holds.** Across the nine runs here and the three reruns, the
+  worst a random value head did to a good policy was −55.7 from 1183.0, under
+  5%. E14's collapse was total and immediate.
+* **"Every arm rose. Not one fell."** was true of these nine runs. The rerun
+  of `except-critic` on seed 2 fell by 55.7. It is a statement about this
+  sample, not the condition.
+* **The per-seed ordering** `all` > `model` > `except-critic`: four of its six
+  gaps exceed 85, and two do not - `all` over `model` on seed 1 (67) and
+  `model` over `except-critic` on seed 2 (75). The order is consistent in
+  sign; it is not established seed by seed. Averaged over seeds the gaps are
+  125 and 104. With the noise in a single difference estimated, crudely, from
+  E20's three pairs at about 53, a three-seed mean of differences carries
+  about 30, so the average ordering stands on firmer ground than any seed's.
+* **Which of the two costs is larger was misread**, independently of the
+  noise. The ladder section below says that on seed 1 nearly all of the loss
+  is the optimizer's and on seeds 0 and 2 the value head carries more, and a
+  bullet under "Supported" said discarding the optimizer costs less than
+  randomising the head. The table says the reverse. The optimizer's share,
+  `all` − `model`, is 211, 67, 98; the head's, `model` − `except-critic`, is
+  120, 116, 75. The optimizer carries more on seeds 0 and 2, the head on seed
+  1, and on average the optimizer costs 125 to the head's 104. With about 53
+  of noise in each difference, neither is established as the larger, and the
+  bullet is removed.
+* **The fractions 18%, 67%, 14%** are withdrawn as measurements. With E20's
+  reruns in their place they read 26%, 70% and −28%. What stands is the
+  average: `except-critic` gained 156 here and 144 in E20, against `all`'s
+  385.
+* **The resumes above their controls**, +80, +132, +39: two of the three are
+  inside the spread of identical runs. This document already called them
+  suggestive and no more; they are less than that.
+* **Amendment 2's "the data is unaffected"** by the suspension means no
+  connection dropped and no request timed out, which the server logs show. It
+  cannot mean the run matches the one an unsuspended machine would have
+  produced, because no two runs here match.
+* **"272,423 parameters"** above counts the value head. The actor, which is
+  what any comparison with pi0.5's movement is about, has **4,390**.
+
 ---
 
 ## The ladder, and what it separates
@@ -156,21 +202,25 @@ it.
 
 **Supported:**
 
-* On `HalfCheetah-v5` with a 272k-parameter flow policy, handing FPO a good
-  actor with a randomly initialised value head does not destroy the policy.
-  **Nine runs, three seeds, three arms: every one improved.**
-* It does slow learning, by a factor that varies with the seed — the
-  `except-critic` arm gains 18%, 67% and 14% of what a faithful resume gains —
-  and the ordering `all` > `model` > `except-critic` holds on all three seeds.
-* Discarding the optimizer's moments alone also costs something, and less than
-  randomising the value head on top of it.
+* On `HalfCheetah-v5` with a flow policy whose actor has 4,390 parameters
+  (272k with its value head), handing FPO a good actor with a randomly
+  initialised value head does not destroy the policy. Nine runs here, three
+  seeds, three arms, every one improved; a rerun of one arm on one seed in
+  E20 fell by 55.7 of 1183.0. *(Corrected 2026-09-25.)*
+* It does slow learning on average: `except-critic` gained 156 averaged over
+  seeds, and 144 when rerun in E20, against 385 for a faithful resume. The
+  per-seed fractions this document first gave are withdrawn - see the
+  correction above. *(Corrected 2026-09-25.)*
+* Averaged over seeds, the ordering `all` > `model` > `except-critic`, by 125
+  and 104. Seed by seed, two of its six gaps are within the spread of
+  identical runs. *(Corrected 2026-09-25.)*
 * FPO training can now be started from a checkpoint at all (PR #39), and a
   faithful resume lands within a few per cent of the run it resumes.
 * E6's learning curve reproduces on today's `main`.
 
 **Not supported:**
 
-* Anything about pi0.5. A 272k MLP on dense-reward locomotion is not a 3B VLA
+* Anything about pi0.5. A 4,390-parameter actor on dense-reward locomotion is not a 3B VLA
   on sparse binary-reward manipulation, and this refutes the mechanism *at
   this scale*, which is not the same as exonerating the critic at E14's. The
   remaining differences — sparse reward, batch 8, a frozen trunk, bfloat16,
@@ -180,8 +230,10 @@ it.
   against a per-update spread an order of magnitude larger. It is recorded
   because it is consistent in sign, not because it is established.
 * Any wall-clock statement about Phase B, whose machine suspended for 32
-  minutes and was then short of memory. See `AMENDMENT.md`; the data is
-  unaffected and the elapsed times are not reported as a cost.
+  minutes and was then short of memory. See `AMENDMENT.md`; no connection
+  dropped, and the elapsed times are not reported as a cost.
+* Any per-seed difference between two runs smaller than about 85, the spread
+  E20 measured between identical runs of this setup.
 
 ---
 
