@@ -88,6 +88,11 @@ class FPOPolicyConfig(BasePolicyGradientFlowPolicyConfig):
     normalize_observations: bool = True
     hidden_dims: tuple[int, ...] = (32, 32, 32, 32)
     value_hidden_dims: tuple[int, ...] = (256, 256, 256, 256, 256)
+    # The observation's state keys, concatenated in this order into the
+    # obs_dim-wide vector the networks read. The MuJoCo client sends one key,
+    # "obs"; the robomimic client sends one per quantity (robot0_eef_pos,
+    # object, ...).
+    state_keys: tuple[str, ...] = ("obs",)
 
 
 @register_policy(UID)
@@ -173,11 +178,25 @@ class FPOPolicy(BasePolicyGradientFlowPolicy):
         )
 
     def extract_model_obs_tensor(self, _obs: dict[str, Any]) -> TorchTree:
-        return torch.as_tensor(
-            _obs["states"]["obs"],
-            dtype=torch.float32,
-            device=self.device,
-        )
+        states = _obs["states"]
+        keys = self.config.state_keys
+        missing = [k for k in keys if k not in states]
+        if missing:
+            raise KeyError(
+                f"state keys {missing} are not in the observation, which has "
+                f"{sorted(states)}; set FPOPolicyConfig.state_keys"
+            )
+        parts = [
+            torch.as_tensor(states[k], dtype=torch.float32, device=self.device)
+            for k in keys
+        ]
+        x = parts[0] if len(parts) == 1 else torch.cat(parts, dim=-1)
+        if x.shape[-1] != self.config.obs_dim:
+            raise ValueError(
+                f"state keys {list(keys)} give {x.shape[-1]} values per "
+                f"observation, but obs_dim is {self.config.obs_dim}"
+            )
+        return x
 
     def build_obs_cache(self, obs: TorchTree) -> Any:
         assert isinstance(obs, torch.Tensor)
