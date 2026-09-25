@@ -1,0 +1,18 @@
+P1  the reward arm reproduces E16, within 1.0
+    seed 0: gain  +104.68   E16   +73.00   difference +31.684
+    seed 1: gain  +382.03   E16  +366.60   difference +15.433
+    seed 2: gain   -55.72   E16   +28.80   difference -84.517
+    FALSIFIED  (0 of 3 seeds)
+
+P3  wall clock under 60 minutes, all six runs
+    19.1 min   HOLDS
+
+P2  noise advantages collapse a good policy: zero arm below -500 on 2 of 3
+    P1 failed - printed below, not read as a result
+    seed 0: start  1129.8   reward arm   +104.7   zero arm   -113.3
+    seed 1: start  1632.3   reward arm   +382.0   zero arm   +141.2
+    seed 2: start  1183.0   reward arm    -55.7   zero arm   -353.4
+    FALSIFIED  (0 of 3 seeds)
+    the zero arm fell on some seeds by less than 500 - reported,
+    no verdict: the null for this condition was never measured
+

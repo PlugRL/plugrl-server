@@ -1,0 +1,26 @@
+Could not import DPPO algorithm module for reason: No module named 'dppo'
+12:45:17|INFO|plugrl_server version: 0.1.0
+12:45:17|INFO|Algorithm: fpo, Config: FPOAlgoConfig(global_steps=81920, buffer_size=4096, output_mode='u_but_supervise_as_eps', fpo_playground_trick=True, treat_truncated_as_done=False, discounting=0.995, reward_scaling=0.0, gae_lambda=0.95, batch_size=1024, num_updates_per_batch=16, learning_rate=0.0003, value_loss_coeff=0.25, clipping_epsilon=0.05, normalize_advantage=True, n_samples_per_action=8, discretize_t_for_training=True, average_losses_before_exp=True, save_interval=20, policy_checkpoint_path=WindowsPath('D:/75128/Desktop/plugrl-work/plugrl-server/.claude/worktrees/fix-pi0-image-mask-batching/experiments/e16-critic-restart/results/fpo/fpo-policy/halfcheetah-seed0/327680'), restore='except-critic', master_weights_device=None)
+12:45:17|INFO|Policy: fpo-policy, Config: FPOPolicyConfig(algo='fpo', device=device(type='cpu'), obs_dim=17, action_dim=6, flow_steps=10, timestep_embed_dim=8, action_horizon=1, feather_std=0.0, policy_mlp_output_scale=0.25, normalize_observations=True, hidden_dims=(32, 32, 32, 32), value_hidden_dims=(256, 256, 256, 256, 256))
+12:45:17|INFO|Seeded python, numpy and torch with 0. One env client is then reproducible; several are not, because batch composition depends on when their requests arrive.
+12:45:17|INFO|Checkpoint Manager created: 
+<plugrl_server.common.checkpoint_manager.CheckpointManager object at 0x0000022D5DE6A9D0> at D:\75128\Desktop\plugrl-work\plugrl-server\.claude\worktrees\fix-pi0-image-mask-batching\experiments\e20-noise-advantages\results\fpo\fpo-policy\zero-seed0
+12:45:18|INFO|Policy created...
+12:45:18|INFO|Initialized RolloutBuffer buffer_size=4096 action_shape=(4096, 1, 6) value_shape=(4096, 1)
+12:45:18|INFO|Restoring from D:\75128\Desktop\plugrl-work\plugrl-server\.claude\worktrees\fix-pi0-image-mask-batching\experiments\e16-critic-restart\results\fpo\fpo-policy\halfcheetah-seed0\327680 with restore=except-critic
+12:45:18|INFO|Loading model state from D:\75128\Desktop\plugrl-work\plugrl-server\.claude\worktrees\fix-pi0-image-mask-batching\experiments\e16-critic-restart\results\fpo\fpo-policy\halfcheetah-seed0\327680...
+12:45:18|INFO|Loading optimizer state from D:\75128\Desktop\plugrl-work\plugrl-server\.claude\worktrees\fix-pi0-image-mask-batching\experiments\e16-critic-restart\results\fpo\fpo-policy\halfcheetah-seed0\327680...
+12:45:18|INFO|Loading metadata from D:\75128\Desktop\plugrl-work\plugrl-server\.claude\worktrees\fix-pi0-image-mask-batching\experiments\e16-critic-restart\results\fpo\fpo-policy\halfcheetah-seed0\327680...
+12:45:18|INFO|Checkpoint loaded from D:\75128\Desktop\plugrl-work\plugrl-server\.claude\worktrees\fix-pi0-image-mask-batching\experiments\e16-critic-restart\results\fpo\fpo-policy\halfcheetah-seed0\327680.
+12:45:18|INFO|Holding back 12 critic tensors
+12:45:18|INFO|Algorithm created: 
+<plugrl_server.algorithm.fpo.fpo.FPOAlgorithm object at 0x0000022D5E66DE50>
+12:45:18|INFO|Agent Server is listening on 0.0.0.0:9203
+12:54:20|INFO|Checkpoint saved at step 81920 to D:\75128\Desktop\plugrl-work\plugrl-server\.claude\worktrees\fix-pi0-image-mask-batching\experiments\e20-noise-advantages\results\fpo\fpo-policy\zero-seed0\81920
+12:54:20|INFO|Stopping server as the algorithm signaled to stop.
+12:54:20|INFO|Shutdown started: aborting pending infer requests.
+12:54:20|INFO|Shutdown cleanup finished: pending_futures=1, drained_requests=1
+12:54:20|INFO|Shutdown closing 1 websocket connection(s).
+12:54:20|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 62964).
+12:54:20|INFO|WebSocket server closed.
+12:54:20|INFO|Scheduler task cancelled and cleaned up.
