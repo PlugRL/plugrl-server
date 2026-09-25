@@ -19,6 +19,13 @@ from summarise import ARMS, FROM_STEP, phase_a, phase_b, value_at
 
 SEEDS = (0, 1, 2)
 
+# An arm runs 81,920 steps on a 4,096 buffer, so a finished one has 20
+# updates. Anything short of that is still running, and its "end" would be a
+# mean over fewer points than the ten the protocol's rule asks for - which is
+# how a partial run gets read as a result. Seed 2 reached six updates before
+# the machine ran out of memory and this printed a verdict on them.
+EXPECTED_UPDATES = 20
+
 
 def _line(verdict: str, text: str) -> None:
     print(f"  {verdict:<13} {text}")
@@ -38,10 +45,16 @@ def main() -> int:
     # Phase B, per seed and arm: the value at the end of its own run. Its
     # start is the seed's Phase A value at the checkpoint, not its own first
     # update, which is already one update of its own training.
-    arm_end = {
-        (s, arm): value_at(b.get((s, arm), [])) for s in SEEDS for arm in ARMS
-    }
     arm_updates = {(s, arm): len(b.get((s, arm), [])) for s in SEEDS for arm in ARMS}
+    arm_end = {
+        (s, arm): (
+            value_at(b.get((s, arm), []))
+            if arm_updates[(s, arm)] >= EXPECTED_UPDATES
+            else None
+        )
+        for s in SEEDS
+        for arm in ARMS
+    }
 
     print("P1 - the control rises")
     print("     'the value at 409,600 exceeds the value at 327,680 on at least")
@@ -76,7 +89,7 @@ def main() -> int:
     for s in SEEDS:
         value = arm_end[(s, "all")]
         if value is None:
-            _line("no data", f"seed {s} all ({arm_updates[(s, 'all')]} updates)")
+            _line("incomplete", f"seed {s} all: {arm_updates[(s, 'all')]}/{EXPECTED_UPDATES} updates")
             continue
         seen.append(s)
         inside = lo <= value <= hi
@@ -109,7 +122,7 @@ def main() -> int:
         base = start[s]
         ec, al = arm_end[(s, "except-critic")], arm_end[(s, "all")]
         if base is None or ec is None or al is None:
-            _line("no data", f"seed {s} ({arm_updates[(s, 'except-critic')]} updates)")
+            _line("incomplete", f"seed {s}: {arm_updates[(s, 'except-critic')]}/{EXPECTED_UPDATES} updates")
             continue
         complete.append(s)
         if ec < base and not (al < base):
