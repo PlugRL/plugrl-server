@@ -1,0 +1,35 @@
+P1 - the control rises
+     'the value at 409,600 exceeds the value at 327,680 on at least
+      2 of 3 seeds'
+  rose          seed 0: 1129.8 -> 1453.6 (+323.7)
+  rose          seed 1: 1632.3 -> 2049.5 (+417.2)
+  rose          seed 2: 1183.0 -> 1345.7 (+162.7)
+  HOLDS         3 of 3 seeds rose
+
+P2 - resuming is faithful
+     'the `all` arm's value at 409,600 lies between the minimum and
+      maximum across Phase A's three seeds at that step'
+  Phase A range at the end: [1345.7, 2049.5]
+  inside        seed 0 all: 1533.9
+  OUTSIDE       seed 1 all: 2181.4
+  inside        seed 2 all: 1385.1
+  FALSIFIED     seeds [1] outside the range
+  post-hoc, not the registered rule - each seed against its own:
+    seed 0: control 1453.6 vs all 1533.9 (+5.5%)
+    seed 1: control 2049.5 vs all 2181.4 (+6.4%)
+    seed 2: control 1345.7 vs all 1385.1 (+2.9%)
+
+P3 / P4 - does an untrained value head reproduce the collapse
+     P3: 'on at least 2 of 3 seeds, `except-critic` is below its own
+      starting value, while `all` is not'
+  rose          seed 0: start 1129.8 -> except-critic 1202.8 (+73.0), all 1533.9 (+404.0)
+  rose          seed 1: start 1632.3 -> except-critic 1998.9 (+366.6), all 2181.4 (+549.1)
+  rose          seed 2: start 1183.0 -> except-critic 1211.8 (+28.8), all 1385.1 (+202.1)
+  P4 HOLDS      P3 is refuted - the mechanism does not do it alone
+
+P5 - which of the two fresh things carries the effect
+     read only after P3 or P4; `model` differs from `except-critic`
+     only in that its value head is restored too
+                seed 0: start 1129.8 -> all 1533.9 (+404.0), model 1322.9 (+193.0), except-critic 1202.8 (+73.0)
+                seed 1: start 1632.3 -> all 2181.4 (+549.1), model 2114.7 (+482.4), except-critic 1998.9 (+366.6)
+                seed 2: start 1183.0 -> all 1385.1 (+202.1), model 1286.9 (+103.9), except-critic 1211.8 (+28.8)

@@ -1,0 +1,7 @@
+# The run trees: checkpoints and tensorboard event files.
+#
+# 49 MB for Phase A alone, and binary either way. What they hold that is the
+# result lives in summary.tsv, e6-comparison.tsv and results/predictions.txt,
+# extracted by the scripts beside them. The logs are committed whole.
+results/fpo/
+results-b/fpo/
