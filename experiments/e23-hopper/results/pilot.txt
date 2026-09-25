@@ -1,0 +1,25 @@
+$ bash run.sh 4096 <scratch>/e23-pilot
+# 2026-09-25, before PROTOCOL.md was written: one iteration per seed, to measure
+# the untrained policy's return and episode length on Hopper-v5 and to check
+# that the harness starts and ends cleanly with Hopper's short episodes.
+
+seed 0 finished rc=0
+seed 1 finished rc=0
+seed 2 finished rc=0
+checkpoints: 4096 on every seed
+failed seeds: 0
+
+first iteration, from each run's tensorboard (collected before any update):
+seed  rollout/reward  rollout/length  rollout/success
+0     16.25           20.98           0.0
+1     19.05           22.38           0.0
+2     14.48           20.37           0.0
+
+Every episode of the untrained policy ends by termination within about 21
+steps - about 195 episode ends per 4,096-step iteration, against about 4 per
+iteration on HalfCheetah, where every episode is cut at 1,000.
+
+An earlier attempt at this pilot never started: the output directory was
+passed as C:/..., which the script's absolute-path test does not recognise,
+and every server exited on an invalid path. The harness was not at fault and
+is unchanged; the directory was passed as /c/... instead.
