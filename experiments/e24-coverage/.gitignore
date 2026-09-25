@@ -3,3 +3,5 @@
 # are committed whole.
 results/*/fpo/
 results/*/dppo/
+results/attempt-1/*/fpo/
+results/attempt-1/*/dppo/

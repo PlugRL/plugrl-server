@@ -1,0 +1,4 @@
+cell:    fpodppo-hopper = fpo-policy/default x dppo/hopper x Hopper-v5
+iters:   20 x 4096  batch: variant default  replan: 1  seeds: 0 1 2
+out:     /d/75128/Desktop/plugrl-work/plugrl-server/.claude/worktrees/fix-pi0-image-mask-batching/experiments/e24-coverage/results/fpodppo-hopper
+start 2026-09-25 17:41:43
