@@ -147,6 +147,76 @@ test named: the same evaluation twice on the cluster under
 `CUBLAS_WORKSPACE_CONFIG=:4096:8` with deterministic algorithms forced,
 against the same two without.
 
+**Correction 2, 2026-09-25: it is not the GPU either, and it was never the
+checkpoint path.** Both halves of the paragraph above are now measured, and
+both were wrong.
+
+The test was run in a cheaper form than the one named: not two whole
+evaluations, but the part of one that is not the environment - the prefix
+forward through the VLM and the ten denoising steps - on a GPU, with a fixed
+input and a fixed seed, twice before loading the checkpoint and twice after.
+[`results/forward_determinism.py`](results/forward_determinism.py), outputs
+beside it.
+
+| | as evaluations run | deterministic algorithms forced |
+| --- | --- | --- |
+| no checkpoint, same seed twice | **bit-identical** | bit-identical |
+| after loading, same seed twice | **bit-identical** | bit-identical |
+| before against after loading | **bit-identical** | bit-identical |
+| CUDA random state changed by the load | **no** | no |
+| non-deterministic ops torch reported | - | **none** |
+
+So a single forward of pi0.5 is deterministic on this GPU, loading the
+checkpoint changes neither its output nor the CUDA random state - which the
+earlier CPU probe never looked at - and with deterministic algorithms forced
+and warnings on, torch names no non-deterministic op on the path. The kernel
+explanation is refuted.
+
+And the checkpoint framing was a reading of totals. The evaluations log every
+episode, and initial state k is episode k, so the six can be compared position
+by position ([`results/episode-patterns.txt`](results/episode-patterns.txt)):
+
+| | episodes that disagree |
+| --- | --- |
+| baseline against baseline-repeat, no checkpoint either | **0 of 50** |
+| baseline against baseline-third, no checkpoint either | **4 of 50** - two gained, two lost, still 29 |
+| the three checkpoint runs, pairwise | 3, 7 and 8 of 50 |
+
+**The no-checkpoint path varies too.** "29, 29, 29" was two identical runs and
+a third that differed on four episodes and happened to land on the same
+total. Nothing about the checkpoint was ever the cause.
+
+What that leaves is a measurement this line of work did not have. The six
+evaluations are **one policy** - the round trip is bit-identical weights, and
+the forward is now shown deterministic - so their spread is the evaluation's
+own noise:
+
+| | |
+| --- | --- |
+| totals | 29, 29, 29, 35, 28, 29 |
+| mean and standard deviation | **29.8 ± 2.6** |
+| initial states all six agree on | **39 of 50** |
+| initial states that flip between runs | 11, most of them in only one run of six |
+
+A seventh evaluation belongs with these and was left out of the six only
+because it came through a training run's checkpoint: the `lr0-control`, whose
+actor is bit-identical to the base on every tensor (its critic differs, and
+the critic plays no part in acting). It scored **37**, above all six. Counted
+with them, an unperturbed actor scores 28 to 37 over seven evaluations,
+**30.9 ± 3.6**. Anything read against the untrained policy from here on uses
+that range, not the six alone.
+
+The noise lives in about a fifth of the initial states, the borderline ones,
+and comes from outside the model. Where outside - the environment's rendering
+or physics, or a shift in the server's noise stream from something like a
+re-sent request, which would change every episode's sample but only tip the
+close ones - is not pinned, because outcomes alone cannot tell those apart.
+
+For this document it settles the question the first correction left open.
+The baseline is 29.8 ± 2.6, not 29 - or 30.9 ± 3.6 with the lr0 control
+counted. The collapse to 0 is at least eight standard deviations either way. The 0.01 arm's 8 and 7 against its neighbours' 0 and 2
+are not noise. The conclusion holds, and now it holds with an error bar.
+
 Every arm above is evaluated through the checkpoint path, so every single
 number in this document carries an unquantified spread of that size. The
 protocol required `clipping_epsilon` 0.01 to be evaluated twice before 8 of 50
@@ -207,10 +277,10 @@ knob; that one measures the algorithm.
   measured, not explained.
 * Anything about `clipping_epsilon` outside [0.002, 0.05], on another task, on
   another seed, or over more than one iteration.
-* Any number here to better than the spread the irreproducibility introduces,
-  which is unquantified and at least ±4 of 50 on the baseline. It is not
-  caused by loading a checkpoint - see the correction above - but it is still
-  there.
+* Any number here to better than the evaluation's own noise, now measured:
+  **29.8 ± 2.6** over six evaluations of one policy, 30.9 ± 3.6 over seven
+  with the lr0 control, concentrated in about eleven borderline initial
+  states of fifty. See correction 2.
 * That the weight-distance table generalises past these four arms. It does not
   include the arm that scored best.
 
