@@ -1,0 +1,10 @@
+cell	policy	algorithm	task	claim	seed	iterations	runs	first_return	last10_return	first_length	last10_length
+fpo-rm	fpo-policy	fpo	robomimic-square	runs	0	20	true	0.0	0.0	400.0	400.0
+fpo-rm	fpo-policy	fpo	robomimic-square	runs	1	20	true	0.0	0.0	400.0	400.0
+fpo-rm	fpo-policy	fpo	robomimic-square	runs	2	20	true	0.0	0.0	400.0	400.0
+fpodppo-rm	fpo-policy	dppo	robomimic-square	runs	0	20	true	0.0	0.0	400.0	400.0
+fpodppo-rm	fpo-policy	dppo	robomimic-square	runs	1	20	true	0.0	0.0	400.0	400.0
+fpodppo-rm	fpo-policy	dppo	robomimic-square	runs	2	20	true	0.0	0.0	400.0	400.0
+dppo-rm	dppo-policy	dppo	robomimic-square	runs	0	20	true	0.0	0.0	400.0	400.0
+dppo-rm	dppo-policy	dppo	robomimic-square	runs	1	20	true	0.0	0.0	400.0	400.0
+dppo-rm	dppo-policy	dppo	robomimic-square	runs	2	20	true	0.0	0.0	400.0	400.0
