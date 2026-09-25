@@ -1,0 +1,12 @@
+15:43:10|INFO|plugrl_server version: 0.1.0
+15:43:10|INFO|Algorithm: fpo, Config: FPOAlgoConfig(global_steps=409600, buffer_size=4096, output_mode='u_but_supervise_as_eps', fpo_playground_trick=True, treat_truncated_as_done=False, discounting=0.995, reward_scaling=10.0, gae_lambda=0.95, batch_size=1024, num_updates_per_batch=16, learning_rate=0.0003, value_loss_coeff=0.25, clipping_epsilon=0.05, normalize_advantage=True, n_critic_warmup_itrs=0, max_policy_drift=0.0, n_samples_per_action=8, discretize_t_for_training=True, average_losses_before_exp=True, save_interval=20, policy_checkpoint_path=None, restore='all', master_weights_device=None)
+15:43:10|INFO|Policy: fpo-policy, Config: FPOPolicyConfig(algo='fpo', device=device(type='cpu'), obs_dim=11, action_dim=3, flow_steps=10, timestep_embed_dim=8, action_horizon=1, feather_std=0.0, policy_mlp_output_scale=0.25, normalize_observations=True, hidden_dims=(32, 32, 32, 32), value_hidden_dims=(256, 256, 256, 256, 256))
+15:43:10|INFO|Seeded python, numpy and torch with 1. One env client is then reproducible; several are not, because batch composition depends on when their requests arrive.
+15:43:10|INFO|Checkpoint Manager created: 
+<plugrl_server.common.checkpoint_manager.CheckpointManager object at 0x000002A95EA98850> at D:\75128\Desktop\plugrl-work\plugrl-server\.claude\worktrees\fix-pi0-image-mask-batching\experiments\e23-hopper\results\fpo\fpo-policy\hopper-seed1
+15:43:11|INFO|Policy created...
+15:43:11|INFO|Initialized RolloutBuffer buffer_size=4096 action_shape=(4096, 1, 3) value_shape=(4096, 1)
+15:43:11|INFO|Algorithm created: 
+<plugrl_server.algorithm.fpo.fpo.FPOAlgorithm object at 0x000002A95EBA81D0>
+15:43:11|INFO|Agent Server is listening on 0.0.0.0:8901
+15:53:20|INFO|Checkpoint saved at step 81920 to D:\75128\Desktop\plugrl-work\plugrl-server\.claude\worktrees\fix-pi0-image-mask-batching\experiments\e23-hopper\results\fpo\fpo-policy\hopper-seed1\81920
