@@ -1,0 +1,27 @@
+13:22:18|INFO|plugrl_server version: 0.1.0
+13:22:18|INFO|Algorithm: dppo, Config: DPPOAlgoConfigCheetah(global_steps=81920, gamma=0.99, gamma_denoising=0.99, actor_lr=0.0001, critic_lr=0.001, actor_weight_decay=0.0, critic_weight_decay=0.0, actor_lr_scheduler=SchedulerConfig(min_lr=0.0001, warmup_steps=10), critic_lr_scheduler=SchedulerConfig(min_lr=0.001, warmup_steps=10), buffer_size=4096, gae_lambda=0.95, update_epochs=5, norm_adv=True, clip_ploss_coef=0.01, clip_ploss_coef_base=0.01, clip_ploss_coef_rate=3, clip_vloss_coef=inf, ent_coef=0.0, vf_coef=0.5, max_grad_norm=inf, target_kl=inf, logprob_noise_level=0.1, sampling_noise_level=0.1, clip_advantage_lower_quantile=0, clip_advantage_upper_quantile=1, n_critic_warmup_itrs=0, use_normalized_rewards=True, batch_size=2048, train_itrs=20, save_interval=20, grad_accum_steps=8, policy_checkpoint_path=WindowsPath('D:/75128/Desktop/plugrl-work/plugrl-server/.claude/worktrees/fix-pi0-image-mask-batching/experiments/e16-critic-restart/results/fpo/fpo-policy/halfcheetah-seed2/327681'), restore='except-critic')
+13:22:18|INFO|Policy: fpo-policy, Config: FPOPolicyConfig(algo='dppo', device=device(type='cpu'), obs_dim=17, action_dim=6, flow_steps=10, timestep_embed_dim=8, action_horizon=1, feather_std=0.0, policy_mlp_output_scale=0.25, normalize_observations=True, hidden_dims=(32, 32, 32, 32), value_hidden_dims=(256, 256, 256, 256, 256))
+13:22:18|INFO|Seeded python, numpy and torch with 2. One env client is then reproducible; several are not, because batch composition depends on when their requests arrive.
+13:22:18|INFO|Checkpoint Manager created: 
+<plugrl_server.common.checkpoint_manager.CheckpointManager object at 0x00000294E623B8D0> at D:\75128\Desktop\plugrl-work\plugrl-server\.claude\worktrees\fix-pi0-image-mask-batching\experiments\e19-dppo-finetune\results\dppo\fpo-policy\halfcheetah-seed2
+13:22:19|INFO|Policy created...
+13:22:19|INFO|Initialized RolloutBuffer buffer_size=4096 action_shape=(4096, 10, 1, 6) value_shape=(4096,)
+13:22:19|INFO|Restoring from D:\75128\Desktop\plugrl-work\plugrl-server\.claude\worktrees\fix-pi0-image-mask-batching\experiments\e16-critic-restart\results\fpo\fpo-policy\halfcheetah-seed2\327681 with restore=except-critic
+13:22:19|INFO|Loading model state from D:\75128\Desktop\plugrl-work\plugrl-server\.claude\worktrees\fix-pi0-image-mask-batching\experiments\e16-critic-restart\results\fpo\fpo-policy\halfcheetah-seed2\327681...
+13:22:19|INFO|Loading optimizer state from D:\75128\Desktop\plugrl-work\plugrl-server\.claude\worktrees\fix-pi0-image-mask-batching\experiments\e16-critic-restart\results\fpo\fpo-policy\halfcheetah-seed2\327681...
+13:22:19|INFO|Loading metadata from D:\75128\Desktop\plugrl-work\plugrl-server\.claude\worktrees\fix-pi0-image-mask-batching\experiments\e16-critic-restart\results\fpo\fpo-policy\halfcheetah-seed2\327681...
+13:22:19|INFO|Checkpoint loaded from D:\75128\Desktop\plugrl-work\plugrl-server\.claude\worktrees\fix-pi0-image-mask-batching\experiments\e16-critic-restart\results\fpo\fpo-policy\halfcheetah-seed2\327681.
+13:22:19|INFO|Holding back 12 critic tensors
+13:22:19|INFO|Algorithm created: 
+<plugrl_server.algorithm.dppo.dppo.DPPOAlgorithm object at 0x00000294E4E60350>
+13:22:19|INFO|Agent Server is listening on 0.0.0.0:9102
+D:\75128\Desktop\plugrl-work\plugrl-server\.claude\worktrees\fix-pi0-image-mask-batching\.venv\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+13:31:50|INFO|Checkpoint saved at step 81920 to D:\75128\Desktop\plugrl-work\plugrl-server\.claude\worktrees\fix-pi0-image-mask-batching\experiments\e19-dppo-finetune\results\dppo\fpo-policy\halfcheetah-seed2\81920
+13:31:50|INFO|Stopping server as the algorithm signaled to stop.
+13:31:50|INFO|Shutdown started: aborting pending infer requests.
+13:31:50|INFO|Shutdown cleanup finished: pending_futures=1, drained_requests=1
+13:31:50|INFO|Shutdown closing 1 websocket connection(s).
+13:31:50|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 52048).
+13:31:50|INFO|WebSocket server closed.
+13:31:50|INFO|Scheduler task cancelled and cleaned up.
