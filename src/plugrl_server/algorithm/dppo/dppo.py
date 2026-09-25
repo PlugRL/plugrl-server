@@ -3,6 +3,10 @@ import torch
 import math
 
 from plugrl_server.common.checkpoint_manager import Checkpoint
+from plugrl_server.common.data_utils import (
+    numpy_tree_to_torch,
+    torch_tree_to_device,
+)
 from plugrl_server.common.logging_utils import get_logger
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm
 from plugrl_server.algorithm.registration import register_algo
@@ -404,8 +408,53 @@ class DPPOAlgorithm(BaseAlgorithm):
         )
 
     def post_learn(self) -> None:
+        # Before the reset, while the buffer still holds this iteration's
+        # observations.
+        self._update_policy_obs_stats()
         self.rollout_buffer.reset()
         super().post_learn()
+
+    def _update_policy_obs_stats(self) -> None:
+        """Feed a policy that normalises its observations the ones it just saw.
+
+        `fpo-policy` normalises its input with running statistics it stores as
+        buffers, and does not maintain them itself: something has to call
+        `update_obs_stats`. `FPOAlgorithm.pre_learn` did, behind
+        `isinstance(self.policy, FPOPolicy)`, and nothing else did. So the
+        moment a second algorithm drove the same policy the normalisation went
+        away without a word. E17 ran DPPO on `fpo-policy` for a hundred
+        iterations with `obs_stats_count` at 0.0 throughout - mean zero,
+        standard deviation one, the identity - on HalfCheetah, whose seventeen
+        observation dimensions have standard deviations from 0.17 to 9.93, a
+        spread of 59x. FPO on the same line normalises and learns.
+
+        Duck-typed rather than `isinstance`, so any policy that keeps running
+        statistics gets them, and a tree observation - which keeps none - is
+        left alone.
+
+        Called after learning rather than before, which is where FPO does it,
+        and deliberately. DPPO's ratio is exp(new logprob - old logprob), and
+        the old one was computed at collection time under the statistics in
+        force then. Moving the statistics between collection and learning
+        makes the ratio differ from one before a single weight has changed,
+        and the clip then acts on a normalisation shift rather than on the
+        policy. Updating here keeps one iteration's collection and learning
+        under the same statistics; the next iteration collects under the new.
+        """
+        update = getattr(self.policy, "update_obs_stats", None)
+        if update is None:
+            return
+        filled = len(self.rollout_buffer)
+        if filled == 0:
+            return
+        stored = self.rollout_buffer.train_state_storage.get_item(slice(0, filled))
+        cond = stored["cond"] if isinstance(stored, dict) else None
+        if cond is None:
+            return
+        cond_torch = torch_tree_to_device(numpy_tree_to_torch(cond), self.policy.device)
+        if not isinstance(cond_torch, torch.Tensor):
+            return
+        update(cond_torch)
 
     def should_learn(self) -> bool:
         return self.rollout_buffer.full()

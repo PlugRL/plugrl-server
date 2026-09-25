@@ -326,10 +326,17 @@ class GAEBuffer(RolloutBuffer):
                 )
                 with torch.inference_mode():
                     # A value head may run in bfloat16, which numpy cannot hold.
-                    batch_values = (
-                        policy.get_value(batch_obs).float().cpu().numpy().reshape(-1, 1)
-                    )
-                self.last_values[next_ids[i : i + batch_size]] = batch_values
+                    batch_values = policy.get_value(batch_obs).float().cpu().numpy()
+                # Shaped to the buffer's own value layout, not to one algorithm's.
+                # FPO stores values as (N, 1) and DPPO as (N,); a fixed
+                # reshape(-1, 1) fits the first and breaks the second as soon
+                # as two bootstrap values land in one chunk. With exactly one,
+                # numpy drops the leading unit dimension and it happens to
+                # work, which is how this survived E17.
+                ids = next_ids[i : i + batch_size]
+                self.last_values[ids] = batch_values.reshape(
+                    self.last_values[ids].shape
+                )
 
         for step in reversed(range(self.idx)):
             next_idx = self.next_indices[step]
