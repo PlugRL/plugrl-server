@@ -208,3 +208,88 @@ class TestRejections:
         )
         with pytest.raises(FileNotFoundError):
             algo.init_optimizers()
+
+
+class TestAResumeKeepsTheLearningRateSchedule:
+    """A resume that restores the optimizers and not the schedules is not one.
+
+    Loading an optimizer's state restores its `lr` to wherever the schedule
+    had taken it, but a freshly built schedule believes it is at step -1, and
+    its next `step()` sets the rate back to the start of the warmup.
+    """
+
+    SCHEDULE = dict(min_lr=1e-5, warmup_steps=2)
+
+    def _scheduled(self, **overrides) -> DPPOAlgoConfig:
+        from plugrl_server.algorithm.dppo.dppo_config import SchedulerConfig
+
+        return _dppo_config(
+            actor_lr_scheduler=SchedulerConfig(**self.SCHEDULE),
+            critic_lr_scheduler=SchedulerConfig(**self.SCHEDULE),
+            **overrides,
+        )
+
+    def _saved_mid_schedule(self, directory: pathlib.Path):
+        torch.manual_seed(0)
+        algo = DPPOAlgorithm(self._scheduled(), _policy())
+        algo.init_optimizers()
+        for _ in range(7):  # well past the two-step warmup
+            algo.actor_lr_scheduler.step()
+            algo.critic_lr_scheduler.step()
+        algo.global_step = STEP
+        algo.curr_train_itrs = 7
+        return algo, _save(directory, algo.create_checkpoint())
+
+    def test_the_schedule_continues_where_it_stopped(self, tmp_path):
+        original, checkpoint = self._saved_mid_schedule(tmp_path)
+
+        torch.manual_seed(1)
+        resumed = DPPOAlgorithm(
+            self._scheduled(policy_checkpoint_path=checkpoint, restore="all"),
+            _policy(),
+        )
+        resumed.init_optimizers()
+        for algo in (original, resumed):
+            algo.actor_lr_scheduler.step()
+            algo.critic_lr_scheduler.step()
+
+        for name in ("actor_optimizer", "critic_optimizer"):
+            want = getattr(original, name).param_groups[0]["lr"]
+            got = getattr(resumed, name).param_groups[0]["lr"]
+            assert got == pytest.approx(want), name
+
+    def test_it_is_not_back_at_the_start_of_the_warmup(self, tmp_path):
+        """The same claim, stated as the failure it prevents."""
+        _, checkpoint = self._saved_mid_schedule(tmp_path)
+
+        resumed = DPPOAlgorithm(
+            self._scheduled(policy_checkpoint_path=checkpoint, restore="all"),
+            _policy(),
+        )
+        resumed.init_optimizers()
+        resumed.actor_lr_scheduler.step()
+
+        # What a restarted schedule gives after one step, measured rather than
+        # computed: whether a scheduler steps once inside its own constructor
+        # has changed between torch versions, and this should not depend on it.
+        fresh = DPPOAlgorithm(self._scheduled(), _policy())
+        fresh.init_optimizers()
+        fresh.actor_lr_scheduler.step()
+        restarted = fresh.actor_optimizer.param_groups[0]["lr"]
+
+        assert resumed.actor_optimizer.param_groups[0]["lr"] != pytest.approx(restarted)
+
+    def test_a_checkpoint_from_before_this_warns_and_carries_on(self, tmp_path):
+        _, checkpoint = self._saved_mid_schedule(tmp_path)
+        optimizer = torch.load(checkpoint / "optimizer.pt", weights_only=False)
+        optimizer.pop("actor_scheduler")
+        optimizer.pop("critic_scheduler")
+        torch.save(optimizer, checkpoint / "optimizer.pt")
+
+        resumed = DPPOAlgorithm(
+            self._scheduled(policy_checkpoint_path=checkpoint, restore="all"),
+            _policy(),
+        )
+        resumed.init_optimizers()
+
+        assert resumed.curr_train_itrs == 7

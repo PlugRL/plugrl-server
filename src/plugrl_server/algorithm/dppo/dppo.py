@@ -510,6 +510,42 @@ class DPPOAlgorithm(BaseAlgorithm):
             self.curr_train_itrs > self.last_saved_itr
         )
 
+    def _scheduler_states(self) -> dict:
+        """The learning-rate schedules' positions, for a checkpoint.
+
+        A resume that restores the optimizers and not the schedules is not a
+        resume. Loading an optimizer's state restores its `lr` to wherever the
+        schedule had taken it, but a freshly built schedule believes it is at
+        step -1, and its next `step()` puts the rate back to the start of the
+        warmup. The `cheetah` variant anneals over `train_itrs` with a ten
+        iteration warmup, so resuming at iteration 80 would have warmed up
+        again from `min_lr`. `NoOpScheduler` has no position to keep.
+        """
+        states = {}
+        for name, scheduler in (
+            ("actor_scheduler", self.actor_lr_scheduler),
+            ("critic_scheduler", self.critic_lr_scheduler),
+        ):
+            if hasattr(scheduler, "state_dict"):
+                states[name] = scheduler.state_dict()
+        return states
+
+    def _load_scheduler_states(self, optimizer_state: dict) -> None:
+        for name, scheduler in (
+            ("actor_scheduler", self.actor_lr_scheduler),
+            ("critic_scheduler", self.critic_lr_scheduler),
+        ):
+            if not hasattr(scheduler, "load_state_dict"):
+                continue
+            if name not in optimizer_state:
+                # A checkpoint written before schedules were saved. Carry on,
+                # but say that the schedule restarts, because it does.
+                logger.warning(
+                    "checkpoint has no %s state; that schedule starts over", name
+                )
+                continue
+            scheduler.load_state_dict(optimizer_state[name])
+
     def create_checkpoint(self) -> Checkpoint:
         self.last_saved_itr = self.curr_train_itrs
         return Checkpoint(
@@ -518,6 +554,7 @@ class DPPOAlgorithm(BaseAlgorithm):
             optimizer={
                 "actor": self.actor_optimizer.state_dict(),
                 "critic": self.critic_optimizer.state_dict(),
+                **self._scheduler_states(),
             },
             meta={
                 "train_itrs": self.curr_train_itrs,
@@ -533,6 +570,7 @@ class DPPOAlgorithm(BaseAlgorithm):
         if checkpoint.optimizer is not None:
             self.actor_optimizer.load_state_dict(checkpoint.optimizer["actor"])
             self.critic_optimizer.load_state_dict(checkpoint.optimizer["critic"])
+            self._load_scheduler_states(checkpoint.optimizer)
         if "train_itrs" in checkpoint.meta:
             self.curr_train_itrs = checkpoint.meta["train_itrs"]
         if "last_saved_itr" in checkpoint.meta:
