@@ -49,6 +49,26 @@ class FPOAlgoConfig(BaseAlgoConfig):
     #
     # Zero keeps the behaviour every experiment so far has run with.
     n_critic_warmup_itrs: int = 0
+    # Stop an iteration's updates once the policy has drifted this far from
+    # the one that collected the data, measured as |1 - mean policy ratio|.
+    #
+    # Clipping bounds what a single sample can contribute; it does not bound
+    # where thousands of updates end up, and PPO implementations pair it with
+    # a stop for that reason. This one had no such stop.
+    #
+    # Measured on a bandit small enough to run on a CPU: FPO reaches about
+    # -0.06 within twenty iterations and then loses it on four of ten
+    # seed-and-dtype runs, by up to nine times. Over the same stretch the
+    # correlation between the advantages and the reward they encode falls from
+    # about 0.5 to 0.07 - the updates stop carrying information and do not
+    # stop being applied.
+    #
+    # Tested on pi0.5 and refuted: 0.01, the best of five settings on that
+    # bandit, returned 0 of 50 on both iterations, exactly as E14 did without
+    # it. Kept as a detector and a capability, not as a fix.
+    #
+    # Zero disables it, which is what every run before this used.
+    max_policy_drift: float = 0.0
     n_samples_per_action: int = 8
     discretize_t_for_training: bool = True
     average_losses_before_exp: bool = True
