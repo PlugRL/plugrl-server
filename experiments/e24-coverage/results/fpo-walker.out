@@ -1,0 +1,10 @@
+cell:    fpo-walker = fpo-policy/default x fpo/default x Walker2d-v5
+iters:   100 x 4096  batch: variant default  replan: 1  seeds: 0 1 2
+out:     /home/guangzhao/zuogou/plugrl/plugrl-server/experiments/e24-coverage/results/fpo-walker
+start 2026-09-25 18:07:44
+seed 1 finished rc=0 at 18:28:04
+seed 2 finished rc=0 at 18:28:11
+seed 0 finished rc=0 at 18:28:31
+end   2026-09-25 18:28:31
+failed seeds: 0
+CELL_DONE fpo-walker
