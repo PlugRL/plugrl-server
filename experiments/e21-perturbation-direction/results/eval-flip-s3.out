@@ -1,0 +1,19 @@
+[18:15:25] cell=e21-flip-s3 policy=flip-s3 suite=libero_10 task_id=8 episodes=50 procs=1 port=8391 budget=21600s checkpoint=/home/gotham/tmp/plugrl/e21/arms/flip-s3 res=/home/gotham/tmp/plugrl/e21/results
+[18:15:25] ALLOW_SIBLINGS=1: not checking for other clients or servers
+[18:15:26] source manifest: 105 files, sha256 b8302e96dec23e81
+[18:16:12] checkpoint sha256: c80e2bff1bc3d8dc
+[18:19:10] server listening
+[18:51:09] client exited with 0 after 1919s
+[18:51:14] after teardown, env client processes: 6 process(es) alive
+  PID  PPID  PGID ELAPSED COMMAND
+65342 58298 65342    1917 timeout 21600 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8393 --num-envs 1 --
+65346 65342 65342    1917 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8393 --num-envs 1 --num-procs 1 --
+65440 58297 65440    1915 timeout 21600 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8392 --num-envs 1 --
+65444 65440 65440    1915 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8392 --num-envs 1 --num-procs 1 --
+65526 58299 65526    1914 timeout 21600 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8394 --num-envs 1 --
+65530 65526 65526    1914 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8394 --num-envs 1 --num-procs 1 --
+[18:51:14] TEARDOWN_NOT_CLEAN
+server scalar tags: ['episode/length', 'episode/reward', 'episode/success']
+CELL e21-flip-s3 | flip-s3 | task 8 | episodes 50 | successes 25 | sr 0.5000 [0.3664, 0.6336] | valid True
+correctness: warnings 0 | reconnects 0 | episodes client 50 server 50 (true) | steps client 23451 server 23451 (true)
+[18:51:15] STAGEC_EVAL_DONE e21-flip-s3

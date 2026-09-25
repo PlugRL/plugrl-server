@@ -1,0 +1,53 @@
+[09-25 17:20:36] building arms
+[09-25 17:27:55] arms built, checks pass
+[09-25 17:34:24] --- batch: flip-s1 flip-s2 neg flip-s1-x3
+[09-25 17:34:24] START e21-flip-s1 gpus=0/1 port=8391
+[09-25 17:34:24] START e21-flip-s2 gpus=2/3 port=8392
+[09-25 17:34:24] START e21-flip-s1-x3 gpus=6/7 port=8394
+[09-25 17:34:24] START e21-neg gpus=4/5 port=8393
+[09-25 18:11:50] END e21-flip-s1 rc=0
+[18:11:42] client exited with 0 after 1940s
+[18:11:50] TEARDOWN_NOT_CLEAN
+[18:11:50] STAGEC_EVAL_DONE e21-flip-s1
+[09-25 18:12:42] END e21-flip-s1-x3 rc=0
+[18:12:37] client exited with 0 after 2001s
+[18:12:41] TEARDOWN_NOT_CLEAN
+[18:12:42] STAGEC_EVAL_DONE e21-flip-s1-x3
+[09-25 18:13:10] END e21-flip-s2 rc=0
+[18:13:04] client exited with 0 after 2027s
+[18:13:10] TEARDOWN_NOT_CLEAN
+[18:13:10] STAGEC_EVAL_DONE e21-flip-s2
+[09-25 18:15:25] END e21-neg rc=0
+[18:15:20] client exited with 0 after 2161s
+[18:15:25] STAGEC_EVAL_DONE e21-neg
+[09-25 18:15:25] --- batch: flip-s3 flip-s1-x10 flip-s1-x30 neg-x3
+[09-25 18:15:25] START e21-flip-s3 gpus=0/1 port=8391
+[09-25 18:15:25] START e21-flip-s1-x10 gpus=2/3 port=8392
+[09-25 18:15:25] START e21-flip-s1-x30 gpus=4/5 port=8393
+[09-25 18:15:25] START e21-neg-x3 gpus=6/7 port=8394
+[09-25 18:51:15] END e21-flip-s3 rc=0
+[18:51:09] client exited with 0 after 1919s
+[18:51:14] TEARDOWN_NOT_CLEAN
+[18:51:15] STAGEC_EVAL_DONE e21-flip-s3
+[09-25 18:52:35] END e21-flip-s1-x10 rc=0
+[18:52:29] client exited with 0 after 1991s
+[18:52:34] TEARDOWN_NOT_CLEAN
+[18:52:35] STAGEC_EVAL_DONE e21-flip-s1-x10
+[09-25 18:53:54] END e21-flip-s1-x30 rc=0
+[18:53:49] client exited with 0 after 2073s
+[18:53:53] TEARDOWN_NOT_CLEAN
+[18:53:54] STAGEC_EVAL_DONE e21-flip-s1-x30
+[09-25 18:55:37] END e21-neg-x3 rc=0
+[18:55:32] client exited with 0 after 2172s
+[18:55:37] STAGEC_EVAL_DONE e21-neg-x3
+[09-25 18:55:37] === rows ===
+policy	task_id	episodes	successes	sr	ci_lo	ci_hi	valid
+flip-s1	8	50	29	0.5800	0.4423	0.7062	true
+flip-s1-x3	8	50	30	0.6000	0.4618	0.7239	true
+flip-s2	8	50	28	0.5600	0.4231	0.6884	true
+neg	8	50	0	0.0000	0.0000	0.0713	true
+flip-s3	8	50	25	0.5000	0.3664	0.6336	true
+flip-s1-x10	8	50	26	0.5200	0.3851	0.6520	true
+flip-s1-x30	8	50	1	0.0200	0.0035	0.1050	true
+neg-x3	8	50	0	0.0000	0.0000	0.0713	true
+[09-25 18:55:37] E21_DONE

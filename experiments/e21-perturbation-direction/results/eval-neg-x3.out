@@ -1,0 +1,11 @@
+[18:15:25] cell=e21-neg-x3 policy=neg-x3 suite=libero_10 task_id=8 episodes=50 procs=1 port=8394 budget=21600s checkpoint=/home/gotham/tmp/plugrl/e21/arms/neg-x3 res=/home/gotham/tmp/plugrl/e21/results
+[18:15:25] ALLOW_SIBLINGS=1: not checking for other clients or servers
+[18:15:26] source manifest: 105 files, sha256 b8302e96dec23e81
+[18:16:11] checkpoint sha256: a14284b30072ae43
+[18:19:20] server listening
+[18:55:32] client exited with 0 after 2172s
+[18:55:36] teardown clean
+server scalar tags: ['episode/length', 'episode/reward', 'episode/success']
+CELL e21-neg-x3 | neg-x3 | task 8 | episodes 50 | successes 0 | sr 0.0000 [0.0000, 0.0713] | valid True
+correctness: warnings 0 | reconnects 0 | episodes client 50 server 50 (true) | steps client 26000 server 26000 (true)
+[18:55:37] STAGEC_EVAL_DONE e21-neg-x3

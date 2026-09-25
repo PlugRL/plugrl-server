@@ -1,0 +1,9 @@
+policy	task_id	episodes	successes	sr	ci_lo	ci_hi	valid
+flip-s1	8	50	29	0.5800	0.4423	0.7062	true
+flip-s1-x3	8	50	30	0.6000	0.4618	0.7239	true
+flip-s2	8	50	28	0.5600	0.4231	0.6884	true
+neg	8	50	0	0.0000	0.0000	0.0713	true
+flip-s3	8	50	25	0.5000	0.3664	0.6336	true
+flip-s1-x10	8	50	26	0.5200	0.3851	0.6520	true
+flip-s1-x30	8	50	1	0.0200	0.0035	0.1050	true
+neg-x3	8	50	0	0.0000	0.0000	0.0713	true

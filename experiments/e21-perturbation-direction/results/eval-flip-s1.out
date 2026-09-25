@@ -1,0 +1,19 @@
+[17:34:24] cell=e21-flip-s1 policy=flip-s1 suite=libero_10 task_id=8 episodes=50 procs=1 port=8391 budget=21600s checkpoint=/home/gotham/tmp/plugrl/e21/arms/flip-s1 res=/home/gotham/tmp/plugrl/e21/results
+[17:34:24] ALLOW_SIBLINGS=1: not checking for other clients or servers
+[17:34:27] source manifest: 105 files, sha256 b8302e96dec23e81
+[17:35:32] checkpoint sha256: 11e8c8077cec8cb4
+[17:39:22] server listening
+[18:11:42] client exited with 0 after 1940s
+[18:11:49] after teardown, env client processes: 6 process(es) alive
+  PID  PPID  PGID ELAPSED COMMAND
+42460 34553 42460    1954 timeout 21600 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8394 --num-envs 1 --
+42464 42460 42460    1954 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8394 --num-envs 1 --num-procs 1 --
+42495 34552 42495    1952 timeout 21600 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8392 --num-envs 1 --
+42499 42495 42495    1952 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8392 --num-envs 1 --num-procs 1 --
+42669 34554 42669    1951 timeout 21600 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8393 --num-envs 1 --
+42673 42669 42669    1951 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8393 --num-envs 1 --num-procs 1 --
+[18:11:50] TEARDOWN_NOT_CLEAN
+server scalar tags: ['episode/length', 'episode/reward', 'episode/success']
+CELL e21-flip-s1 | flip-s1 | task 8 | episodes 50 | successes 29 | sr 0.5800 [0.4423, 0.7062] | valid True
+correctness: warnings 0 | reconnects 0 | episodes client 50 server 50 (true) | steps client 22900 server 22900 (true)
+[18:11:50] STAGEC_EVAL_DONE e21-flip-s1
