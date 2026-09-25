@@ -58,6 +58,24 @@ and it is measurable from E14's own logs.
 3. **The code is E16's.** This branch is cut from `exp/e16-critic-restart`,
    so the only difference between E20's reward-on arm and E16's is the day it
    ran.
+4. **How sparse E14's reward actually was**, from its own
+   `results/train-metrics.txt`. Added before any E20 run; it changes no
+   prediction, and says how far the answer should transfer.
+
+   | E14 iteration | success while collecting | mean episode length | non-zero rewards in 4,096 transitions |
+   | --- | --- | --- | --- |
+   | 1 | 0.65 | 461.6 | about 6, **0.14%** |
+   | 2 | 0.026 | 519.5 | about 0 |
+   | 3-9 | **0** | 520, every episode timing out | **0** |
+
+   The counts are estimates - episodes run across iteration boundaries on ten
+   clients, so completed episodes per iteration is about 4096 / length - but
+   the order of magnitude is not in doubt. E14's first update, the one that
+   collapsed the policy, used advantages of which about 99.86% came from a
+   value head with `value_loss` at 0.880; and every update after the collapse
+   used advantages that were **entirely** critic, because no episode earned
+   anything. So E20's `zero` arm is not only the limit of E14's condition. For
+   E14's last eight iterations it **is** the condition, exactly.
 
 ---
 
