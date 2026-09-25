@@ -57,5 +57,10 @@ def _set_tree_item(tree: NumpyState, index: int | slice, value: NumpyState) -> N
 
 def _get_tree_item(tree: NumpyState, index: int | slice | np.ndarray) -> NumpyState:
     if isinstance(tree, np.ndarray):
-        return tree[index]
+        # An int into a 1-D leaf - a per-sample scalar such as pi0's
+        # image_mask - gives a numpy scalar, which is not an ndarray, and
+        # every consumer of a NumpyState tells leaves from mappings by
+        # isinstance(np.ndarray). Keep it a 0-d array. For every other index
+        # np.asarray returns the same object, so nothing is copied.
+        return np.asarray(tree[index])
     return dict((key, _get_tree_item(value, index)) for key, value in tree.items())
