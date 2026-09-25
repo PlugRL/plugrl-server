@@ -252,6 +252,7 @@ class DPPOAlgorithm(BaseAlgorithm):
         grad_accum_steps: int,
         actor_enabled: bool,
         force: bool = False,
+        accumulated: int | None = None,
     ) -> tuple[float | None, float | None]:
         max_actor_grad_norm = (
             optimizer_step_if_ready(
@@ -261,6 +262,7 @@ class DPPOAlgorithm(BaseAlgorithm):
                 grad_accum_steps=grad_accum_steps,
                 max_grad_norm=self.config.max_grad_norm,
                 force=force,
+                accumulated=accumulated,
             )
             if actor_enabled
             else None
@@ -275,6 +277,7 @@ class DPPOAlgorithm(BaseAlgorithm):
             grad_accum_steps=grad_accum_steps,
             max_grad_norm=self.config.max_grad_norm,
             force=force,
+            accumulated=accumulated,
         )
         return max_actor_grad_norm, max_critic_grad_norm
 
@@ -297,6 +300,8 @@ class DPPOAlgorithm(BaseAlgorithm):
             self.actor_optimizer.zero_grad()
             self.critic_optimizer.zero_grad()
             accum_steps = 0
+            # Backward passes sitting in the gradients, waiting for a step.
+            pending = 0
 
             for batch in dataloader:
                 obs, action, oldlogprob, _reward, value, advantage, ret = (
@@ -321,9 +326,9 @@ class DPPOAlgorithm(BaseAlgorithm):
                     - self.config.ent_coef * entropy_loss
                     + self.config.vf_coef * v_loss
                 )
-                loss = loss / grad_accum
                 loss.backward()
                 accum_steps += 1
+                pending += 1
                 learn_progress_current += 1
                 self.report_learn_progress(learn_progress_current, learn_progress_total)
 
@@ -331,7 +336,13 @@ class DPPOAlgorithm(BaseAlgorithm):
                     accum_steps=accum_steps,
                     grad_accum_steps=grad_accum,
                     actor_enabled=actor_enabled,
+                    accumulated=pending,
                 )
+                # The critic always steps when a window closes; the actor does
+                # not during a warmup, so it is the critic that says whether
+                # the gradients were consumed.
+                if max_critic_grad_norm is not None:
+                    pending = 0
                 if max_actor_grad_norm is not None:
                     max_actor_grad_norms.append(max_actor_grad_norm)
                     max_critic_grad_norms.append(max_critic_grad_norm)
@@ -344,13 +355,15 @@ class DPPOAlgorithm(BaseAlgorithm):
                     break
 
             # flush remaining gradients
-            if accum_steps % grad_accum != 0:
+            if pending > 0:
                 max_actor_grad_norm, max_critic_grad_norm = self._step_optimizers(
                     accum_steps=accum_steps,
                     grad_accum_steps=grad_accum,
                     actor_enabled=actor_enabled,
                     force=True,
+                    accumulated=pending,
                 )
+                pending = 0
                 if max_actor_grad_norm is not None:
                     max_actor_grad_norms.append(max_actor_grad_norm)
                     max_critic_grad_norms.append(max_critic_grad_norm)
