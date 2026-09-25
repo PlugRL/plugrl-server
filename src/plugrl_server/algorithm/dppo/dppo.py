@@ -2,7 +2,10 @@ import numpy as np
 import torch
 import math
 
-from plugrl_server.common.checkpoint_manager import Checkpoint
+from plugrl_server.common.checkpoint_manager import (
+    Checkpoint,
+    load_checkpoint_from_path,
+)
 from plugrl_server.common.data_utils import (
     numpy_tree_to_torch,
     torch_tree_to_device,
@@ -85,6 +88,46 @@ class DPPOAlgorithm(BaseAlgorithm):
             train_itrs=config.train_itrs,
             max_lr=config.critic_lr,
         )
+        if config.policy_checkpoint_path is not None:
+            self._restore_from(config.policy_checkpoint_path, config.restore)
+
+    def _restore_from(self, path, restore: str) -> None:
+        """Start this run from a saved one, taking as much of it as asked.
+
+        Mirrors FPO's (PR #39) so the two algorithms mean the same thing by
+        the same flag. The weights part is algorithm-independent and the two
+        copies should become one helper once both have merged.
+        """
+        logger.info("Restoring from %s with restore=%s", path, restore)
+        checkpoint = load_checkpoint_from_path(path)
+        if restore == "all":
+            optimizer = checkpoint.optimizer
+            if optimizer is not None and not (
+                isinstance(optimizer, dict) and {"actor", "critic"} <= optimizer.keys()
+            ):
+                raise ValueError(
+                    f"checkpoint at {path} was not written by DPPO: its optimizer "
+                    "state has no separate actor and critic, so it cannot be "
+                    "resumed. Use --algo.restore model or except-critic to take "
+                    "its weights instead."
+                )
+            self.load_checkpoint(checkpoint)
+            return
+
+        if checkpoint.model is None:
+            raise ValueError(f"checkpoint at {path} carries no model weights")
+        state = dict(checkpoint.model)
+        if restore == "except-critic":
+            dropped = [k for k in state if k.startswith("critic.")]
+            for key in dropped:
+                del state[key]
+            logger.info("Holding back %d critic tensors", len(dropped))
+        missing, unexpected = self.policy.load_state_dict(state, strict=False)
+        if unexpected:
+            raise ValueError(f"checkpoint at {path} has unknown keys: {unexpected}")
+        if restore == "model" and missing:
+            raise ValueError(f"checkpoint at {path} is missing keys: {missing}")
+        # Optimizers, schedulers, step and iteration are left as built.
 
     def infer(self, obs: dict) -> tuple[np.ndarray, PolicyRuntimeState]:
         with torch.inference_mode():
