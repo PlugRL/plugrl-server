@@ -1,0 +1,19 @@
+19:08:53|INFO|plugrl_server version: 0.1.0
+19:08:53|INFO|Algorithm: fpo, Config: FPOAlgoConfig(global_steps=81920, buffer_size=4096, output_mode='u_but_supervise_as_eps', fpo_playground_trick=True, treat_truncated_as_done=False, discounting=0.995, reward_scaling=10.0, gae_lambda=0.95, batch_size=1024, num_updates_per_batch=16, learning_rate=0.0003, value_loss_coeff=0.25, clipping_epsilon=0.05, normalize_advantage=True, n_critic_warmup_itrs=0, max_policy_drift=0.0, n_samples_per_action=8, discretize_t_for_training=True, average_losses_before_exp=True, save_interval=20, policy_checkpoint_path=None, restore='all', master_weights_device=None)
+19:08:53|INFO|Policy: fpo-policy, Config: FPOPolicyConfig(algo='fpo', device=device(type='cpu'), obs_dim=23, action_dim=7, flow_steps=10, timestep_embed_dim=8, action_horizon=1, feather_std=0.0, policy_mlp_output_scale=0.25, normalize_observations=True, hidden_dims=(32, 32, 32, 32), value_hidden_dims=(256, 256, 256, 256, 256), state_keys=('robot0_eef_pos', 'robot0_eef_quat', 'robot0_gripper_qpos', 'object'))
+19:08:53|INFO|Seeded python, numpy and torch with 0. One env client is then reproducible; several are not, because batch composition depends on when their requests arrive.
+19:08:53|INFO|Checkpoint Manager created: 
+<plugrl_server.common.checkpoint_manager.CheckpointManager object at 0x7d4422c07d50> at /home/guangzhao/zuogou/plugrl/e27/experiments/e27-robomimic/results/fpo-rm/fpo/fpo-policy/fpo-rm-seed0
+19:08:53|INFO|Policy created...
+19:08:53|INFO|Initialized RolloutBuffer buffer_size=4096 action_shape=(4096, 1, 7) value_shape=(4096, 1)
+19:08:53|INFO|Algorithm created: 
+<plugrl_server.algorithm.fpo.fpo.FPOAlgorithm object at 0x7d4422d17d50>
+19:08:53|INFO|Agent Server is listening on 0.0.0.0:9400
+19:22:55|INFO|Checkpoint saved at step 81921 to /home/guangzhao/zuogou/plugrl/e27/experiments/e27-robomimic/results/fpo-rm/fpo/fpo-policy/fpo-rm-seed0/81921
+19:22:55|INFO|Stopping server as the algorithm signaled to stop.
+19:22:55|INFO|Shutdown started: aborting pending infer requests.
+19:22:55|INFO|Shutdown cleanup finished: pending_futures=1, drained_requests=1
+19:22:55|INFO|Shutdown closing 1 websocket connection(s).
+19:22:55|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 39556).
+19:22:55|INFO|WebSocket server closed.
+19:22:55|INFO|Scheduler task cancelled and cleaned up.

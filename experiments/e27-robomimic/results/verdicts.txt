@@ -1,0 +1,28 @@
+P1  every cell runs end to end
+    fpo-rm          fpo-policy   fpo   robomimic-square HOLDS   (14 min)
+    fpodppo-rm      fpo-policy   dppo  robomimic-square HOLDS   (15 min)
+    dppo-rm         dppo-policy  dppo  robomimic-square HOLDS   (17 min)
+
+reported: success rate, first iteration and max over all twenty
+    fpo-rm          seed 0  success 0.000, best 0.000
+    fpo-rm          seed 1  success 0.000, best 0.000
+    fpo-rm          seed 2  success 0.000, best 0.000
+    fpodppo-rm      seed 0  success 0.000, best 0.000
+    fpodppo-rm      seed 1  success 0.000, best 0.000
+    fpodppo-rm      seed 2  success 0.000, best 0.000
+    dppo-rm         seed 0  success 0.000, best 0.000
+    dppo-rm         seed 1  success 0.000, best 0.000
+    dppo-rm         seed 2  success 0.000, best 0.000
+
+reported: first iteration and mean of the last ten, return and episode length
+    fpo-rm          seed 0  return      0.0 ->      0.0   length  400.0 ->  400.0
+    fpo-rm          seed 1  return      0.0 ->      0.0   length  400.0 ->  400.0
+    fpo-rm          seed 2  return      0.0 ->      0.0   length  400.0 ->  400.0
+    fpodppo-rm      seed 0  return      0.0 ->      0.0   length  400.0 ->  400.0
+    fpodppo-rm      seed 1  return      0.0 ->      0.0   length  400.0 ->  400.0
+    fpodppo-rm      seed 2  return      0.0 ->      0.0   length  400.0 ->  400.0
+    dppo-rm         seed 0  return      0.0 ->      0.0   length  400.0 ->  400.0
+    dppo-rm         seed 1  return      0.0 ->      0.0   length  400.0 ->  400.0
+    dppo-rm         seed 2  return      0.0 ->      0.0   length  400.0 ->  400.0
+
+wrote /home/guangzhao/zuogou/plugrl/e27/experiments/e27-robomimic/summary.tsv
