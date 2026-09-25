@@ -2,7 +2,14 @@ import numpy as np
 import torch
 import math
 
-from plugrl_server.common.checkpoint_manager import Checkpoint
+from plugrl_server.common.checkpoint_manager import (
+    Checkpoint,
+    load_checkpoint_from_path,
+)
+from plugrl_server.common.data_utils import (
+    numpy_tree_to_torch,
+    torch_tree_to_device,
+)
 from plugrl_server.common.logging_utils import get_logger
 from plugrl_server.algorithm.base_algorithm import BaseAlgorithm
 from plugrl_server.algorithm.registration import register_algo
@@ -81,6 +88,46 @@ class DPPOAlgorithm(BaseAlgorithm):
             train_itrs=config.train_itrs,
             max_lr=config.critic_lr,
         )
+        if config.policy_checkpoint_path is not None:
+            self._restore_from(config.policy_checkpoint_path, config.restore)
+
+    def _restore_from(self, path, restore: str) -> None:
+        """Start this run from a saved one, taking as much of it as asked.
+
+        Mirrors FPO's (PR #39) so the two algorithms mean the same thing by
+        the same flag. The weights part is algorithm-independent and the two
+        copies should become one helper once both have merged.
+        """
+        logger.info("Restoring from %s with restore=%s", path, restore)
+        checkpoint = load_checkpoint_from_path(path)
+        if restore == "all":
+            optimizer = checkpoint.optimizer
+            if optimizer is not None and not (
+                isinstance(optimizer, dict) and {"actor", "critic"} <= optimizer.keys()
+            ):
+                raise ValueError(
+                    f"checkpoint at {path} was not written by DPPO: its optimizer "
+                    "state has no separate actor and critic, so it cannot be "
+                    "resumed. Use --algo.restore model or except-critic to take "
+                    "its weights instead."
+                )
+            self.load_checkpoint(checkpoint)
+            return
+
+        if checkpoint.model is None:
+            raise ValueError(f"checkpoint at {path} carries no model weights")
+        state = dict(checkpoint.model)
+        if restore == "except-critic":
+            dropped = [k for k in state if k.startswith("critic.")]
+            for key in dropped:
+                del state[key]
+            logger.info("Holding back %d critic tensors", len(dropped))
+        missing, unexpected = self.policy.load_state_dict(state, strict=False)
+        if unexpected:
+            raise ValueError(f"checkpoint at {path} has unknown keys: {unexpected}")
+        if restore == "model" and missing:
+            raise ValueError(f"checkpoint at {path} is missing keys: {missing}")
+        # Optimizers, schedulers, step and iteration are left as built.
 
     def infer(self, obs: dict) -> tuple[np.ndarray, PolicyRuntimeState]:
         with torch.inference_mode():
@@ -252,6 +299,7 @@ class DPPOAlgorithm(BaseAlgorithm):
         grad_accum_steps: int,
         actor_enabled: bool,
         force: bool = False,
+        accumulated: int | None = None,
     ) -> tuple[float | None, float | None]:
         max_actor_grad_norm = (
             optimizer_step_if_ready(
@@ -261,6 +309,7 @@ class DPPOAlgorithm(BaseAlgorithm):
                 grad_accum_steps=grad_accum_steps,
                 max_grad_norm=self.config.max_grad_norm,
                 force=force,
+                accumulated=accumulated,
             )
             if actor_enabled
             else None
@@ -275,6 +324,7 @@ class DPPOAlgorithm(BaseAlgorithm):
             grad_accum_steps=grad_accum_steps,
             max_grad_norm=self.config.max_grad_norm,
             force=force,
+            accumulated=accumulated,
         )
         return max_actor_grad_norm, max_critic_grad_norm
 
@@ -297,6 +347,8 @@ class DPPOAlgorithm(BaseAlgorithm):
             self.actor_optimizer.zero_grad()
             self.critic_optimizer.zero_grad()
             accum_steps = 0
+            # Backward passes sitting in the gradients, waiting for a step.
+            pending = 0
 
             for batch in dataloader:
                 obs, action, oldlogprob, _reward, value, advantage, ret = (
@@ -321,9 +373,9 @@ class DPPOAlgorithm(BaseAlgorithm):
                     - self.config.ent_coef * entropy_loss
                     + self.config.vf_coef * v_loss
                 )
-                loss = loss / grad_accum
                 loss.backward()
                 accum_steps += 1
+                pending += 1
                 learn_progress_current += 1
                 self.report_learn_progress(learn_progress_current, learn_progress_total)
 
@@ -331,7 +383,13 @@ class DPPOAlgorithm(BaseAlgorithm):
                     accum_steps=accum_steps,
                     grad_accum_steps=grad_accum,
                     actor_enabled=actor_enabled,
+                    accumulated=pending,
                 )
+                # The critic always steps when a window closes; the actor does
+                # not during a warmup, so it is the critic that says whether
+                # the gradients were consumed.
+                if max_critic_grad_norm is not None:
+                    pending = 0
                 if max_actor_grad_norm is not None:
                     max_actor_grad_norms.append(max_actor_grad_norm)
                     max_critic_grad_norms.append(max_critic_grad_norm)
@@ -344,13 +402,15 @@ class DPPOAlgorithm(BaseAlgorithm):
                     break
 
             # flush remaining gradients
-            if accum_steps % grad_accum != 0:
+            if pending > 0:
                 max_actor_grad_norm, max_critic_grad_norm = self._step_optimizers(
                     accum_steps=accum_steps,
                     grad_accum_steps=grad_accum,
                     actor_enabled=actor_enabled,
                     force=True,
+                    accumulated=pending,
                 )
+                pending = 0
                 if max_actor_grad_norm is not None:
                     max_actor_grad_norms.append(max_actor_grad_norm)
                     max_critic_grad_norms.append(max_critic_grad_norm)
@@ -391,8 +451,53 @@ class DPPOAlgorithm(BaseAlgorithm):
         )
 
     def post_learn(self) -> None:
+        # Before the reset, while the buffer still holds this iteration's
+        # observations.
+        self._update_policy_obs_stats()
         self.rollout_buffer.reset()
         super().post_learn()
+
+    def _update_policy_obs_stats(self) -> None:
+        """Feed a policy that normalises its observations the ones it just saw.
+
+        `fpo-policy` normalises its input with running statistics it stores as
+        buffers, and does not maintain them itself: something has to call
+        `update_obs_stats`. `FPOAlgorithm.pre_learn` did, behind
+        `isinstance(self.policy, FPOPolicy)`, and nothing else did. So the
+        moment a second algorithm drove the same policy the normalisation went
+        away without a word. E17 ran DPPO on `fpo-policy` for a hundred
+        iterations with `obs_stats_count` at 0.0 throughout - mean zero,
+        standard deviation one, the identity - on HalfCheetah, whose seventeen
+        observation dimensions have standard deviations from 0.17 to 9.93, a
+        spread of 59x. FPO on the same line normalises and learns.
+
+        Duck-typed rather than `isinstance`, so any policy that keeps running
+        statistics gets them, and a tree observation - which keeps none - is
+        left alone.
+
+        Called after learning rather than before, which is where FPO does it,
+        and deliberately. DPPO's ratio is exp(new logprob - old logprob), and
+        the old one was computed at collection time under the statistics in
+        force then. Moving the statistics between collection and learning
+        makes the ratio differ from one before a single weight has changed,
+        and the clip then acts on a normalisation shift rather than on the
+        policy. Updating here keeps one iteration's collection and learning
+        under the same statistics; the next iteration collects under the new.
+        """
+        update = getattr(self.policy, "update_obs_stats", None)
+        if update is None:
+            return
+        filled = len(self.rollout_buffer)
+        if filled == 0:
+            return
+        stored = self.rollout_buffer.train_state_storage.get_item(slice(0, filled))
+        cond = stored["cond"] if isinstance(stored, dict) else None
+        if cond is None:
+            return
+        cond_torch = torch_tree_to_device(numpy_tree_to_torch(cond), self.policy.device)
+        if not isinstance(cond_torch, torch.Tensor):
+            return
+        update(cond_torch)
 
     def should_learn(self) -> bool:
         return self.rollout_buffer.full()
@@ -405,6 +510,42 @@ class DPPOAlgorithm(BaseAlgorithm):
             self.curr_train_itrs > self.last_saved_itr
         )
 
+    def _scheduler_states(self) -> dict:
+        """The learning-rate schedules' positions, for a checkpoint.
+
+        A resume that restores the optimizers and not the schedules is not a
+        resume. Loading an optimizer's state restores its `lr` to wherever the
+        schedule had taken it, but a freshly built schedule believes it is at
+        step -1, and its next `step()` puts the rate back to the start of the
+        warmup. The `cheetah` variant anneals over `train_itrs` with a ten
+        iteration warmup, so resuming at iteration 80 would have warmed up
+        again from `min_lr`. `NoOpScheduler` has no position to keep.
+        """
+        states = {}
+        for name, scheduler in (
+            ("actor_scheduler", self.actor_lr_scheduler),
+            ("critic_scheduler", self.critic_lr_scheduler),
+        ):
+            if hasattr(scheduler, "state_dict"):
+                states[name] = scheduler.state_dict()
+        return states
+
+    def _load_scheduler_states(self, optimizer_state: dict) -> None:
+        for name, scheduler in (
+            ("actor_scheduler", self.actor_lr_scheduler),
+            ("critic_scheduler", self.critic_lr_scheduler),
+        ):
+            if not hasattr(scheduler, "load_state_dict"):
+                continue
+            if name not in optimizer_state:
+                # A checkpoint written before schedules were saved. Carry on,
+                # but say that the schedule restarts, because it does.
+                logger.warning(
+                    "checkpoint has no %s state; that schedule starts over", name
+                )
+                continue
+            scheduler.load_state_dict(optimizer_state[name])
+
     def create_checkpoint(self) -> Checkpoint:
         self.last_saved_itr = self.curr_train_itrs
         return Checkpoint(
@@ -413,6 +554,7 @@ class DPPOAlgorithm(BaseAlgorithm):
             optimizer={
                 "actor": self.actor_optimizer.state_dict(),
                 "critic": self.critic_optimizer.state_dict(),
+                **self._scheduler_states(),
             },
             meta={
                 "train_itrs": self.curr_train_itrs,
@@ -428,6 +570,7 @@ class DPPOAlgorithm(BaseAlgorithm):
         if checkpoint.optimizer is not None:
             self.actor_optimizer.load_state_dict(checkpoint.optimizer["actor"])
             self.critic_optimizer.load_state_dict(checkpoint.optimizer["critic"])
+            self._load_scheduler_states(checkpoint.optimizer)
         if "train_itrs" in checkpoint.meta:
             self.curr_train_itrs = checkpoint.meta["train_itrs"]
         if "last_saved_itr" in checkpoint.meta:

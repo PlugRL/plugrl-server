@@ -1,4 +1,5 @@
 import dataclasses
+import pathlib
 from plugrl_server.algorithm.base_algorithm import BaseAlgoConfig
 from plugrl_server.algorithm.registration import register_algo_config
 
@@ -45,14 +46,36 @@ class DPPOAlgoConfig(BaseAlgoConfig):
     use_normalized_rewards: bool = False
 
     batch_size: int = 256
-    critic_batch_size: int | None = None
     train_itrs: int = 200
     save_interval: int = 10
     grad_accum_steps: int = 8
+    # A checkpoint to start from, and how much of it to take - the same three
+    # modes FPO has, for the same reason: DPPO had a `load_checkpoint` that
+    # nothing could reach, so a DPPO run could be saved and never continued,
+    # and could not start from a policy some other run had trained.
+    #
+    #   all            model, both optimizers, step, iteration - a resume.
+    #                  Needs a checkpoint DPPO wrote; FPO's has one optimizer.
+    #   model          weights only; optimizers, step and iteration start over.
+    #   except-critic  everything but `critic.*`. The value head keeps its
+    #                  random initialisation and `obs_stats_*` come with the
+    #                  actor. The mode to start DPPO from a policy FPO trained:
+    #                  FPO's critic predicts returns under FPO's reward
+    #                  scaling and discount, not DPPO's.
+    #
+    # Restored at the end of `init_optimizers`, not in `__init__`, because
+    # `all` needs the optimizers to exist and DPPO builds them there.
+    policy_checkpoint_path: pathlib.Path | None = None
+    restore: str = "all"
 
     def __post_init__(self):
-        if self.critic_batch_size is None:
-            self.critic_batch_size = self.batch_size
+        allowed = ("all", "model", "except-critic")
+        if self.restore not in allowed:
+            raise ValueError(f"restore must be one of {allowed}, got {self.restore!r}")
+        if self.restore != "all" and self.policy_checkpoint_path is None:
+            raise ValueError(
+                "restore only means something with policy_checkpoint_path set"
+            )
         self.global_steps = self.train_itrs * self.buffer_size
 
 
@@ -80,14 +103,12 @@ class DPPOAlgoConfigHopper(DPPOAlgoConfig):
     buffer_size: int = 40 * 500
     gae_lambda: float = 0.95
 
-    n_train_itr: int = 1000
     batch_size: int = 2048
     update_epochs: int = 5
     vf_coef: float = 0.5
     norm_adv: bool = True
     clip_ploss_coef: float = 0.01
     clip_ploss_coef_base: float = 0.01
-    n_critic_warmup_itr: int = 0
     logprob_noise_level: float = 0.1
     sampling_noise_level: float = 0.1
     use_normalized_rewards: bool = True
@@ -119,7 +140,6 @@ class DPPOAlgoConfigLibero(DPPOAlgoConfig):
     buffer_size: int = 64 * 32 * 8
     gae_lambda: float = 0.95
 
-    n_train_itr: int = 1000
     batch_size: int = 128
     grad_accum_steps: int = 16
     update_epochs: int = 4
@@ -127,7 +147,6 @@ class DPPOAlgoConfigLibero(DPPOAlgoConfig):
     norm_adv: bool = True
     clip_ploss_coef: float = 0.001
     clip_ploss_coef_base: float = 0.001
-    n_critic_warmup_itr: int = 0
 
     logprob_noise_level: float = 0.5
     sampling_noise_level: float = 0.5
