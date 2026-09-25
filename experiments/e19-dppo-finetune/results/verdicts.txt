@@ -1,0 +1,24 @@
+P1(a) the restore took effect, mechanically
+      seed 0: restore logged True, 12 critic tensors held back True
+      seed 1: restore logged True, 12 critic tensors held back True
+      seed 2: restore logged True, 12 critic tensors held back True
+      HOLDS
+
+P1(b) the restored policy acts trained: first iteration beats random by > 500
+      seed 0: first   1438.1   random  -356.0   margin  +1794.1   (Phase A, FPO sampling: 1129.8)
+      seed 1: first   1791.6   random  -356.8   margin  +2148.4   (Phase A, FPO sampling: 1632.3)
+      seed 2: first   1190.8   random  -290.2   margin  +1481.0   (Phase A, FPO sampling: 1183.0)
+      HOLDS
+
+P3    wall clock under 45 minutes
+      seed 0:   9.5 min
+      seed 1:   9.5 min
+      seed 2:   9.5 min
+      HOLDS
+
+P2    no collapse: end - start > -500 on every seed
+      seed 0: start   1438.1   end   1120.8   gain   -317.3   | E16 FPO except-critic gain   +73.0 (reference, no verdict)
+      seed 1: start   1791.6   end   1673.1   gain   -118.5   | E16 FPO except-critic gain  +366.6 (reference, no verdict)
+      seed 2: start   1190.8   end   1211.6   gain    +20.9   | E16 FPO except-critic gain   +28.8 (reference, no verdict)
+      HOLDS
+
