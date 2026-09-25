@@ -47,6 +47,10 @@ class FPOAlgorithm(BaseAlgorithm):
     config: FPOAlgoConfig
     policy: BasePolicyGradientFlowPolicy
 
+    # The spread of the advantages as they come out of the buffer, before any
+    # normalising. NaN until the first learn step has built a batch cache.
+    _advantage_raw_std: float = float("nan")
+
     def __init__(self, config: FPOAlgoConfig, policy: BasePolicyGradientFlowPolicy):
         super().__init__(config, policy)
         example_train_state = self.example_train_state(batch_size=1)
@@ -317,7 +321,37 @@ class FPOAlgorithm(BaseAlgorithm):
             self.policy.device
         )
         ret = torch.from_numpy(self.rollout_buffer.returns[:idx]).to(self.policy.device)
-        return value, advantage, ret
+        return value, self._scale_advantage(advantage), ret
+
+    def _scale_advantage(self, advantage: torch.Tensor) -> torch.Tensor:
+        """Normalise over the whole buffer, not per minibatch.
+
+        This used to happen inside `_compute_loss`, which receives a minibatch.
+        That is the usual arrangement and it is fine at the batch sizes this
+        algorithm was written for - its own default is 1024. A pi0.5-sized
+        policy does not fit those. E14 ran at batch 8, forced by memory, and at
+        8 the arrangement stops being a rescaling and becomes a source of
+        signal: the standard deviation of eight samples estimates nothing, and
+        subtracting their mean forces half of every eight positive and half
+        negative at unit scale whatever the rewards were.
+
+        What this does NOT fix, stated so the change is not credited with more
+        than it earns: normalising rescales whatever spread it finds to 1, so a
+        buffer holding only the value head's own variation still comes out at
+        unit scale. Once a policy has collapsed far enough that no episode
+        earns a reward, that is all there is. Guarding that needs a rule for
+        when a buffer carries no signal, which is a separate change. This one
+        addresses the cause, not the floor a collapse settles onto.
+        """
+        # Recorded before the division, because afterwards the spread is 1.0 by
+        # construction and says nothing. This is the statistic that shows
+        # whether the buffer held a signal: E14 had no reward anywhere from its
+        # third iteration on and none of its metrics could show it, because the
+        # only advantage statistic logged was measured after normalising.
+        self._advantage_raw_std = float(advantage.std().detach().cpu())
+        if not self.config.normalize_advantage:
+            return advantage
+        return (advantage - advantage.mean()) / (advantage.std() + 1e-8)
 
     def _compute_loss(
         self,
@@ -331,8 +365,11 @@ class FPOAlgorithm(BaseAlgorithm):
         loss_t,
         initial_cfm_loss,
     ) -> tuple[torch.Tensor, dict[str, float], dict[str, float]]:
-        if self.config.normalize_advantage:
-            advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
+        # `advantage` arrives already normalised over the whole buffer, in
+        # `_build_train_batch_cache`. It is deliberately not normalised again
+        # here: this method sees one minibatch, and at the batch sizes a VLA
+        # forces, a per-minibatch statistic manufactures signal rather than
+        # removing scale.
         obs_cache_started_at = time.perf_counter()
         obs_cache = self.policy.build_obs_cache(obs)
         _sync_cuda_if_needed(self.policy.device)
@@ -452,9 +489,11 @@ class FPOAlgorithm(BaseAlgorithm):
             value_all = torch.from_numpy(self.rollout_buffer.values[:num_items]).to(
                 self.policy.device
             )
-            advantage_all = torch.from_numpy(
-                self.rollout_buffer.advantages[:num_items]
-            ).to(self.policy.device)
+            advantage_all = self._scale_advantage(
+                torch.from_numpy(self.rollout_buffer.advantages[:num_items]).to(
+                    self.policy.device
+                )
+            )
             ret_all = torch.from_numpy(self.rollout_buffer.returns[:num_items]).to(
                 self.policy.device
             )
@@ -529,6 +568,7 @@ class FPOAlgorithm(BaseAlgorithm):
                 clipped_ratio_mean=float(np.mean(metric_history["clipped_ratio_mean"])),
                 advantages_mean=float(np.mean(metric_history["advantages_mean"])),
                 advantages_std=float(np.mean(metric_history["advantages_std"])),
+                advantages_raw_std=self._advantage_raw_std,
                 initial_cfm_loss_mean=float(
                     np.mean(metric_history["initial_cfm_loss_mean"])
                 ),
