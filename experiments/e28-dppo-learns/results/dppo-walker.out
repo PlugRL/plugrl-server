@@ -1,0 +1,10 @@
+cell:    dppo-walker = dppo-policy/walker x dppo/walker x Walker2d-v5
+iters:   100 x 1024  batch: 512  replan: 4  seeds: 0 1 2
+out:     /home/guangzhao/zuogou/plugrl/e28/experiments/e28-dppo-learns/results/dppo-walker
+start 2026-09-25 19:34:30
+seed 0 finished rc=0 at 19:50:14
+seed 2 finished rc=0 at 19:50:23
+seed 1 finished rc=0 at 19:50:25
+end   2026-09-25 19:50:25
+failed seeds: 0
+CELL_DONE dppo-walker
