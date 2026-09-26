@@ -1,0 +1,30 @@
+# E29 pilot, 2026-09-25 21:30-21:33, guangzhao, before PROTOCOL.md was written.
+# run.sh with ITERS=11 SEEDS=0 OUT=pilot: the three arms at once, seed 0,
+# 11 iterations (DPPO's scheduler refuses fewer than its 10-iteration warmup).
+# Code 0ecfd1d (main + #64), client 931ab56.
+
+All three arms: seed 0 finished rc=0, no traceback in the server log.
+
+Configuration, as each server logged it:
+  control  logprob_clamp_max=2.0  sampling_noise_level=0.1  logprob_noise_level=0.1
+  noclamp  logprob_clamp_max=inf  sampling_noise_level=0.1  logprob_noise_level=0.1
+  wide     logprob_clamp_max=2.0  sampling_noise_level=1.0  logprob_noise_level=1.0
+
+Tensorboard, iterations 1-11 (entropy min..max; the rest means):
+
+  arm      entropy            approx_kl  clipfrac  actor grad norm  return
+  control  -1.9198..-1.9198   2.5e-07    4.4e-07   2.5e-03          14.9, 17.3, 14.3, 13.7, 18.0, 14.8, 14.4, 16.1, 18.1, 13.9, 16.3
+  noclamp  -1.9198..-1.9198   5.9e-07    3.6e-06   3.8e-03          14.9, 17.5, 14.7, 13.7, 16.7, 14.4, 14.6, 16.3, 17.5, 14.9, 15.5
+  wide      0.3828.. 0.3828   2.7e-08    0.0       2.6e-03          16.7, 16.0, 17.0, 16.7, 16.1, 18.5, 17.7, 15.4, 16.5, 16.6, 18.5
+
+control's first return is E28's fpodppo-hopper seed 0's, 14.9. The logged
+entropies are the probe's (-1.920 at level 0.1; +0.383 at 1.0, against
+-1.920 + ln 10 = +0.3826).
+
+Before the pilot, a probe of freshly initialised policies (clamp_probe.py,
+4,096 Hopper-sized samples, run with `PYTHONPATH=src python clamp_probe.py LEVEL`):
+
+  level 0.1  fpo-policy   above 2: 50.7%  (0, 0, 0, 36.9, 59.1, 70.3, 77.4, 82.9, 88.1, 92.7% by step)
+                          below -5: 0.02%  entropy -1.920
+             dppo-policy  above 2: 0%     below -5: 0.17%  entropy 0.312
+  level 1.0  fpo-policy   above 2: 0%     below -5: 0.19%  entropy 0.383
