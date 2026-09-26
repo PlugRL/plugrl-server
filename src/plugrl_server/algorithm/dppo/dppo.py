@@ -230,13 +230,14 @@ class DPPOAlgorithm(BaseAlgorithm):
             sampling_noise_level=self.config.logprob_noise_level,
         )
 
+        lo, hi = self.config.logprob_clamp_min, self.config.logprob_clamp_max
         newlogprob = (
-            newlogprob.clamp(min=-5, max=2)
+            newlogprob.clamp(min=lo, max=hi)
             .mean(dim=(-1, -2))
             .reshape(batch_size, ft_denoising_steps)
         )
         oldlogprob = (
-            oldlogprob.clamp(min=-5, max=2)
+            oldlogprob.clamp(min=lo, max=hi)
             .mean(dim=(-1, -2))
             .reshape(batch_size, ft_denoising_steps)
         )
