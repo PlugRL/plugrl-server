@@ -126,10 +126,15 @@ We use `uv` to manage dependencies and development environments.
 - `dppo` - DPPO (Diffusion Policy Policy Optimization). No extras needed,
   and it runs against `fpo-policy`.
 - `dppo-dist` - Distributed DPPO (experimental)
+- `ppo` - PPO as CleanRL's `ppo_continuous_action.py` runs it, every
+  default included. Drives `gaussian-policy`; no extras needed.
 - `eval` - Evaluation only, no learning
 
 **Policies:**
 - `fpo-policy` - Flow policy. Defaults to `obs_dim=17`, `action_dim=6`
+- `gaussian-policy` - CleanRL's Gaussian MLP: tanh layers of 64, a log std
+  that does not depend on the observation. Defaults to `obs_dim=17`,
+  `action_dim=6`
 - `dummy-policy` - Outputs random actions (for testing)
 - `dppo-policy` - DPPO policy (requires `plugrl-server[dppo]` and a checkpoint)
 - `pi0-policy` - PI0 policy (OpenPI). Needs more than a checkpoint. The
@@ -212,6 +217,27 @@ last step. At the default `buffer_size=983040`, any run shorter than about a
 million steps therefore learns exactly once, at the very end - producing a
 single point rather than a curve. 4096 gives one update per 4096 environment
 steps.
+
+#### The baseline: a Gaussian policy with PPO
+
+The pair every other one is measured against, written to CleanRL's
+`ppo_continuous_action.py`: a rollout of 2048 steps, ten epochs of 32
+minibatches, clip 0.2, a learning rate of 3e-4 annealed to zero over 488
+iterations (a million steps), observations and rewards normalised. CleanRL
+does the normalising and the action clipping in gymnasium wrappers; PlugRL's
+client does not wrap, so the policy and the algorithm do it on the server.
+
+```bash
+# Terminal 1: Hopper-v5 has an 11-dimensional observation and 3 actions
+python -m plugrl_server.cli gaussian-policy default ppo default \
+    --port 8000 --policy.device cpu \
+    --policy.obs-dim 11 --policy.action-dim 3
+
+# Terminal 2
+python -m plugrl_env_client.cli mujoco-v1 \
+    --server-port 8000 --num-envs 1 --num-episodes 100000 \
+    --env.name Hopper-v5 --runner.replan-steps 1 --runner.seed 0
+```
 
 #### Quick Start: Testing with Dummy Components
 

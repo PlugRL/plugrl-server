@@ -16,3 +16,5 @@ import plugrl_server.algorithm.dppo.dppo  # noqa: F401,E402
 import plugrl_server.algorithm.dppo.dppo_config  # noqa: F401,E402
 import plugrl_server.algorithm.dppo.dppo_dist  # noqa: F401,E402
 import plugrl_server.algorithm.dppo.dppo_dist_config  # noqa: F401,E402
+import plugrl_server.algorithm.ppo.ppo  # noqa: F401,E402
+import plugrl_server.algorithm.ppo.ppo_config  # noqa: F401,E402
