@@ -1,0 +1,26 @@
+[00:01:51] cell=e26-frozen policy=frozen suite=libero_10 task_id=8 episodes=50 procs=1 port=8363 budget=21600s checkpoint=/home/gotham/tmp/plugrl/e26/frozen/ck/fpo/pi0-policy/frozen/4100 res=/home/gotham/tmp/plugrl/e26/results
+[00:01:51] ALLOW_SIBLINGS=1: not checking for other clients or servers
+[00:01:52] source manifest: 105 files, sha256 b8302e96dec23e81
+[00:02:40] checkpoint sha256: baed240475bf8d4a
+[00:05:45] server listening
+[00:42:48] client exited with 0 after 2223s
+[00:42:53] after teardown, env client processes: 13 process(es) alive
+  PID  PPID  PGID ELAPSED COMMAND
+33058 27860 33058    6914 timeout 43200 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8590 --num-envs 1 --
+33062 33058 33058    6913 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8590 --num-envs 1 --num-procs 10 -
+33159 33062 33058    6910 /home/gotham/tmp/plugrl/venv-libero/bin/python -c from multiprocessing.resource_tracker import main;main(43)
+33160 33062 33058    6910 /home/gotham/tmp/plugrl/venv-libero/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=44, pipe_handle=46) --multiprocessin
+33161 33062 33058    6910 /home/gotham/tmp/plugrl/venv-libero/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=44, pipe_handle=48) --multiprocessin
+33162 33062 33058    6910 /home/gotham/tmp/plugrl/venv-libero/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=44, pipe_handle=50) --multiprocessin
+33163 33062 33058    6910 /home/gotham/tmp/plugrl/venv-libero/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=44, pipe_handle=52) --multiprocessin
+33164 33062 33058    6910 /home/gotham/tmp/plugrl/venv-libero/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=44, pipe_handle=54) --multiprocessin
+33165 33062 33058    6910 /home/gotham/tmp/plugrl/venv-libero/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=44, pipe_handle=56) --multiprocessin
+33166 33062 33058    6910 /home/gotham/tmp/plugrl/venv-libero/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=44, pipe_handle=58) --multiprocessin
+33167 33062 33058    6910 /home/gotham/tmp/plugrl/venv-libero/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=44, pipe_handle=60) --multiprocessin
+33168 33062 33058    6909 /home/gotham/tmp/plugrl/venv-libero/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=44, pipe_handle=62) --multiprocessin
+33169 33062 33058    6909 /home/gotham/tmp/plugrl/venv-libero/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=44, pipe_handle=64) --multiprocessin
+[00:42:53] TEARDOWN_NOT_CLEAN
+server scalar tags: ['episode/length', 'episode/reward', 'episode/success']
+CELL e26-frozen | frozen | task 8 | episodes 50 | successes 0 | sr 0.0000 [0.0000, 0.0713] | valid True
+correctness: warnings 0 | reconnects 0 | episodes client 50 server 50 (true) | steps client 26000 server 26000 (true)
+[00:42:54] STAGEC_EVAL_DONE e26-frozen

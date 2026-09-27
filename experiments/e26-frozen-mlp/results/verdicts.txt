@@ -1,0 +1,31 @@
+V1  the freeze held
+    yes  frozen: all 54 MLP tensors bit-identical to the base
+    yes  frozen: the other groups moved
+    yes  control: the MLP tensors moved
+    PASS
+
+V2  every evaluation valid
+    base     valid
+    control  valid
+    frozen   valid
+
+null, an unperturbed actor on the older code: 30.9 +/- 3.6, range 28-37
+FPO's first iteration on the older code: 0 of 50 (E14); E22 only-mlp: 0
+
+P1  the collapse reproduces on this code: control at most 5 of 50
+    control  0 of 50
+    HOLDS
+
+P2  freezing the MLP prevents it: frozen at least 20 of 50
+    frozen   0 of 50
+    FALSIFIED - the rest of the expert, trained, destroys it too
+
+reported: base on this code, against the older null
+    base     29 of 50
+
+reported: relative distance from the base, per module group
+    group             control             frozen
+    mod        2.173% (74/74)     2.972% (74/74)
+    attn       1.714% (72/72)     2.425% (72/72)
+    mlp        1.585% (54/54)      0.000% (0/54)
+    io           1.540% (8/8)       1.958% (8/8)
