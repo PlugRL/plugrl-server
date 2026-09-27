@@ -1,0 +1,40 @@
+# E25 pilots, 2026-09-25, qz103, before PROTOCOL.md was written.
+# All three: `pi0-policy default dppo libero`, pi05_libero, buffer 512, cell.sh.
+
+## Pilot 1, 21:45 - code main 8812b54, one iteration, the variant's minibatch 128
+
+The server died on its first learn step, 91 s after listening:
+
+  File ".../buffer/rollout_buffer.py", line 206, in collate_fn
+  File ".../common/data_utils.py", line 206, in stack_numpy_tree
+  AttributeError: 'numpy.bool_' object has no attribute 'keys'
+
+pi0's per-camera image_mask is a per-sample scalar; indexing the buffer by int,
+as DPPO's DataLoader does, returned a numpy scalar that stack_numpy_tree took
+for a mapping. A platform defect, fixed in #58 (cdd053d) with a regression
+test written first; the fix was deployed to $R/plugrl-server-main, COMMIT
+marker 8812b54+cdd053d. Peak on card 0 before the crash: 11,807 MiB.
+
+## Pilot 2, 22:15 - with #58, one iteration, minibatch 128
+
+The collate step passed; the learn step then ran out of memory in pi0.5's
+VLM prefix (openpi_policy.build_obs_cache, under DPPO's _compute_loss):
+
+  torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 3.78 GiB.
+  GPU 0 has a total capacity of 23.56 GiB of which 1.55 GiB is free.
+
+Card 1 held 5 MiB: DPPO has no option to put its optimizer's copies on a
+second card, as FPO's master_weights_device does. Peak 22,537 MiB.
+
+## Pilot 3, 22:20 - with #58, two iterations, minibatch 8
+
+Minibatch 8, E14's for FPO on this policy, with the variant's 16
+accumulation steps unchanged (averaged since #49), so an optimizer step still
+sees 128 samples. Ran to the end and exited on its own after two iterations,
+1,050 s after listening; teardown clean; no traceback.
+
+  checkpoints: 520, 1030
+  rollout/reward     0.0, 1.0      (few episodes finish in 512 steps)
+  losses/clipfrac    0.0737, 0.0588
+  losses/approx_kl   0.0, 0.0      (at six decimals)
+  peak card 0        21,317 MiB of 24,576; card 1: 5 MiB

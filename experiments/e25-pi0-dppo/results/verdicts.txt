@@ -1,0 +1,26 @@
+P1  pi0.5 trains end to end under DPPO
+    yes  2 iterations logged (2)
+    yes  a checkpoint after each ([4100, 8200])
+    yes  no traceback in the server log
+    yes  the server exited on its own
+    yes  card 0 under 24576 MiB (peak 21318)
+    HOLDS
+
+null, an unperturbed actor: 30.9 +/- 3.6, range 28-37 (E15 correction 2)
+FPO's first iteration: 0 of 50 (E14)
+
+P2  DPPO's two iterations leave at least 20 of 50
+    dppo-iter2  30 of 50  (95% CI 0.4618-0.7239)
+    HOLDS - DPPO's updates are too small to do FPO's damage in two iterations
+
+reported: training, per iteration
+    rollout/reward     0.6500, 0.6818
+    losses/clipfrac    0.0847, 0.0715
+    losses/approx_kl   0.0000, 0.0000
+
+reported: relative distance from the base, per module group
+    group   DPPO, 2 iters  FPO, 1 iter   ratio
+    mod            0.258%       2.111%   0.122
+    attn           0.031%       1.663%   0.019
+    mlp            0.031%       1.551%   0.020
+    io             0.250%       1.320%   0.189

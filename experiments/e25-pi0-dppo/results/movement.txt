@@ -1,0 +1,5 @@
+/home/gotham/tmp/plugrl/e25/runs/dppo-libero/ck/dppo/pi0-policy/dppo-libero/8200/model.safetensors
+  mod   moved  74  unchanged   0  relative distance 0.002577
+  attn  moved  72  unchanged   0  relative distance 0.000309
+  mlp   moved  54  unchanged   0  relative distance 0.000313
+  io    moved   8  unchanged   0  relative distance 0.002497
