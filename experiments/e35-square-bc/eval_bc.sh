@@ -15,6 +15,7 @@ FLOW_STEPS="$2"
 EPISODES="$3"
 PORT="$4"
 OUT="$5"
+case "$OUT" in /*) ;; *) OUT="$(pwd)/$OUT" ;; esac
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 HOME_DIR="$ROOT/.."
