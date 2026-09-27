@@ -1,0 +1,47 @@
+P1  every arm runs end to end
+    control  HOLDS   (20 min)
+    noclamp  HOLDS   (20 min)
+    wide     HOLDS   (20 min)
+
+V1  the manipulation: each arm's logged entropy, every iteration
+    control  expected -1.9200, logged -1.9198 to -1.9198  PASS
+    noclamp  expected -1.9200, logged -1.9198 to -1.9198  PASS
+    wide     expected +0.3826, logged 0.3828 to 0.3828  PASS
+
+P2  the control reproduces E28: gain at most +50 on every seed
+    control  +10.6, +4.5, +9.7
+    HOLDS
+
+P3  lifting the clamp alone lets it learn: gain at least +100 on 2 of 3
+    noclamp  +7.0, +3.0, +7.8
+    0 of 3  FALSIFIED
+
+P4  ten times the noise lets it learn: gain at least +100 on 2 of 3
+    wide     +73.6, +84.6, +106.2
+    1 of 3  FALSIFIED
+
+reported: update diagnostics, mean over iterations 1-10 and 91-100
+    control  kl        2.39e-07 -> 2.82e-06
+    control  clipfrac  1.46e-06 -> 1.79e-03
+    noclamp  kl        5.13e-07 -> 2.85e-06
+    noclamp  clipfrac  2.60e-06 -> 1.57e-03
+    wide     kl        2.50e-08 -> 1.48e-06
+    wide     clipfrac  0.00e+00 -> 1.02e-03
+
+reported: the actor's relative movement, iteration 20 to 100, per seed
+    control  22.52%, 19.83%, 21.71%
+    noclamp  19.18%, 15.24%, 20.24%
+    wide     39.97%, 42.63%, 43.47%
+
+reported: first iteration and mean of the last ten, return and episode length
+    control  seed 0  return    14.9 ->    25.5   length   20.2 ->   27.4
+    control  seed 1  return    19.7 ->    24.2   length   22.8 ->   25.3
+    control  seed 2  return    17.0 ->    26.7   length   21.9 ->   27.4
+    noclamp  seed 0  return    14.9 ->    21.9   length   20.2 ->   25.3
+    noclamp  seed 1  return    19.7 ->    22.7   length   22.8 ->   24.2
+    noclamp  seed 2  return    17.0 ->    24.8   length   21.9 ->   26.3
+    wide     seed 0  return    16.7 ->    90.3   length   22.7 ->   58.4
+    wide     seed 1  return    21.2 ->   105.7   length   23.6 ->   61.5
+    wide     seed 2  return    19.6 ->   125.8   length   23.8 ->   75.9
+
+wrote /home/guangzhao/zuogou/plugrl/e29/experiments/e29-clamp-or-noise/summary.tsv

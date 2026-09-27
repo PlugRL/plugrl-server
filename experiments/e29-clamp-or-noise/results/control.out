@@ -1,0 +1,11 @@
+cell:    control = fpo-policy/default x dppo/hopper x Hopper-v5
+iters:   100 x 4096  batch: variant default  replan: 1  seeds: 0 1 2
+extra:   none
+out:     /home/guangzhao/zuogou/plugrl/e29/experiments/e29-clamp-or-noise/results/control
+start 2026-09-25 21:36:26
+seed 0 finished rc=0 at 21:56:23
+seed 1 finished rc=0 at 21:56:35
+seed 2 finished rc=0 at 21:56:36
+end   2026-09-25 21:56:36
+failed seeds: 0
+CELL_DONE control
