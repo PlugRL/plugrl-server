@@ -67,6 +67,21 @@
       "client": ["robomimic-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-procs 6 --num-episodes 100000", "--env.name square-img --env.agentview-image-size 84 84", "--env.no-terminate-on-success --runner.replan-steps 4"],
       "env": "robomimic", "source": "experiments/e34-square-dppo/run_cell.sh"
     },
+    "gaussian-ppo-cheetah": {
+      "server": ["gaussian-policy default ppo default", "--port 8000 --seed 0 --policy.device cpu", "--policy.obs-dim 17 --policy.action-dim 6", "--algo.buffer-size 2048 --algo.batch-size 64 --algo.train-itrs 488"],
+      "client": ["mujoco-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-episodes 100000", "--env.name HalfCheetah-v5 --runner.replan-steps 1 --runner.seed 0"],
+      "env": "mujoco", "source": "experiments/e38-gaussian-ppo/run.sh"
+    },
+    "gaussian-ppo-hopper": {
+      "server": ["gaussian-policy default ppo default", "--port 8000 --seed 0 --policy.device cpu", "--policy.obs-dim 11 --policy.action-dim 3", "--algo.buffer-size 2048 --algo.batch-size 64 --algo.train-itrs 488"],
+      "client": ["mujoco-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-episodes 100000", "--env.name Hopper-v5 --runner.replan-steps 1 --runner.seed 0"],
+      "env": "mujoco", "source": "experiments/e38-gaussian-ppo/run.sh"
+    },
+    "gaussian-ppo-walker": {
+      "server": ["gaussian-policy default ppo default", "--port 8000 --seed 0 --policy.device cpu", "--policy.obs-dim 17 --policy.action-dim 6", "--algo.buffer-size 2048 --algo.batch-size 64 --algo.train-itrs 488"],
+      "client": ["mujoco-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-episodes 100000", "--env.name Walker2d-v5 --runner.replan-steps 1 --runner.seed 0"],
+      "env": "mujoco", "source": "experiments/e38-gaussian-ppo/run.sh"
+    },
     "pi0-base": {
       "server": ["pi0-policy default eval default", "--port 8000 --policy.device cuda", "--policy.name pi05_libero --policy.checkpoint-path PI05_LIBERO_CHECKPOINT"],
       "client": ["libero-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-procs 1 --num-episodes 50", "--env.task-suite-name libero_10 --env.task-id 8", "--env.no-randomize-initial-state --runner.replan-steps 5 --runner.seed 7"],
