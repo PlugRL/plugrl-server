@@ -1,0 +1,27 @@
+[09-25 22:42:56] code: 4d7ee38
+[09-25 22:42:56] --- phase 1
+[09-25 23:23:43] END eval base rc=0
+[09-25 23:58:45] END train frozen rc=0
+[09-26 00:01:07] END train control rc=0
+[09-26 00:01:07] checkpoints: control=/home/gotham/tmp/plugrl/e26/control/ck/fpo/pi0-policy/control/4100 frozen=/home/gotham/tmp/plugrl/e26/frozen/ck/fpo/pi0-policy/frozen/4100
+22:45:51|INFO|Froze 54 action-expert tensors matching ['\\.mlp\\.']
+[09-26 00:01:07] --- V1: did freezing hold
+/home/gotham/tmp/plugrl/e26/control/ck/fpo/pi0-policy/control/4100/model.safetensors
+  mod   moved  74  unchanged   0  relative distance 0.021728
+  attn  moved  72  unchanged   0  relative distance 0.017140
+  mlp   moved  54  unchanged   0  relative distance 0.015850
+  io    moved   8  unchanged   0  relative distance 0.015400
+/home/gotham/tmp/plugrl/e26/frozen/ck/fpo/pi0-policy/frozen/4100/model.safetensors
+  mod   moved  74  unchanged   0  relative distance 0.029719
+  attn  moved  72  unchanged   0  relative distance 0.024245
+  mlp   moved   0  unchanged  54  relative distance 0.000000
+  io    moved   8  unchanged   0  relative distance 0.019584
+[09-26 00:01:51] --- phase 2
+[09-26 00:42:30] END eval control rc=0
+[09-26 00:42:54] END eval frozen rc=0
+[09-26 00:42:54] === rows ===
+policy	task_id	episodes	successes	sr	ci_lo	ci_hi	valid
+base	8	50	29	0.5800	0.4423	0.7062	true
+control	8	50	0	0.0000	0.0000	0.0713	true
+frozen	8	50	0	0.0000	0.0000	0.0713	true
+[09-26 00:42:54] E26_DONE

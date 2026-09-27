@@ -1,0 +1,45 @@
+22:43:11|INFO|plugrl_server version: 0.1.0
+22:43:11|INFO|Algorithm: fpo, Config: FPOAlgoConfig(global_steps=4096, buffer_size=4096, output_mode='u_but_supervise_as_eps', fpo_playground_trick=True, treat_truncated_as_done=False, discounting=0.995, reward_scaling=10.0, gae_lambda=0.95, batch_size=8, num_updates_per_batch=4, learning_rate=1e-05, value_loss_coeff=0.25, clipping_epsilon=0.05, normalize_advantage=True, n_critic_warmup_itrs=0, max_policy_drift=0.0, n_samples_per_action=4, discretize_t_for_training=True, average_losses_before_exp=True, save_interval=1, policy_checkpoint_path=None, restore='all', master_weights_device='cuda:1')
+22:43:11|INFO|Policy: pi0-policy, Config: Pi0PolicyConfig(algo='fpo', device=device(type='cuda', index=0), name='pi05_libero', checkpoint_path=PosixPath('/home/gotham/tmp/plugrl/ckpt/pi05_libero'), default_prompt=None, denoising_steps=5, train_expert_only=True, freeze_expert_params=())
+22:43:11|INFO|Seeded python, numpy and torch with 7. One env client is then reproducible; several are not, because batch composition depends on when their requests arrive.
+22:43:11|INFO|Checkpoint Manager created: 
+<plugrl_server.common.checkpoint_manager.CheckpointManager object at 0x7f7657ae1f50> at /home/gotham/tmp/plugrl/e26/control/ck/fpo/pi0-policy/control
+22:43:11|INFO|train_config: TrainConfig(name='pi05_libero', project_name='openpi', exp_name=tyro.MISSING, model=Pi0Config(action_dim=32, action_horizon=10, max_token_len=200, dtype='bfloat16', paligemma_variant='gemma_2b', action_expert_variant='gemma_300m', pi05=True, discrete_state_input=False), weight_loader=CheckpointWeightLoader(params_path='gs://openpi-assets/checkpoints/pi05_base/params'), pytorch_weight_path='/path/to/your/pytorch_weight_path', pytorch_training_precision='bfloat16', lr_schedule=CosineDecaySchedule(warmup_steps=10000, peak_lr=5e-05, decay_steps=1000000, decay_lr=5e-05), optimizer=AdamW(b1=0.9, b2=0.95, eps=1e-08, weight_decay=1e-10, clip_gradient_norm=1.0), ema_decay=0.999, freeze_filter=Nothing(), data=LeRobotLiberoDataConfig(repo_id='physical-intelligence/libero', assets=AssetsConfig(assets_dir=None, asset_id=None), base_config=DataConfig(repo_id=None, asset_id=None, norm_stats=None, repack_transforms=Group(inputs=(), outputs=()), data_transforms=Group(inputs=(), outputs=()), model_transforms=Group(inputs=(), outputs=()), use_quantile_norm=False, action_sequence_keys=('actions',), prompt_from_task=True, rlds_data_dir=None, action_space=None, filter_dict_path=None), extra_delta_transform=False), assets_base_dir='./assets', checkpoint_base_dir='./checkpoints', seed=42, batch_size=256, num_workers=2, num_train_steps=30000, log_interval=100, save_interval=1000, keep_period=5000, overwrite=False, resume=False, wandb_enabled=True, policy_metadata=None, fsdp_devices=1)
+22:45:19|INFO|Norm stats not found in /home/gotham/tmp/plugrl/plugrl-server-e26/assets/pi05_libero/physical-intelligence/libero, skipping.
+22:45:19|INFO|Loaded norm stats from /home/gotham/tmp/plugrl/ckpt/pi05_libero/assets/physical-intelligence/libero
+22:45:25|INFO|Policy created...
+22:45:25|INFO|Initialized RolloutBuffer buffer_size=4096 action_shape=(4096, 10, 32) value_shape=(4096, 1)
+22:45:26|INFO|Algorithm created: 
+<plugrl_server.algorithm.fpo.fpo.FPOAlgorithm object at 0x7f7648965310>
+22:45:26|INFO|Agent Server is listening on 0.0.0.0:8261
+23:02:10|INFO|Still waiting for feedback from ('127.0.0.1', 36174) after 60.0s while a learn step is in flight; keeping the connection.
+23:02:10|INFO|Still waiting for feedback from ('127.0.0.1', 53552) after 60.0s while a learn step is in flight; keeping the connection.
+23:02:10|INFO|Still waiting for feedback from ('127.0.0.1', 53558) after 60.0s while a learn step is in flight; keeping the connection.
+23:02:10|INFO|Still waiting for feedback from ('127.0.0.1', 36200) after 60.0s while a learn step is in flight; keeping the connection.
+00:00:58|INFO|Checkpoint saved at step 4100 to /home/gotham/tmp/plugrl/e26/control/ck/fpo/pi0-policy/control/4100
+00:00:59|INFO|Stopping server as the algorithm signaled to stop.
+00:00:59|INFO|Shutdown started: aborting pending infer requests.
+00:00:59|INFO|Shutdown cleanup finished: pending_futures=20, drained_requests=20
+00:00:59|INFO|Shutdown closing 10 websocket connection(s).
+00:00:59|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 53586).
+00:00:59|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 36194).
+00:00:59|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 36210).
+00:00:59|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 53536).
+00:00:59|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 36180).
+00:00:59|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 53570).
+00:00:59|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 36174).
+00:00:59|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 53552).
+00:00:59|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 53558).
+00:00:59|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 36200).
+00:00:59|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 51738).
+00:00:59|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 46722).
+00:00:59|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 46726).
+00:00:59|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 46728).
+00:00:59|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 46730).
+00:00:59|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 46756).
+00:00:59|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 46768).
+00:00:59|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 46776).
+00:00:59|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 46742).
+00:00:59|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 46716).
+00:00:59|INFO|WebSocket server closed.
+00:00:59|INFO|Scheduler task cancelled and cleaned up.
