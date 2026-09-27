@@ -55,7 +55,8 @@ def main() -> int:
     learned = curve("losses/clipfrac")
     ck = re.search(r"checkpoints: (.*)$", out, flags=re.M)
     saves = sorted(
-        int(s) for s in re.findall(r"/(\d+)/model\.safetensors", ck.group(1) if ck else "")
+        int(s)
+        for s in re.findall(r"/(\d+)/model\.safetensors", ck.group(1) if ck else "")
     )
     peak = re.search(r"peak MiB on cards 0 and 1: (\d+), (\d+)", out)
     card0 = int(peak.group(1)) if peak else None
@@ -94,7 +95,9 @@ def main() -> int:
         s = int(row["successes"])
         print(f"    {ARM}  {s} of 50  (95% CI {row['ci_lo']}-{row['ci_hi']})")
         if s >= 20:
-            print("    HOLDS - DPPO's updates are too small to do FPO's damage in two iterations")
+            print(
+                "    HOLDS - DPPO's updates are too small to do FPO's damage in two iterations"
+            )
         elif s <= 5:
             print("    FALSIFIED - DPPO destroys it too; the damage is not FPO's alone")
         else:
