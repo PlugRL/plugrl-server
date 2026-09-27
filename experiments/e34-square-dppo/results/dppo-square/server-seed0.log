@@ -1,0 +1,31 @@
+07:18:28|INFO|plugrl_server version: 0.1.0
+07:18:28|INFO|Algorithm: dppo, Config: DPPOAlgoConfigSquare(global_steps=800000, gamma=0.999, gamma_denoising=0.99, actor_lr=0.0001, critic_lr=0.001, actor_weight_decay=0.0, critic_weight_decay=0.0, actor_lr_scheduler=None, critic_lr_scheduler=None, buffer_size=20000, gae_lambda=0.95, update_epochs=10, norm_adv=True, clip_ploss_coef=0.01, clip_ploss_coef_base=0.001, clip_ploss_coef_rate=3, clip_vloss_coef=inf, ent_coef=0.0, vf_coef=0.5, max_grad_norm=inf, target_kl=1.0, logprob_noise_level=0.1, sampling_noise_level=0.1, logprob_clamp_min=-5.0, logprob_clamp_max=2.0, clip_advantage_lower_quantile=0, clip_advantage_upper_quantile=1, n_critic_warmup_itrs=2, use_normalized_rewards=True, batch_size=1000, train_itrs=40, save_interval=10, grad_accum_steps=1, policy_checkpoint_path=None, restore='all')
+07:18:28|INFO|Policy: dppo-policy, Config: DPPOPolicyConfigSquare(algo='dppo', device=device(type='cpu'), env_type='robomimic', env_name='square', checkpoint_path=PosixPath('/home/guangzhao/zuogou/plugrl/e34/../ckpt/dppo-square/state_8000.pt'), ft_denoising_steps=10, critic=DPPOCriticObsConfig(mlp_dims=[256, 256, 256], activation='Mish', residual_style=True))
+07:18:28|INFO|Seeded python, numpy and torch with 0. One env client is then reproducible; several are not, because batch composition depends on when their requests arrive.
+07:18:28|INFO|Checkpoint Manager created: 
+<plugrl_server.common.checkpoint_manager.CheckpointManager object at 0x71d209e74610> at /home/guangzhao/zuogou/plugrl/e34/experiments/e34-square-dppo/results/dppo-square/dppo/dppo-policy/dppo-square-seed0
+07:18:28|INFO|Number of network parameters: 2305212
+07:18:28|INFO|Loaded the ema weights of /home/guangzhao/zuogou/plugrl/e34/../ckpt/dppo-square/state_8000.pt
+07:18:28|INFO|Policy created...
+07:18:28|INFO|Initialized RolloutBuffer buffer_size=20000 action_shape=(20000, 10, 4, 7) value_shape=(20000,)
+07:18:28|INFO|Algorithm created: 
+<plugrl_server.algorithm.dppo.dppo.DPPOAlgorithm object at 0x71d2098e8950>
+07:18:28|INFO|Agent Server is listening on 0.0.0.0:9500
+/home/guangzhao/zuogou/plugrl/plugrl-server/.venv/lib/python3.11/site-packages/torch/utils/data/dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+08:36:34|INFO|Checkpoint saved at step 200005 to /home/guangzhao/zuogou/plugrl/e34/experiments/e34-square-dppo/results/dppo-square/dppo/dppo-policy/dppo-square-seed0/200005
+09:55:00|INFO|Checkpoint saved at step 400003 to /home/guangzhao/zuogou/plugrl/e34/experiments/e34-square-dppo/results/dppo-square/dppo/dppo-policy/dppo-square-seed0/400003
+11:13:19|INFO|Checkpoint saved at step 600007 to /home/guangzhao/zuogou/plugrl/e34/experiments/e34-square-dppo/results/dppo-square/dppo/dppo-policy/dppo-square-seed0/600007
+12:29:36|INFO|Checkpoint saved at step 800017 to /home/guangzhao/zuogou/plugrl/e34/experiments/e34-square-dppo/results/dppo-square/dppo/dppo-policy/dppo-square-seed0/800017
+12:29:36|INFO|Stopping server as the algorithm signaled to stop.
+12:29:36|INFO|Shutdown started: aborting pending infer requests.
+12:29:36|INFO|Shutdown cleanup finished: pending_futures=6, drained_requests=6
+12:29:36|INFO|Shutdown closing 6 websocket connection(s).
+12:29:36|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 55228).
+12:29:36|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 55238).
+12:29:36|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 55248).
+12:29:36|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 55274).
+12:29:36|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 55258).
+12:29:36|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 55230).
+12:29:36|INFO|WebSocket server closed.
+12:29:36|INFO|Scheduler task cancelled and cleaned up.
