@@ -35,7 +35,7 @@ CELL = 150 * S  # the still's side
 BORDER = 3 * S
 CURVE = 30 * S
 GAP = 10 * S
-LEFT = 96 * S
+LEFT = 96 * S  # at least; widened to the longest row label
 TOP = 26 * S
 PAD = 8 * S
 
@@ -80,15 +80,21 @@ def main() -> int:
     mono = ImageFont.truetype(args.mono, 10 * S)
 
     rows, cols = data["rows"], data["columns"]
+    labels = [[p.strip() for p in row["label"].split("·")] for row in rows]
+    left = max(
+        LEFT,
+        round(PAD + max(max(mono.getlength(p), bold.getlength(a)) for p, a in labels))
+        + PAD,
+    )
     cell_h = CELL + CURVE + 2 * BORDER
-    width = LEFT + len(cols) * (CELL + 2 * BORDER) + (len(cols) - 1) * GAP + PAD
+    width = left + len(cols) * (CELL + 2 * BORDER) + (len(cols) - 1) * GAP + PAD
     legend_y = TOP + len(rows) * cell_h + (len(rows) - 1) * GAP + 12 * S
     height = legend_y + 22 * S
     img = Image.new("RGB", (width, height), GROUND)
     draw = ImageDraw.Draw(img)
 
     def col_x(j):
-        return LEFT + j * (CELL + 2 * BORDER + GAP)
+        return left + j * (CELL + 2 * BORDER + GAP)
 
     def row_y(i):
         return TOP + i * (cell_h + GAP)
@@ -102,8 +108,7 @@ def main() -> int:
             anchor="ls",
         )
     # Each row: the policy, and under it the algorithm that trains it.
-    for i, row in enumerate(rows):
-        policy, algo = [p.strip() for p in row["label"].split("·")]
+    for i, (policy, algo) in enumerate(labels):
         mid = row_y(i) + cell_h / 2
         draw.text((PAD, mid - 3 * S), policy, font=mono, fill=INK, anchor="ls")
         draw.text((PAD, mid + 3 * S), algo, font=bold, fill=SOFT, anchor="lt")
@@ -154,7 +159,7 @@ def main() -> int:
             colour,
         )
 
-    lx = LEFT
+    lx = left
     for status in ("learns", "rising", "flat"):
         colour, _, text = STATUS[status]
         draw.rounded_rectangle(
