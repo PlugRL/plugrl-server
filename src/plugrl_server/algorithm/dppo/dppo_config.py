@@ -40,6 +40,17 @@ class DPPOAlgoConfig(BaseAlgoConfig):
 
     logprob_noise_level: float = 0.01
     sampling_noise_level: float = 0.01
+    # Every element's log-probability is clamped to these bounds before the
+    # ratio is formed - DPPO's reference values. With DPPO's own policy the
+    # upper bound never binds: each of its denoising steps has a deviation of
+    # at least `sampling_noise_level`, and a normal with deviation 0.1 has a
+    # log-density of at most 1.38. A flow policy's later steps are narrower;
+    # `fpo-policy`'s run down to about 0.01 at level 0.1, and about half its
+    # elements land above 2, where they carry no gradient and a ratio of 1.
+    # `inf` lifts a bound; `--algo.logprob-clamp-min=-inf` needs the equals
+    # sign, or argparse reads `-inf` as a flag.
+    logprob_clamp_min: float = -5.0
+    logprob_clamp_max: float = 2.0
     clip_advantage_lower_quantile: float = 0
     clip_advantage_upper_quantile: float = 1
     n_critic_warmup_itrs: int = 0
