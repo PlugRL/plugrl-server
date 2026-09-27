@@ -1,0 +1,126 @@
+{
+  "_about": "The coverage figure's cells. `runs` is relative to the machine's PlugRL home and takes {seed}; `seed` is the one whose mean return over its last ten iterations is the median of the three (ties: the lowest seed). `status` is what the experiments established, not what the video shows.",
+  "rows": [
+    {"id": "fpo-fpo", "label": "fpo-policy · FPO"},
+    {"id": "fpo-dppo", "label": "fpo-policy · DPPO"},
+    {"id": "dppo-dppo", "label": "dppo-policy · DPPO"}
+  ],
+  "columns": [
+    {"id": "cheetah", "label": "HalfCheetah-v5"},
+    {"id": "hopper", "label": "Hopper-v5"},
+    {"id": "walker", "label": "Walker2d-v5"},
+    {"id": "square", "label": "robomimic square"}
+  ],
+  "cells": [
+    {
+      "id": "fpo-fpo-cheetah", "row": "fpo-fpo", "column": "cheetah",
+      "status": "learns", "experiments": ["E6", "E16"],
+      "note": "-340 to 1,454 in 409,600 steps (seed 0; seeds 1-2: 2,050, 1,346)",
+      "runs": "coverage/stage/e16/halfcheetah-seed{seed}", "seed": 0,
+      "server": ["fpo-policy", "default", "eval", "default", "--policy.obs-dim", "17", "--policy.action-dim", "6"],
+      "client": ["mujoco-v1", "--env.name", "HalfCheetah-v5", "--env.render"],
+      "replan": 1, "native_fps": 20
+    },
+    {
+      "id": "fpo-fpo-hopper", "row": "fpo-fpo", "column": "hopper",
+      "status": "learns", "experiments": ["E23"],
+      "note": "15-19 to 1,587-2,006 in 409,600 steps",
+      "runs": "coverage/stage/e23/hopper-seed{seed}", "seed": 2,
+      "server": ["fpo-policy", "default", "eval", "default", "--policy.obs-dim", "11", "--policy.action-dim", "3"],
+      "client": ["mujoco-v1", "--env.name", "Hopper-v5", "--env.render"],
+      "replan": 1, "native_fps": 125
+    },
+    {
+      "id": "fpo-fpo-walker", "row": "fpo-fpo", "column": "walker",
+      "status": "learns", "experiments": ["E24"],
+      "note": "about 0 to 964-1,101 in 409,600 steps",
+      "runs": "plugrl-server/experiments/e24-coverage/results/fpo-walker/fpo/fpo-policy/fpo-walker-seed{seed}", "seed": 1,
+      "server": ["fpo-policy", "default", "eval", "default", "--policy.obs-dim", "17", "--policy.action-dim", "6"],
+      "client": ["mujoco-v1", "--env.name", "Walker2d-v5", "--env.render"],
+      "replan": 1, "native_fps": 125
+    },
+    {
+      "id": "fpo-fpo-square", "row": "fpo-fpo", "column": "square",
+      "status": "runs", "experiments": ["E27"],
+      "note": "runs end to end; sparse reward, no success in 204 episodes per seed",
+      "runs": "e27/experiments/e27-robomimic/results/fpo-rm/fpo/fpo-policy/fpo-rm-seed{seed}", "seed": 0,
+      "server": ["fpo-policy", "default", "eval", "default", "--policy.obs-dim", "23", "--policy.action-dim", "7",
+                 "--policy.state-keys", "robot0_eef_pos", "robot0_eef_quat", "robot0_gripper_qpos", "object"],
+      "client": ["robomimic-v1", "--env.name", "square-img", "--env.agentview-image-size", "256", "256"],
+      "replan": 1, "native_fps": 20
+    },
+    {
+      "id": "fpo-dppo-cheetah", "row": "fpo-dppo", "column": "cheetah",
+      "status": "flat", "experiments": ["E17", "E18"],
+      "note": "no learning in 409,600 steps (E18: +2 to +20 against a bar of +200)",
+      "runs": "coverage/stage/e18/halfcheetah-seed{seed}", "seed": 1,
+      "server": ["fpo-policy", "default", "eval", "default", "--policy.obs-dim", "17", "--policy.action-dim", "6"],
+      "client": ["mujoco-v1", "--env.name", "HalfCheetah-v5", "--env.render"],
+      "replan": 1, "native_fps": 20
+    },
+    {
+      "id": "fpo-dppo-hopper", "row": "fpo-dppo", "column": "hopper",
+      "status": "flat", "experiments": ["E28", "E29"],
+      "note": "no learning in 409,600 steps (+5 to +11); ten times the noise: +74 to +106 (E29)",
+      "runs": "e28/experiments/e28-dppo-learns/results/fpodppo-hopper/dppo/fpo-policy/fpodppo-hopper-seed{seed}", "seed": 0,
+      "server": ["fpo-policy", "default", "eval", "default", "--policy.obs-dim", "11", "--policy.action-dim", "3"],
+      "client": ["mujoco-v1", "--env.name", "Hopper-v5", "--env.render"],
+      "replan": 1, "native_fps": 125
+    },
+    {
+      "id": "fpo-dppo-walker", "row": "fpo-dppo", "column": "walker",
+      "status": "flat", "experiments": ["E28"],
+      "note": "no learning in 409,600 steps (+1 to +2)",
+      "runs": "e28/experiments/e28-dppo-learns/results/fpodppo-walker/dppo/fpo-policy/fpodppo-walker-seed{seed}", "seed": 2,
+      "server": ["fpo-policy", "default", "eval", "default", "--policy.obs-dim", "17", "--policy.action-dim", "6"],
+      "client": ["mujoco-v1", "--env.name", "Walker2d-v5", "--env.render"],
+      "replan": 1, "native_fps": 125
+    },
+    {
+      "id": "fpo-dppo-square", "row": "fpo-dppo", "column": "square",
+      "status": "runs", "experiments": ["E27"],
+      "note": "runs end to end; sparse reward, no success in 204 episodes per seed",
+      "runs": "e27/experiments/e27-robomimic/results/fpodppo-rm/dppo/fpo-policy/fpodppo-rm-seed{seed}", "seed": 0,
+      "server": ["fpo-policy", "default", "eval", "default", "--policy.obs-dim", "23", "--policy.action-dim", "7",
+                 "--policy.state-keys", "robot0_eef_pos", "robot0_eef_quat", "robot0_gripper_qpos", "object"],
+      "client": ["robomimic-v1", "--env.name", "square-img", "--env.agentview-image-size", "256", "256"],
+      "replan": 1, "native_fps": 20
+    },
+    {
+      "id": "dppo-dppo-cheetah", "row": "dppo-dppo", "column": "cheetah",
+      "status": "learns", "experiments": ["E28"],
+      "note": "+84 to +544 over the first iteration; 2 of 3 seeds past +200",
+      "runs": "e28/experiments/e28-dppo-learns/results/dppo-cheetah/dppo/dppo-policy/dppo-cheetah-seed{seed}", "seed": 0,
+      "server": ["dppo-policy", "cheetah", "eval", "default"],
+      "client": ["mujoco-v1", "--env.name", "HalfCheetah-v5", "--env.render"],
+      "replan": 4, "native_fps": 20
+    },
+    {
+      "id": "dppo-dppo-hopper", "row": "dppo-dppo", "column": "hopper",
+      "status": "rising", "experiments": ["E28"],
+      "note": "11-16 to 276-430, still climbing; the bar was 500",
+      "runs": "e28/experiments/e28-dppo-learns/results/dppo-hopper/dppo/dppo-policy/dppo-hopper-seed{seed}", "seed": 0,
+      "server": ["dppo-policy", "hopper", "eval", "default"],
+      "client": ["mujoco-v1", "--env.name", "Hopper-v5", "--env.render"],
+      "replan": 4, "native_fps": 125
+    },
+    {
+      "id": "dppo-dppo-walker", "row": "dppo-dppo", "column": "walker",
+      "status": "rising", "experiments": ["E28"],
+      "note": "about -2 to 260-292, flat after fifty iterations; the bar was 500",
+      "runs": "e28/experiments/e28-dppo-learns/results/dppo-walker/dppo/dppo-policy/dppo-walker-seed{seed}", "seed": 2,
+      "server": ["dppo-policy", "walker", "eval", "default"],
+      "client": ["mujoco-v1", "--env.name", "Walker2d-v5", "--env.render"],
+      "replan": 4, "native_fps": 125
+    },
+    {
+      "id": "dppo-dppo-square", "row": "dppo-dppo", "column": "square",
+      "status": "runs", "experiments": ["E27"],
+      "note": "runs end to end; sparse reward, no success in 204 episodes per seed",
+      "runs": "e27/experiments/e27-robomimic/results/dppo-rm/dppo/dppo-policy/dppo-rm-seed{seed}", "seed": 0,
+      "server": ["dppo-policy", "default", "eval", "default", "--policy.env-type", "robomimic", "--policy.env-name", "square"],
+      "client": ["robomimic-v1", "--env.name", "square-img", "--env.agentview-image-size", "256", "256"],
+      "replan": 4, "native_fps": 20
+    }
+  ]
+}
