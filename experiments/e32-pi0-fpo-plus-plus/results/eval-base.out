@@ -1,0 +1,18 @@
+[12:36:36] cell=e32-base policy=base suite=libero_10 task_id=8 episodes=50 procs=1 port=8371 budget=21600s checkpoint=none res=/home/gotham/tmp/plugrl/e32/results
+[12:36:36] ALLOW_SIBLINGS=1: not checking for other clients or servers
+[12:36:39] source manifest: 109 files, sha256 397908458e5e2edd
+[12:43:32] server listening
+[13:15:10] client exited with 0 after 1898s
+[13:15:15] after teardown, env client processes: 6 process(es) alive
+  PID  PPID  PGID ELAPSED COMMAND
+18768  3150 18768    1891 timeout 21600 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8374 --num-envs 1 --
+18772 18768 18768    1891 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8374 --num-envs 1 --num-procs 1 --
+19002  3148 19002    1885 timeout 21600 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8373 --num-envs 1 --
+19006 19002 19002    1885 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8373 --num-envs 1 --num-procs 1 --
+19105  3145 19105    1881 timeout 21600 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8372 --num-envs 1 --
+19109 19105 19105    1881 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8372 --num-envs 1 --num-procs 1 --
+[13:15:15] TEARDOWN_NOT_CLEAN
+server scalar tags: ['episode/length', 'episode/reward', 'episode/success']
+CELL e32-base | base | task 8 | episodes 50 | successes 36 | sr 0.7200 [0.5833, 0.8253] | valid True
+correctness: warnings 0 | reconnects 0 | episodes client 50 server 50 (true) | steps client 22210 server 22210 (true)
+[13:15:16] STAGEC_EVAL_DONE e32-base

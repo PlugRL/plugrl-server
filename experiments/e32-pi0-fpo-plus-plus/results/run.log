@@ -1,0 +1,163 @@
+[09-27 09:55:17] code: 5272832 (feat/fpo-chunk-loss-per-sample-ratio, PR #74: main 2bd2789 plus FPO++ chunk loss and per-sample ratio), LF archive
+[09-27 09:55:17] --- phase 1
+[09-27 12:30:25] END train control rc=0
+[09-27 12:33:46] END train chunk rc=0
+[09-27 12:35:59] END train fpopp rc=0
+[09-27 12:36:36] END train persample rc=0
+[09-27 12:36:36] checkpoints control: first /home/gotham/tmp/plugrl/e32/control/ck/fpo/pi0-policy/control/4100, last /home/gotham/tmp/plugrl/e32/control/ck/fpo/pi0-policy/control/8200
+[09-27 12:36:36] checkpoints chunk: first /home/gotham/tmp/plugrl/e32/chunk/ck/fpo/pi0-policy/chunk/4100, last /home/gotham/tmp/plugrl/e32/chunk/ck/fpo/pi0-policy/chunk/8200
+[09-27 12:36:36] checkpoints persample: first /home/gotham/tmp/plugrl/e32/persample/ck/fpo/pi0-policy/persample/4100, last /home/gotham/tmp/plugrl/e32/persample/ck/fpo/pi0-policy/persample/8200
+[09-27 12:36:36] checkpoints fpopp: first /home/gotham/tmp/plugrl/e32/fpopp/ck/fpo/pi0-policy/fpopp/4100, last /home/gotham/tmp/plugrl/e32/fpopp/ck/fpo/pi0-policy/fpopp/8200
+[09-27 12:36:36] --- phase 2
+[09-27 12:36:36] --- V1: the first iteration left the actor as it was
+/home/gotham/tmp/plugrl/e32/control/ck/fpo/pi0-policy/control/4100/model.safetensors
+  mod    moved   0  unchanged  74  relative distance 0.000000
+  attn   moved   0  unchanged  72  relative distance 0.000000
+  mlp    moved   0  unchanged  54  relative distance 0.000000
+  io     moved   0  unchanged   8  relative distance 0.000000
+  expert moved   0  unchanged 201  relative distance 0.000000
+/home/gotham/tmp/plugrl/e32/chunk/ck/fpo/pi0-policy/chunk/4100/model.safetensors
+  mod    moved   0  unchanged  74  relative distance 0.000000
+  attn   moved   0  unchanged  72  relative distance 0.000000
+  mlp    moved   0  unchanged  54  relative distance 0.000000
+  io     moved   0  unchanged   8  relative distance 0.000000
+  expert moved   0  unchanged 201  relative distance 0.000000
+/home/gotham/tmp/plugrl/e32/persample/ck/fpo/pi0-policy/persample/4100/model.safetensors
+  mod    moved   0  unchanged  74  relative distance 0.000000
+  attn   moved   0  unchanged  72  relative distance 0.000000
+  mlp    moved   0  unchanged  54  relative distance 0.000000
+  io     moved   0  unchanged   8  relative distance 0.000000
+  expert moved   0  unchanged 201  relative distance 0.000000
+/home/gotham/tmp/plugrl/e32/fpopp/ck/fpo/pi0-policy/fpopp/4100/model.safetensors
+  mod    moved   0  unchanged  74  relative distance 0.000000
+  attn   moved   0  unchanged  72  relative distance 0.000000
+  mlp    moved   0  unchanged  54  relative distance 0.000000
+  io     moved   0  unchanged   8  relative distance 0.000000
+  expert moved   0  unchanged 201  relative distance 0.000000
+[09-27 12:39:55] --- movement from the base after the second iteration
+/home/gotham/tmp/plugrl/e32/control/ck/fpo/pi0-policy/control/8200/model.safetensors
+  mod    moved  74  unchanged   0  relative distance 0.026613
+  attn   moved  72  unchanged   0  relative distance 0.024066
+  mlp    moved  54  unchanged   0  relative distance 0.020581
+  io     moved   8  unchanged   0  relative distance 0.014301
+  expert moved 200  unchanged   1  relative distance 0.020212
+/home/gotham/tmp/plugrl/e32/chunk/ck/fpo/pi0-policy/chunk/8200/model.safetensors
+  mod    moved  74  unchanged   0  relative distance 0.023681
+  attn   moved  72  unchanged   0  relative distance 0.016416
+  mlp    moved  54  unchanged   0  relative distance 0.016172
+  io     moved   8  unchanged   0  relative distance 0.014283
+  expert moved 200  unchanged   1  relative distance 0.015854
+/home/gotham/tmp/plugrl/e32/persample/ck/fpo/pi0-policy/persample/8200/model.safetensors
+  mod    moved  74  unchanged   0  relative distance 0.025588
+  attn   moved  72  unchanged   0  relative distance 0.023537
+  mlp    moved  54  unchanged   0  relative distance 0.020839
+  io     moved   8  unchanged   0  relative distance 0.013607
+  expert moved 200  unchanged   1  relative distance 0.020054
+/home/gotham/tmp/plugrl/e32/fpopp/ck/fpo/pi0-policy/fpopp/8200/model.safetensors
+  mod    moved  74  unchanged   0  relative distance 0.023784
+  attn   moved  72  unchanged   0  relative distance 0.017089
+  mlp    moved  54  unchanged   0  relative distance 0.016966
+  io     moved   8  unchanged   0  relative distance 0.016553
+  expert moved 200  unchanged   1  relative distance 0.016406
+[09-27 12:43:11] --- learn-step statistics
+## control
+/home/gotham/tmp/plugrl/e32/control/ck/fpo/pi0-policy/control/tensorboard/events.out.tfevents.1790502935.e88d1a355314.63691.0
+  fpo/policy_ratio_mean                    n=2 first=1 last=0.925429 min=0.925429 max=1
+  fpo/clipped_ratio_mean                   n=2 first=0 last=0.510376 min=0 max=0.510376
+  fpo/advantages_mean                      n=2 first=5.99903e-09 last=4.70027e-09 min=4.70027e-09 max=5.99903e-09
+  fpo/advantages_std                       n=2 first=0.881728 last=0.918944 min=0.881728 max=0.918944
+  fpo/advantages_raw_std                   n=2 first=1.63759 last=1.20551 min=1.20551 max=1.63759
+  fpo/initial_cfm_loss_mean                n=2 first=0.000472325 last=0.000509579 min=0.000472325 max=0.000509579
+  fpo/cfm_loss_mean                        n=2 first=0.000472325 last=0.0818421 min=0.000472325 max=0.0818421
+  fpo/loss_delta_mean                      n=2 first=0 last=-0.0813325 min=-0.0813325 max=0
+  fpo/loss_delta_min                       n=2 first=0 last=-0.911762 min=-0.911762 max=0
+  fpo/loss_delta_max                       n=2 first=0 last=0.0288135 min=0 max=0.0288135
+  learn_runtime/cfm_loss_time              n=2 first=89.6421 last=94.2691 min=89.6421 max=94.2691
+  learn_runtime/ratio_policy_loss_time     n=2 first=0.492089 last=0.526158 min=0.492089 max=0.526158
+  learn_runtime/dataloader_ratio           n=2 first=0.404421 last=0.402955 min=0.402955 max=0.404421
+  learn_runtime/batch_to_device_ratio      n=2 first=0.000216795 last=0.000252661 min=0.000216795 max=0.000252661
+  learn_runtime/compute_loss_ratio         n=2 first=0.425475 last=0.425065 min=0.425065 max=0.425475
+  learn_runtime/backward_step_ratio        n=2 first=0.169857 last=0.171687 min=0.169857 max=0.171687
+  learn_runtime/obs_cache_ratio            n=2 first=0.39808 last=0.39607 min=0.39607 max=0.39808
+  learn_runtime/cfm_loss_ratio             n=2 first=0.0257069 last=0.0268439 min=0.0257069 max=0.0268439
+  learn_runtime/ratio_policy_loss_ratio    n=2 first=0.000141118 last=0.000149828 min=0.000141118 max=0.000149828
+  learn_runtime/value_forward_ratio        n=2 first=0.000330078 last=0.000367491 min=0.000330078 max=0.000367491
+## chunk
+/home/gotham/tmp/plugrl/e32/chunk/ck/fpo/pi0-policy/chunk/tensorboard/events.out.tfevents.1790502993.e88d1a355314.64450.0
+  fpo/policy_ratio_mean                    n=2 first=1 last=0.920416 min=0.920416 max=1
+  fpo/clipped_ratio_mean                   n=2 first=0 last=0.560547 min=0 max=0.560547
+  fpo/advantages_mean                      n=2 first=1.88265e-08 last=2.91629e-09 min=2.91629e-09 max=1.88265e-08
+  fpo/advantages_std                       n=2 first=0.864965 last=0.914208 min=0.864965 max=0.914208
+  fpo/advantages_raw_std                   n=2 first=1.52243 last=1.20487 min=1.20487 max=1.52243
+  fpo/initial_cfm_loss_mean                n=2 first=0.117774 last=0.130364 min=0.117774 max=0.130364
+  fpo/cfm_loss_mean                        n=2 first=0.117774 last=0.223424 min=0.117774 max=0.223424
+  fpo/loss_delta_mean                      n=2 first=0 last=-0.092508 min=-0.092508 max=0
+  fpo/loss_delta_min                       n=2 first=0 last=-3 min=-3 max=0
+  fpo/loss_delta_max                       n=2 first=0 last=3 min=0 max=3
+  learn_runtime/cfm_loss_time              n=2 first=93.533 last=95.5001 min=93.533 max=95.5001
+  learn_runtime/ratio_policy_loss_time     n=2 first=0.543872 last=0.55994 min=0.543872 max=0.55994
+  learn_runtime/dataloader_ratio           n=2 first=0.385088 last=0.380672 min=0.380672 max=0.385088
+  learn_runtime/batch_to_device_ratio      n=2 first=0.000242685 last=0.000259214 min=0.000242685 max=0.000259214
+  learn_runtime/compute_loss_ratio         n=2 first=0.408003 last=0.40447 min=0.40447 max=0.408003
+  learn_runtime/backward_step_ratio        n=2 first=0.206635 last=0.214554 min=0.206635 max=0.214554
+  learn_runtime/obs_cache_ratio            n=2 first=0.379972 last=0.375751 min=0.375751 max=0.379972
+  learn_runtime/cfm_loss_ratio             n=2 first=0.0261869 last=0.0264059 min=0.0261869 max=0.0264059
+  learn_runtime/ratio_policy_loss_ratio    n=2 first=0.000152271 last=0.000154824 min=0.000152271 max=0.000154824
+  learn_runtime/value_forward_ratio        n=2 first=0.000350899 last=0.000373476 min=0.000350899 max=0.000373476
+## persample
+/home/gotham/tmp/plugrl/e32/persample/ck/fpo/pi0-policy/persample/tensorboard/events.out.tfevents.1790503052.e88d1a355314.65501.0
+  fpo/policy_ratio_mean                    n=2 first=1 last=0.938575 min=0.938575 max=1
+  fpo/clipped_ratio_mean                   n=2 first=0 last=0.412735 min=0 max=0.412735
+  fpo/advantages_mean                      n=2 first=2.01144e-08 last=-7.29233e-09 min=-7.29233e-09 max=2.01144e-08
+  fpo/advantages_std                       n=2 first=0.875175 last=0.918802 min=0.875175 max=0.918802
+  fpo/advantages_raw_std                   n=2 first=1.60965 last=1.2426 min=1.2426 max=1.60965
+  fpo/initial_cfm_loss_mean                n=2 first=0.000550271 last=0.000571337 min=0.000550271 max=0.000571337
+  fpo/cfm_loss_mean                        n=2 first=0.000550271 last=0.0690333 min=0.000550271 max=0.0690333
+  fpo/loss_delta_mean                      n=2 first=0 last=-0.0684619 min=-0.0684619 max=0
+  fpo/loss_delta_min                       n=2 first=0 last=-0.944089 min=-0.944089 max=0
+  fpo/loss_delta_max                       n=2 first=0 last=0.0358 min=0 max=0.0358
+  learn_runtime/cfm_loss_time              n=2 first=87.7265 last=90.6649 min=87.7265 max=90.6649
+  learn_runtime/ratio_policy_loss_time     n=2 first=0.553162 last=0.5477 min=0.5477 max=0.553162
+  learn_runtime/dataloader_ratio           n=2 first=0.381766 last=0.377318 min=0.377318 max=0.381766
+  learn_runtime/batch_to_device_ratio      n=2 first=0.000211293 last=0.000232569 min=0.000211293 max=0.000232569
+  learn_runtime/compute_loss_ratio         n=2 first=0.400695 last=0.396806 min=0.396806 max=0.400695
+  learn_runtime/backward_step_ratio        n=2 first=0.217299 last=0.225604 min=0.217299 max=0.225604
+  learn_runtime/obs_cache_ratio            n=2 first=0.374997 last=0.370342 min=0.370342 max=0.374997
+  learn_runtime/cfm_loss_ratio             n=2 first=0.0241237 last=0.0245958 min=0.0241237 max=0.0245958
+  learn_runtime/ratio_policy_loss_ratio    n=2 first=0.000152113 last=0.000148582 min=0.000148582 max=0.000152113
+  learn_runtime/value_forward_ratio        n=2 first=0.000311265 last=0.000330268 min=0.000311265 max=0.000330268
+## fpopp
+/home/gotham/tmp/plugrl/e32/fpopp/ck/fpo/pi0-policy/fpopp/tensorboard/events.out.tfevents.1790503118.e88d1a355314.3485.0
+  fpo/policy_ratio_mean                    n=2 first=1 last=0.907017 min=0.907017 max=1
+  fpo/clipped_ratio_mean                   n=2 first=0 last=0.561264 min=0 max=0.561264
+  fpo/advantages_mean                      n=2 first=-9.53423e-09 last=8.97035e-09 min=-9.53423e-09 max=8.97035e-09
+  fpo/advantages_std                       n=2 first=0.869065 last=0.901332 min=0.869065 max=0.901332
+  fpo/advantages_raw_std                   n=2 first=1.55922 last=1.15356 min=1.15356 max=1.55922
+  fpo/initial_cfm_loss_mean                n=2 first=0.114777 last=0.130272 min=0.114777 max=0.130272
+  fpo/cfm_loss_mean                        n=2 first=0.114777 last=0.272354 min=0.114777 max=0.272354
+  fpo/loss_delta_mean                      n=2 first=0 last=-0.135158 min=-0.135158 max=0
+  fpo/loss_delta_min                       n=2 first=0 last=-5 min=-5 max=0
+  fpo/loss_delta_max                       n=2 first=0 last=4.40859 min=0 max=4.40859
+  learn_runtime/cfm_loss_time              n=2 first=98.113 last=86.7178 min=86.7178 max=98.113
+  learn_runtime/ratio_policy_loss_time     n=2 first=1.35477 last=0.529487 min=0.529487 max=1.35477
+  learn_runtime/dataloader_ratio           n=2 first=0.375242 last=0.377035 min=0.375242 max=0.377035
+  learn_runtime/batch_to_device_ratio      n=2 first=0.000333164 last=0.000213238 min=0.000213238 max=0.000333164
+  learn_runtime/compute_loss_ratio         n=2 first=0.402068 last=0.396765 min=0.396765 max=0.402068
+  learn_runtime/backward_step_ratio        n=2 first=0.222313 last=0.225947 min=0.222313 max=0.225947
+  learn_runtime/obs_cache_ratio            n=2 first=0.372752 last=0.371177 min=0.371177 max=0.372752
+  learn_runtime/cfm_loss_ratio             n=2 first=0.0270794 last=0.0239885 min=0.0239885 max=0.0270794
+  learn_runtime/ratio_policy_loss_ratio    n=2 first=0.000373919 last=0.000146471 min=0.000146471 max=0.000373919
+  learn_runtime/value_forward_ratio        n=2 first=0.000501885 last=0.000319272 min=0.000319272 max=0.000501885
+[09-27 13:14:38] END eval fpopp rc=0
+[09-27 13:15:16] END eval base rc=0
+[09-27 13:17:24] END eval chunk rc=0
+[09-27 13:19:37] END eval persample rc=0
+[09-27 13:19:57] END eval control rc=0
+[09-27 13:19:57] === rows ===
+policy	task_id	episodes	successes	sr	ci_lo	ci_hi	valid
+fpopp	8	50	33	0.6600	0.5215	0.7756	true
+base	8	50	36	0.7200	0.5833	0.8253	true
+chunk	8	50	26	0.5200	0.3851	0.6520	true
+persample	8	50	0	0.0000	0.0000	0.0713	true
+control	8	50	0	0.0000	0.0000	0.0713	true
+[09-27 13:19:57] E32_DONE

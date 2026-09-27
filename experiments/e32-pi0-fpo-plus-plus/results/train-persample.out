@@ -1,0 +1,16 @@
+[09:57:17] cell=persample iterations=2 master_device=cuda:1 lr=1e-5 updates=4 clip=0.05 drift=0 warmup=0 srv_gpus=4,5 cli_gpu=7 buffer=4096 batch=8
+[09:57:17] ALLOW_SIBLINGS=1: not checking for other clients or servers
+[09:57:17] arm flags: --algo.n-critic-warmup-itrs 1 --algo.ratio-per-sample
+[09:59:34] server listening
+[12:36:36] clients exit 0 after 9422s (server_died=0)
+[12:36:36] teardown clean
+[12:36:36] === learn steps seen ===
+13
+[12:36:36] === out of memory? ===
+0
+[12:36:36] === peak memory, GPU0 and GPU1 ===
+gpu0_peak_mib=19943  gpu1_peak_mib=9070
+[12:36:36] === checkpoints ===
+11:17 8528818570 /home/gotham/tmp/plugrl/e32/persample/ck/fpo/pi0-policy/persample/4100/model.safetensors
+12:36 8528818570 /home/gotham/tmp/plugrl/e32/persample/ck/fpo/pi0-policy/persample/8200/model.safetensors
+[12:36:36] E32_TRAIN_DONE persample

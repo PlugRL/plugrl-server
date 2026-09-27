@@ -1,0 +1,24 @@
+/home/gotham/tmp/plugrl/e32/control/ck/fpo/pi0-policy/control/4100/model.safetensors
+  mod    moved   0  unchanged  74  relative distance 0.000000
+  attn   moved   0  unchanged  72  relative distance 0.000000
+  mlp    moved   0  unchanged  54  relative distance 0.000000
+  io     moved   0  unchanged   8  relative distance 0.000000
+  expert moved   0  unchanged 201  relative distance 0.000000
+/home/gotham/tmp/plugrl/e32/chunk/ck/fpo/pi0-policy/chunk/4100/model.safetensors
+  mod    moved   0  unchanged  74  relative distance 0.000000
+  attn   moved   0  unchanged  72  relative distance 0.000000
+  mlp    moved   0  unchanged  54  relative distance 0.000000
+  io     moved   0  unchanged   8  relative distance 0.000000
+  expert moved   0  unchanged 201  relative distance 0.000000
+/home/gotham/tmp/plugrl/e32/persample/ck/fpo/pi0-policy/persample/4100/model.safetensors
+  mod    moved   0  unchanged  74  relative distance 0.000000
+  attn   moved   0  unchanged  72  relative distance 0.000000
+  mlp    moved   0  unchanged  54  relative distance 0.000000
+  io     moved   0  unchanged   8  relative distance 0.000000
+  expert moved   0  unchanged 201  relative distance 0.000000
+/home/gotham/tmp/plugrl/e32/fpopp/ck/fpo/pi0-policy/fpopp/4100/model.safetensors
+  mod    moved   0  unchanged  74  relative distance 0.000000
+  attn   moved   0  unchanged  72  relative distance 0.000000
+  mlp    moved   0  unchanged  54  relative distance 0.000000
+  io     moved   0  unchanged   8  relative distance 0.000000
+  expert moved   0  unchanged 201  relative distance 0.000000

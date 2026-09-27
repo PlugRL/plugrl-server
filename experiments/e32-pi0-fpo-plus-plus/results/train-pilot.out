@@ -1,0 +1,14 @@
+[09:10:01] cell=pilot iterations=1 master_device=cuda:1 lr=1e-5 updates=4 clip=0.05 drift=0 warmup=0 srv_gpus=0,1 cli_gpu=3 buffer=64 batch=8
+[09:10:01] arm flags: --algo.output-mode u --algo.loss-t-beta 1.5 1.0 --algo.advantage-floor 0
+[09:12:38] server listening
+[09:15:25] clients exit 0 after 167s (server_died=0)
+[09:15:26] teardown clean
+[09:15:26] === learn steps seen ===
+1
+[09:15:26] === out of memory? ===
+0
+[09:15:26] === peak memory, GPU0 and GPU1 ===
+gpu0_peak_mib=18338  gpu1_peak_mib=9069
+[09:15:26] === checkpoints ===
+09:15 8528818570 /home/gotham/tmp/plugrl/e32/pilot/ck/fpo/pi0-policy/pilot/70/model.safetensors
+[09:15:26] E32_TRAIN_DONE pilot

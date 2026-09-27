@@ -1,0 +1,57 @@
+# E32 harness checks, 2026-09-27, qz103 cards 0-1, before PROTOCOL.md was written.
+# Neither is a result: 64 steps per iteration, one seed, never evaluated.
+
+## Check 1, 09:10-09:15 UTC - under E32's first design, since replaced
+
+Code ab49524 (#72), deployed LF as $R/plugrl-server-e32 (since moved to
+$R/plugrl-server-e32-ab49524). E32 was first designed around #72's options,
+the flow times of pi0's training and an advantage floor; reading FPO++'s
+reference replaced that design with the one PROTOCOL.md registers, and #72's
+options are not used.
+
+  train.sh pilot 1 8270 cuda:1, BUFFER_SIZE=64,
+  ARM_FLAGS="--algo.output-mode u --algo.loss-t-beta 1.5 1.0 --algo.advantage-floor 0"
+
+Ran end to end: server listened after 2.6 min, checkpoint at step 70
+(8,528,818,570 bytes), no traceback, no out-of-memory; peak 18,338 MiB on
+the model's card and 9,069 on the master weights' card. Config line:
+output_mode='u', loss_t_beta=(1.5, 1.0), advantage_floor=0.0.
+Tensorboard: initial_cfm_loss_mean 0.000778, cfm_loss_mean 0.000671,
+policy_ratio_mean 1.00011, clipped_ratio_mean 0.
+
+Read after it, from runs already made (vanilla FPO):
+  E26's control, one iteration of 4,096 on pi0.5 (0 of 50):
+    initial_cfm_loss_mean 0.000515, cfm_loss_mean 0.142,
+    policy_ratio_mean 0.878, clipped_ratio_mean 0.601
+  E24's fpo-policy on Walker2d, seed 0, 100 iterations (learns):
+    initial_cfm_loss_mean 0.564 to 0.665, cfm_loss_mean within 2% of it,
+    policy_ratio_mean 0.989 to 1.004, clipped_ratio_mean 0 to 0.114
+
+## Check 2, 09:40-09:46 UTC - the registered design's fpopp arm
+
+Code 5272832 (#74), deployed LF as $R/plugrl-server-e32; fpo.py sha256
+42aa7609..., utils.py ea718947..., equal to the git blobs.
+
+  train.sh pilot2 2 8270 cuda:1, BUFFER_SIZE=64,
+  ARM_FLAGS="--algo.n-critic-warmup-itrs 1 --algo.output-mode u
+    --algo.no-discretize-t-for-training --algo.cfm-loss-steps 5
+    --algo.cfm-loss-dims 7 --algo.cfm-loss-sum-over-steps --algo.ratio-per-sample"
+
+Ran end to end, two iterations: checkpoints at steps 70 and 130, clients
+exit 0, teardown clean, no traceback, no out-of-memory; peak 19,762 MiB and
+9,069 MiB. Config line: output_mode='u', n_critic_warmup_itrs=1,
+discretize_t_for_training=False, cfm_loss_steps=5, cfm_loss_dims=7,
+cfm_loss_sum_over_steps=True, ratio_per_sample=True.
+
+Tensorboard, iteration 1 (critic only) and iteration 2 (the policy update):
+  initial_cfm_loss_mean  0.0963 -> 0.0608
+  cfm_loss_mean          0.0963 -> 0.0777
+  policy_ratio_mean      1      -> 0.987
+  clipped_ratio_mean     0      -> 0.161
+
+movement.py against E15's base dump:
+  step 70 (after iteration 1): every group moved 0 tensors - the critic-only
+    iteration left the actor bit-identical.
+  step 130 (after iteration 2): expert 200 of 201 tensors moved (lm_head is
+    frozen), relative distance 0.0022; mod 0.0031, attn 0.0023, mlp 0.0023,
+    io 0.0022.
