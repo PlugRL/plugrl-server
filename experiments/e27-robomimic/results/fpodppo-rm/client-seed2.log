@@ -1,0 +1,81 @@
+2026-09-25 19:09:24.457 | WARNING  | plugrl_env_client.envs:_load_env_modules:27 - Skip loading env module plugrl_env_client.envs.classic.classic_env: pygame is not installed. Please install it with pip install "plugrl-env-client[classic]".
+2026-09-25 19:09:24.457 | WARNING  | plugrl_env_client.envs:_load_env_modules:27 - Skip loading env module plugrl_env_client.envs.atari.atari_env: Atari is not installed. Please install it with the 'atari' extra, e.g. 'pip install plugrl-env-client[atari]'
+2026-09-25 19:09:24.457 | WARNING  | plugrl_env_client.envs:_load_env_modules:27 - Skip loading env module plugrl_env_client.envs.d4rl.d4rl_env: d4rl is not installed. Please install it with pip install "plugrl-env-client[d4rl]".
+2026-09-25 19:09:24.457 | WARNING  | plugrl_env_client.envs:_load_env_modules:27 - Skip loading env module plugrl_env_client.envs.libero.libero_env: libero is not installed. Please install it with pip install "plugrl-env-client[libero]".
+[robosuite WARNING] No private macro file found! (macros.py:53)
+[robosuite WARNING] It is recommended to use a private macro file (macros.py:54)
+[robosuite WARNING] To setup, run: python /home/guangzhao/zuogou/plugrl/plugrl-env-client/.venv-robomimic/lib/python3.11/site-packages/robosuite/scripts/setup_macros.py (macros.py:55)
+2026-09-25 19:09:25.140 | INFO     | __main__:main:83 - Starting env client exp_name=robomimic-v1-nenv1-20260925-190925-48d02422 output_dir=runs/robomimic-v1-nenv1-20260925-190925-48d02422 recorder={'episode_freq': 0, 'thread0_only': True, 'record_video': False, 'video_fps': 30.0, 'record_full_rollout': False, 'record_obs_stats': True, 'record_episode_metrics': True, 'metric_window': 100}
+2026-09-25 19:09:26.171 | INFO     | plugrl_env_client.agent.websocket_env_client_agent:_wait_for_server:67 - Waiting for server at ws://127.0.0.1:9412...
+2026-09-25 19:09:26.174 | INFO     | plugrl_env_client.runner.run:report_server_metadata:56 - Server metadata: {'protocol_version': 1, 'server': 'plugrl-server', 'server_version': '0.1.0', 'algorithm': 'DPPOAlgorithm', 'policy': 'FPOPolicy', 'action_dim': 7, 'action_horizon': 1}
+2026-09-25 19:09:56.190 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=2972 infer_calls=2972 feedback_calls=2972 infer_wait=9.740s infer_obs_pack=0.128s env_step=19.467s feedback_total=0.470s feedback_obs_pack=0.171s feedback_info_pack=0.009s effective_fps=99.71
+2026-09-25 19:10:26.192 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=5688 infer_calls=5688 feedback_calls=5688 infer_wait=20.223s infer_obs_pack=0.245s env_step=38.199s feedback_total=0.944s feedback_obs_pack=0.342s feedback_info_pack=0.017s effective_fps=95.42
+2026-09-25 19:10:56.199 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=8371 infer_calls=8371 feedback_calls=8371 infer_wait=30.707s infer_obs_pack=0.436s env_step=56.880s feedback_total=1.407s feedback_obs_pack=0.511s feedback_info_pack=0.026s effective_fps=93.60
+2026-09-25 19:11:26.207 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=11099 infer_calls=11099 feedback_calls=11099 infer_wait=40.906s infer_obs_pack=0.556s env_step=75.890s feedback_total=1.894s feedback_obs_pack=0.681s feedback_info_pack=0.035s effective_fps=93.08
+2026-09-25 19:11:56.208 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=13800 infer_calls=13800 feedback_calls=13800 infer_wait=51.476s infer_obs_pack=0.670s env_step=94.548s feedback_total=2.361s feedback_obs_pack=0.849s feedback_info_pack=0.045s effective_fps=92.58
+2026-09-25 19:12:26.215 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=16502 infer_calls=16502 feedback_calls=16502 infer_wait=61.948s infer_obs_pack=0.790s env_step=113.290s feedback_total=2.837s feedback_obs_pack=1.023s feedback_info_pack=0.054s effective_fps=92.26
+2026-09-25 19:12:56.223 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=19260 infer_calls=19260 feedback_calls=19260 infer_wait=72.045s infer_obs_pack=0.914s env_step=132.408s feedback_total=3.313s feedback_obs_pack=1.195s feedback_info_pack=0.063s effective_fps=92.29
+2026-09-25 19:13:26.225 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=21963 infer_calls=21963 feedback_calls=21963 infer_wait=82.477s infer_obs_pack=1.032s env_step=151.199s feedback_total=3.787s feedback_obs_pack=1.369s feedback_info_pack=0.072s effective_fps=92.09
+2026-09-25 19:13:56.233 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=24666 infer_calls=24666 feedback_calls=24666 infer_wait=92.977s infer_obs_pack=1.149s env_step=169.926s feedback_total=4.258s feedback_obs_pack=1.539s feedback_info_pack=0.081s effective_fps=91.93
+2026-09-25 19:14:26.235 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=27466 infer_calls=27466 feedback_calls=27466 infer_wait=102.991s infer_obs_pack=1.270s env_step=189.133s feedback_total=4.722s feedback_obs_pack=1.707s feedback_info_pack=0.090s effective_fps=92.13
+2026-09-25 19:14:56.241 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=30151 infer_calls=30151 feedback_calls=30151 infer_wait=113.428s infer_obs_pack=1.387s env_step=207.927s feedback_total=5.193s feedback_obs_pack=1.874s feedback_info_pack=0.099s effective_fps=91.94
+2026-09-25 19:15:26.259 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=32877 infer_calls=32877 feedback_calls=32877 infer_wait=123.729s infer_obs_pack=1.507s env_step=226.853s feedback_total=5.670s feedback_obs_pack=2.041s feedback_info_pack=0.108s effective_fps=91.90
+2026-09-25 19:15:56.265 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=35637 infer_calls=35637 feedback_calls=35637 infer_wait=133.850s infer_obs_pack=1.626s env_step=245.957s feedback_total=6.141s feedback_obs_pack=2.210s feedback_info_pack=0.117s effective_fps=91.95
+2026-09-25 19:16:26.268 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=38308 infer_calls=38308 feedback_calls=38308 infer_wait=144.367s infer_obs_pack=1.742s env_step=264.662s feedback_total=6.612s feedback_obs_pack=2.379s feedback_info_pack=0.127s effective_fps=91.78
+2026-09-25 19:16:56.271 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=41017 infer_calls=41017 feedback_calls=41017 infer_wait=154.750s infer_obs_pack=1.859s env_step=283.500s feedback_total=7.085s feedback_obs_pack=2.547s feedback_info_pack=0.137s effective_fps=91.72
+2026-09-25 19:17:26.274 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=43744 infer_calls=43744 feedback_calls=43744 infer_wait=165.067s infer_obs_pack=1.978s env_step=302.397s feedback_total=7.567s feedback_obs_pack=2.720s feedback_info_pack=0.146s effective_fps=91.70
+2026-09-25 19:17:56.283 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=46480 infer_calls=46480 feedback_calls=46480 infer_wait=175.520s infer_obs_pack=2.097s env_step=321.171s feedback_total=8.042s feedback_obs_pack=2.893s feedback_info_pack=0.155s effective_fps=91.71
+2026-09-25 19:18:26.288 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=49160 infer_calls=49160 feedback_calls=49160 infer_wait=185.930s infer_obs_pack=2.218s env_step=339.979s feedback_total=8.522s feedback_obs_pack=3.073s feedback_info_pack=0.164s effective_fps=91.61
+2026-09-25 19:18:56.289 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=51923 infer_calls=51923 feedback_calls=51923 infer_wait=196.034s infer_obs_pack=2.342s env_step=359.072s feedback_total=9.009s feedback_obs_pack=3.246s feedback_info_pack=0.174s effective_fps=91.66
+2026-09-25 19:19:26.296 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=54693 infer_calls=54693 feedback_calls=54693 infer_wait=206.622s infer_obs_pack=2.461s env_step=377.702s feedback_total=9.483s feedback_obs_pack=3.420s feedback_info_pack=0.183s effective_fps=91.73
+2026-09-25 19:19:56.297 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=57422 infer_calls=57422 feedback_calls=57422 infer_wait=217.116s infer_obs_pack=2.579s env_step=396.421s feedback_total=9.965s feedback_obs_pack=3.592s feedback_info_pack=0.194s effective_fps=91.72
+2026-09-25 19:20:26.302 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=60157 infer_calls=60157 feedback_calls=60157 infer_wait=227.402s infer_obs_pack=2.696s env_step=415.350s feedback_total=10.447s feedback_obs_pack=3.763s feedback_info_pack=0.204s effective_fps=91.72
+2026-09-25 19:20:56.305 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=62890 infer_calls=62890 feedback_calls=62890 infer_wait=237.870s infer_obs_pack=2.816s env_step=434.102s feedback_total=10.916s feedback_obs_pack=3.934s feedback_info_pack=0.213s effective_fps=91.72
+2026-09-25 19:21:26.315 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=65547 infer_calls=65547 feedback_calls=65547 infer_wait=248.503s infer_obs_pack=2.932s env_step=452.713s feedback_total=11.380s feedback_obs_pack=4.100s feedback_info_pack=0.222s effective_fps=91.61
+2026-09-25 19:21:56.316 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=68245 infer_calls=68245 feedback_calls=68245 infer_wait=258.645s infer_obs_pack=3.052s env_step=471.788s feedback_total=11.850s feedback_obs_pack=4.269s feedback_info_pack=0.231s effective_fps=91.56
+2026-09-25 19:22:26.320 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=70910 infer_calls=70910 feedback_calls=70910 infer_wait=269.191s infer_obs_pack=3.171s env_step=490.448s feedback_total=12.338s feedback_obs_pack=4.444s feedback_info_pack=0.241s effective_fps=91.48
+2026-09-25 19:22:56.322 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=73625 infer_calls=73625 feedback_calls=73625 infer_wait=279.231s infer_obs_pack=3.294s env_step=509.614s feedback_total=12.820s feedback_obs_pack=4.618s feedback_info_pack=0.250s effective_fps=91.46
+2026-09-25 19:23:26.325 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=76602 infer_calls=76602 feedback_calls=76602 infer_wait=288.934s infer_obs_pack=3.421s env_step=529.093s feedback_total=13.309s feedback_obs_pack=4.797s feedback_info_pack=0.259s effective_fps=91.77
+2026-09-25 19:23:56.330 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Intermediate rollout timing summary: env_steps=79624 infer_calls=79624 feedback_calls=79624 infer_wait=298.482s infer_obs_pack=3.548s env_step=548.722s feedback_total=13.800s feedback_obs_pack=4.975s feedback_info_pack=0.269s effective_fps=92.10
+2026-09-25 19:24:18.882 | INFO     | plugrl_env_client.runner.rollout:log_timing_summary:98 - Final rollout timing summary: env_steps=81921 infer_calls=81921 feedback_calls=81921 infer_wait=305.199s infer_obs_pack=3.642s env_step=563.479s feedback_total=14.145s feedback_obs_pack=5.101s feedback_info_pack=0.275s effective_fps=92.41
+2026-09-25 19:24:18.882 | INFO     | plugrl_env_client.runner.run:run:156 - Server signalled the end of the run; collection stopped after 204/327680 episodes.
+Created environment with name NutAssemblySquare
+Action size is 7
+Exception ignored in: <function MjRenderContext.__del__ at 0x746cbc147ce0>
+Traceback (most recent call last):
+  File "/home/guangzhao/zuogou/plugrl/plugrl-env-client/.venv-robomimic/lib/python3.11/site-packages/robosuite/utils/binding_utils.py", line 199, in __del__
+    self.gl_ctx.free()
+  File "/home/guangzhao/zuogou/plugrl/plugrl-env-client/.venv-robomimic/lib/python3.11/site-packages/robosuite/renderers/context/egl_context.py", line 149, in free
+    EGL.eglMakeCurrent(EGL_DISPLAY, EGL.EGL_NO_SURFACE, EGL.EGL_NO_SURFACE, EGL.EGL_NO_CONTEXT)
+  File "/home/guangzhao/zuogou/plugrl/plugrl-env-client/.venv-robomimic/lib/python3.11/site-packages/OpenGL/error.py", line 228, in glCheckError
+    raise GLError(
+OpenGL.error.GLError: GLError(
+	err = 12289,
+	baseOperation = eglMakeCurrent,
+	cArguments = (
+		<OpenGL._opaque.EGLDisplay_pointer object at 0x746c91f14290>,
+		<OpenGL._opaque.EGLSurface_pointer object at 0x746cc0b45400>,
+		<OpenGL._opaque.EGLSurface_pointer object at 0x746cc0b45400>,
+		<OpenGL._opaque.EGLContext_pointer object at 0x746cc0b452e0>,
+	),
+	result = 0
+)
+Exception ignored in: <function EGLGLContext.__del__ at 0x746cbc147ba0>
+Traceback (most recent call last):
+  File "/home/guangzhao/zuogou/plugrl/plugrl-env-client/.venv-robomimic/lib/python3.11/site-packages/robosuite/renderers/context/egl_context.py", line 155, in __del__
+    self.free()
+  File "/home/guangzhao/zuogou/plugrl/plugrl-env-client/.venv-robomimic/lib/python3.11/site-packages/robosuite/renderers/context/egl_context.py", line 149, in free
+    EGL.eglMakeCurrent(EGL_DISPLAY, EGL.EGL_NO_SURFACE, EGL.EGL_NO_SURFACE, EGL.EGL_NO_CONTEXT)
+  File "/home/guangzhao/zuogou/plugrl/plugrl-env-client/.venv-robomimic/lib/python3.11/site-packages/OpenGL/error.py", line 228, in glCheckError
+    raise GLError(
+OpenGL.error.GLError: GLError(
+	err = 12289,
+	baseOperation = eglMakeCurrent,
+	cArguments = (
+		<OpenGL._opaque.EGLDisplay_pointer object at 0x746c91f14290>,
+		<OpenGL._opaque.EGLSurface_pointer object at 0x746cc0b45400>,
+		<OpenGL._opaque.EGLSurface_pointer object at 0x746cc0b45400>,
+		<OpenGL._opaque.EGLContext_pointer object at 0x746cc0b452e0>,
+	),
+	result = 0
+)

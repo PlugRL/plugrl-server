@@ -1,0 +1,12 @@
+cell:    dppo-rm = dppo-policy/default x dppo/default x robomimic square
+iters:   20 x 1024  batch: 256  replan: 4  seeds: 0 1 2
+server:  /home/guangzhao/zuogou/plugrl/e27/../plugrl-server/.venv/bin/python (src /home/guangzhao/zuogou/plugrl/e27/src)
+client:  /home/guangzhao/zuogou/plugrl/e27/../plugrl-env-client/.venv-robomimic/bin/python
+out:     /home/guangzhao/zuogou/plugrl/e27/experiments/e27-robomimic/results/dppo-rm
+start 2026-09-25 19:09:32
+seed 0 finished rc=0 at 19:26:05
+seed 1 finished rc=0 at 19:26:09
+seed 2 finished rc=0 at 19:26:16
+end   2026-09-25 19:26:16
+failed seeds: 0
+CELL_DONE dppo-rm

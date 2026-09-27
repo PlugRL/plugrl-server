@@ -1,0 +1,22 @@
+19:09:39|INFO|plugrl_server version: 0.1.0
+19:09:39|INFO|Algorithm: dppo, Config: DPPOAlgoConfig(global_steps=20480, gamma=0.99, gamma_denoising=1.0, actor_lr=0.0001, critic_lr=0.001, actor_weight_decay=0.0, critic_weight_decay=0.0, actor_lr_scheduler=None, critic_lr_scheduler=None, buffer_size=1024, gae_lambda=0.95, update_epochs=4, norm_adv=True, clip_ploss_coef=0.01, clip_ploss_coef_base=0.001, clip_ploss_coef_rate=3, clip_vloss_coef=inf, ent_coef=0.0, vf_coef=0.5, max_grad_norm=inf, target_kl=inf, logprob_noise_level=0.01, sampling_noise_level=0.01, clip_advantage_lower_quantile=0, clip_advantage_upper_quantile=1, n_critic_warmup_itrs=0, use_normalized_rewards=False, batch_size=256, train_itrs=20, save_interval=20, grad_accum_steps=8, policy_checkpoint_path=None, restore='all')
+19:09:39|INFO|Policy: dppo-policy, Config: DPPOPolicyConfig(algo='dppo', device=device(type='cpu'), env_type='robomimic', env_name='square', checkpoint_path=None, critic=DPPOCriticObsConfig(mlp_dims=[256, 256, 256], activation='Mish', residual_style=True))
+19:09:39|INFO|Seeded python, numpy and torch with 1. One env client is then reproducible; several are not, because batch composition depends on when their requests arrive.
+19:09:39|INFO|Checkpoint Manager created: 
+<plugrl_server.common.checkpoint_manager.CheckpointManager object at 0x71de00e53910> at /home/guangzhao/zuogou/plugrl/e27/experiments/e27-robomimic/results/dppo-rm/dppo/dppo-policy/dppo-rm-seed1
+19:09:39|INFO|Number of network parameters: 2305212
+19:09:39|INFO|Policy created...
+19:09:39|INFO|Initialized RolloutBuffer buffer_size=1024 action_shape=(1024, 20, 4, 7) value_shape=(1024,)
+19:09:39|INFO|Algorithm created: 
+<plugrl_server.algorithm.dppo.dppo.DPPOAlgorithm object at 0x71de00414710>
+19:09:39|INFO|Agent Server is listening on 0.0.0.0:9421
+/home/guangzhao/zuogou/plugrl/plugrl-server/.venv/lib/python3.11/site-packages/torch/utils/data/dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+19:26:09|INFO|Checkpoint saved at step 20481 to /home/guangzhao/zuogou/plugrl/e27/experiments/e27-robomimic/results/dppo-rm/dppo/dppo-policy/dppo-rm-seed1/20481
+19:26:09|INFO|Stopping server as the algorithm signaled to stop.
+19:26:09|INFO|Shutdown started: aborting pending infer requests.
+19:26:09|INFO|Shutdown cleanup finished: pending_futures=1, drained_requests=1
+19:26:09|INFO|Shutdown closing 1 websocket connection(s).
+19:26:09|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 37862).
+19:26:09|INFO|WebSocket server closed.
+19:26:09|INFO|Scheduler task cancelled and cleaned up.

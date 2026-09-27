@@ -1,0 +1,32 @@
+# E27 pilots, 2026-09-25, guangzhao, before PROTOCOL.md was committed.
+# Each: run_cell.sh with SEEDS=0 and one iteration, the three cells at once.
+
+## Pilot 1, 19:00 - client at plugrl-env-client main (cbed9c4)
+
+fpo-rm      seed 0 finished rc=0, env_steps 4097
+fpodppo-rm  seed 0 finished rc=0, env_steps 4097
+dppo-rm     seed 0 finished rc=0, env_steps 4100
+
+Every client log: "Server signalled the end of the run; collection stopped
+after 0/... episodes" - no episode ended in 4,096 steps. square-img.json sets
+ignore_done: true and horizon: null; the client took `terminated` from
+robomimic's done, which is never true, and hard-coded `truncated` to False.
+Fixed in plugrl-env-client#9 (931ab56).
+
+Every client log also ends with, after the run:
+
+  Exception ignored in: <function MjRenderContext.__del__ ...>
+    File ".../robosuite/renderers/context/egl_context.py", line 149, in free
+      EGL.eglMakeCurrent(EGL_DISPLAY, EGL.EGL_NO_SURFACE, ...)
+  OpenGL.error.GLError: GLError(err = 12289, baseOperation = eglMakeCurrent, ...)
+
+robosuite freeing its EGL context at interpreter shutdown; nothing the run
+did depends on it.
+
+## Pilot 2, 19:06 - client at 931ab56
+
+fpo-rm      seed 0 finished rc=0, "collection stopped after 10/16384 episodes"
+fpodppo-rm  seed 0 finished rc=0, "collection stopped after 10/16384 episodes"
+dppo-rm     seed 0 finished rc=0, "collection stopped after 10/4096 episodes"
+
+Ten episodes of 400 steps in about 4,096: the horizon now ends them.
