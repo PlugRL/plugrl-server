@@ -4,8 +4,9 @@
 
 For every cell in cells.json: its status, experiments and note; the return
 per iteration of all three seeds, from their tensorboards; and what pick.py
-recorded about the clip, if it has run. The `vla` section of cells.json is
-copied as it stands, with its clips' notes merged the same way. Needs
+recorded about the clip, if it has run; and from commands.json, the two
+commands that trained it and the env-client environment it needs. The `vla`
+section of cells.json is copied as it stands, with the same additions. Needs
 tensorboard - the server's venv has it.
 """
 
@@ -90,6 +91,19 @@ def main() -> int:
     missing = sorted(wanted - dirs.keys())
     if missing:
         raise SystemExit(f"no experiment directory for {missing}")
+
+    # The two commands behind each cell, and the env-client environment each
+    # needs. Every cell must have them, and every script they cite must exist.
+    commands = json.loads((HERE / "commands.json").read_text())
+    for cell in cells + (vla or {}).get("cells", []):
+        train = commands["cells"].get(cell["id"])
+        if train is None:
+            raise SystemExit(f"{cell['id']}: no commands in commands.json")
+        if not (HERE.parent.parent / train["source"]).is_file():
+            raise SystemExit(f"{cell['id']}: {train['source']} does not exist")
+        if train["env"] not in commands["envs"]:
+            raise SystemExit(f"{cell['id']}: unknown env {train['env']}")
+        cell["train"] = train
     data = {
         "rows": spec["rows"],
         "columns": spec["columns"],
@@ -97,6 +111,8 @@ def main() -> int:
         "cells": cells,
         "vla": vla,
         "experiments": {e: dirs[e] for e in sorted(wanted, key=lambda e: int(e[1:]))},
+        "envs": commands["envs"],
+        "server_packages": commands["server_packages"],
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(
