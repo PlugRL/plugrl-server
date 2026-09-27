@@ -1,0 +1,86 @@
+{
+  "_about": "The two commands behind each cell, as its experiment ran them: one training server, one env client. Output and logging flags are left out, every run is shown with port 8000 and seed 0 (the experiments ran seeds 0-2), and the client's episode count is an upper bound only - the server ends every run. pi0.5's cluster paths and environment variables are placeholders; `source` is the script that ran it.",
+  "envs": {
+    "mujoco": {"extra": "mujoco", "packages": "gymnasium 1.x, mujoco 3.x (3.6 and 3.14 here)"},
+    "robomimic": {"extra": "robomimic", "packages": "robomimic 0.4, robosuite 1.4.1, mujoco 2.3.7"},
+    "libero": {"extra": "libero", "packages": "LIBERO, robosuite 1.4.1, mujoco 2.3.7"}
+  },
+  "server_packages": "torch; no MuJoCo, robosuite or gymnasium on any server that trained these cells",
+  "cells": {
+    "fpo-fpo-cheetah": {
+      "server": ["fpo-policy default fpo default", "--port 8000 --seed 0 --policy.device cpu", "--algo.buffer-size 4096 --algo.global-steps 409600"],
+      "client": ["mujoco-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-episodes 100000", "--env.name HalfCheetah-v5 --runner.replan-steps 1 --runner.seed 0"],
+      "env": "mujoco", "source": "experiments/e16-critic-restart/phase_a.sh"
+    },
+    "fpo-fpo-hopper": {
+      "server": ["fpo-policy default fpo default", "--port 8000 --seed 0 --policy.device cpu", "--policy.obs-dim 11 --policy.action-dim 3", "--algo.buffer-size 4096 --algo.global-steps 409600"],
+      "client": ["mujoco-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-episodes 100000", "--env.name Hopper-v5 --runner.replan-steps 1 --runner.seed 0"],
+      "env": "mujoco", "source": "experiments/e23-hopper/run.sh"
+    },
+    "fpo-fpo-walker": {
+      "server": ["fpo-policy default fpo default", "--port 8000 --seed 0 --policy.device cpu", "--policy.obs-dim 17 --policy.action-dim 6", "--algo.buffer-size 4096 --algo.global-steps 409600"],
+      "client": ["mujoco-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-episodes 100000", "--env.name Walker2d-v5 --runner.replan-steps 1 --runner.seed 0"],
+      "env": "mujoco", "source": "experiments/e24-coverage/run_cell.sh"
+    },
+    "fpo-fpo-square": {
+      "server": ["fpo-policy default fpo default", "--port 8000 --seed 0 --policy.device cpu", "--policy.obs-dim 23 --policy.action-dim 7", "--policy.state-keys robot0_eef_pos robot0_eef_quat robot0_gripper_qpos object", "--algo.buffer-size 4096 --algo.global-steps 81920"],
+      "client": ["robomimic-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-episodes 100000", "--env.name square-img --env.agentview-image-size 84 84", "--runner.replan-steps 1"],
+      "env": "robomimic", "source": "experiments/e27-robomimic/run_cell.sh"
+    },
+    "fpo-dppo-cheetah": {
+      "server": ["fpo-policy default dppo cheetah", "--port 8000 --seed 0 --policy.device cpu", "--algo.buffer-size 4096 --algo.train-itrs 100"],
+      "client": ["mujoco-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-episodes 100000", "--env.name HalfCheetah-v5 --runner.replan-steps 1 --runner.seed 0"],
+      "env": "mujoco", "source": "experiments/e18-dppo-normalised/run.sh"
+    },
+    "fpo-dppo-hopper": {
+      "server": ["fpo-policy default dppo hopper", "--port 8000 --seed 0 --policy.device cpu", "--policy.obs-dim 11 --policy.action-dim 3", "--algo.buffer-size 4096 --algo.train-itrs 100"],
+      "client": ["mujoco-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-episodes 100000", "--env.name Hopper-v5 --runner.replan-steps 1 --runner.seed 0"],
+      "env": "mujoco", "source": "experiments/e28-dppo-learns/run.sh"
+    },
+    "fpo-dppo-walker": {
+      "server": ["fpo-policy default dppo walker", "--port 8000 --seed 0 --policy.device cpu", "--policy.obs-dim 17 --policy.action-dim 6", "--algo.buffer-size 4096 --algo.train-itrs 100"],
+      "client": ["mujoco-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-episodes 100000", "--env.name Walker2d-v5 --runner.replan-steps 1 --runner.seed 0"],
+      "env": "mujoco", "source": "experiments/e28-dppo-learns/run.sh"
+    },
+    "fpo-dppo-square": {
+      "server": ["fpo-policy default dppo default", "--port 8000 --seed 0 --policy.device cpu", "--policy.obs-dim 23 --policy.action-dim 7", "--policy.state-keys robot0_eef_pos robot0_eef_quat robot0_gripper_qpos object", "--algo.buffer-size 4096 --algo.batch-size 256 --algo.train-itrs 20"],
+      "client": ["robomimic-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-episodes 100000", "--env.name square-img --env.agentview-image-size 84 84", "--runner.replan-steps 1"],
+      "env": "robomimic", "source": "experiments/e27-robomimic/run_cell.sh"
+    },
+    "dppo-dppo-cheetah": {
+      "server": ["dppo-policy cheetah dppo cheetah", "--port 8000 --seed 0 --policy.device cpu", "--algo.buffer-size 1024 --algo.batch-size 512 --algo.train-itrs 100"],
+      "client": ["mujoco-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-episodes 100000", "--env.name HalfCheetah-v5 --runner.replan-steps 4 --runner.seed 0"],
+      "env": "mujoco", "source": "experiments/e28-dppo-learns/run.sh"
+    },
+    "dppo-dppo-hopper": {
+      "server": ["dppo-policy hopper dppo hopper", "--port 8000 --seed 0 --policy.device cpu", "--algo.buffer-size 1024 --algo.batch-size 512 --algo.train-itrs 100"],
+      "client": ["mujoco-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-episodes 100000", "--env.name Hopper-v5 --runner.replan-steps 4 --runner.seed 0"],
+      "env": "mujoco", "source": "experiments/e28-dppo-learns/run.sh"
+    },
+    "dppo-dppo-walker": {
+      "server": ["dppo-policy walker dppo walker", "--port 8000 --seed 0 --policy.device cpu", "--algo.buffer-size 1024 --algo.batch-size 512 --algo.train-itrs 100"],
+      "client": ["mujoco-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-episodes 100000", "--env.name Walker2d-v5 --runner.replan-steps 4 --runner.seed 0"],
+      "env": "mujoco", "source": "experiments/e28-dppo-learns/run.sh"
+    },
+    "dppo-dppo-square": {
+      "server": ["dppo-policy default dppo default", "--port 8000 --seed 0 --policy.device cpu", "--policy.env-type robomimic --policy.env-name square", "--algo.buffer-size 1024 --algo.batch-size 256 --algo.train-itrs 20"],
+      "client": ["robomimic-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-episodes 100000", "--env.name square-img --env.agentview-image-size 84 84", "--runner.replan-steps 4"],
+      "env": "robomimic", "source": "experiments/e27-robomimic/run_cell.sh"
+    },
+    "pi0-base": {
+      "server": ["pi0-policy default eval default", "--port 8000 --policy.device cuda", "--policy.name pi05_libero --policy.checkpoint-path PI05_LIBERO_CHECKPOINT"],
+      "client": ["libero-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-procs 1 --num-episodes 50", "--env.task-suite-name libero_10 --env.task-id 8", "--env.no-randomize-initial-state --runner.replan-steps 5 --runner.seed 7"],
+      "env": "libero", "source": "experiments/e26-frozen-mlp/eval.sh"
+    },
+    "pi0-fpo": {
+      "server": ["pi0-policy default fpo default", "--port 8000 --seed 7 --policy.device cuda:0", "--policy.name pi05_libero --policy.checkpoint-path PI05_LIBERO_CHECKPOINT", "--algo.learning-rate 1e-5 --algo.clipping-epsilon 0.05", "--algo.num-updates-per-batch 4 --algo.n-samples-per-action 4", "--algo.buffer-size 4096 --algo.batch-size 8 --algo.global-steps 4096", "--algo.master-weights-device cuda:1"],
+      "client": ["libero-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-procs 10 --num-episodes 100000", "--env.task-suite-name libero_10 --env.task-id 8", "--env.randomize-initial-state --runner.replan-steps 5 --runner.seed 7"],
+      "env": "libero", "source": "experiments/e26-frozen-mlp/train.sh"
+    },
+    "pi0-dppo": {
+      "server": ["pi0-policy default dppo libero", "--port 8000 --seed 7 --policy.device cuda:0", "--policy.name pi05_libero --policy.checkpoint-path PI05_LIBERO_CHECKPOINT", "--algo.buffer-size 4096 --algo.batch-size 8 --algo.train-itrs 2"],
+      "client": ["libero-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-procs 10 --num-episodes 100000", "--env.task-suite-name libero_10 --env.task-id 8", "--env.randomize-initial-state --runner.replan-steps 5 --runner.seed 7"],
+      "env": "libero", "source": "experiments/e25-pi0-dppo/cell.sh"
+    }
+  }
+}
