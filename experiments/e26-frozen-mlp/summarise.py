@@ -37,7 +37,11 @@ def read_check() -> dict[str, dict[str, tuple[int, int, float]]]:
             line,
         )
         if m and current:
-            arms[current][m.group(1)] = (int(m.group(2)), int(m.group(3)), float(m.group(4)))
+            arms[current][m.group(1)] = (
+                int(m.group(2)),
+                int(m.group(3)),
+                float(m.group(4)),
+            )
     return arms
 
 
@@ -72,7 +76,9 @@ def main() -> int:
     for part, ok in v1_parts.items():
         print(f"    {'yes' if ok else 'NO ':3s}  {part}")
     v1 = all(v1_parts.values())
-    print(f"    {'PASS' if v1 else 'FAIL - frozen is not what it claims and is not read'}")
+    print(
+        f"    {'PASS' if v1 else 'FAIL - frozen is not what it claims and is not read'}"
+    )
 
     rows = read_rows()
     valid = {
