@@ -1,0 +1,71 @@
+P1  every arm runs end to end
+    base     HOLDS   (24 min)
+    chunk4   HOLDS   (8 min)
+    steps20  HOLDS   (31 min)
+    net512   HOLDS   (36 min)
+    all      HOLDS   (16 min)
+
+V1  the manipulation: each arm's logged entropy, every iteration
+    base     expected +0.3826, logged 0.3828 to 0.3828  PASS
+    chunk4   expected +0.3826, logged 0.3828 to 0.3828  PASS
+    steps20  expected -0.0040, logged -0.0040 to -0.0040  PASS
+    net512   expected +0.3826, logged 0.3828 to 0.3828  PASS
+    all      expected -0.0040, logged -0.0040 to -0.0040  PASS
+
+gains (closes most of the gap: at least +200 on 2 of 3)
+    base     +73.2, +88.8, +106.1         does not close
+    chunk4   +48.1, +60.1, +45.2          does not close
+    steps20  +64.2, +84.9, +100.4         does not close
+    net512   +333.8, +333.7, +339.4       closes
+    all      +741.9, +852.8, +968.4       closes
+
+P2  the network closes most of the gap: net512 does
+    HOLDS
+
+P3  neither the chunk nor the step count does: chunk4 and steps20 do not
+    HOLDS
+
+reported: the Hopper bar - iterations 91-100 at least 500 on 2 of 3
+    base     89.9, 110.0, 125.7           0 of 3  does not
+    chunk4   67.6, 77.8, 63.2             0 of 3  does not
+    steps20  81.0, 107.9, 120.6           0 of 3  does not
+    net512   351.9, 351.6, 356.6          0 of 3  does not
+    all      761.8, 872.6, 989.3          3 of 3  meets it
+
+reported: update diagnostics, mean over iterations 1-10 and 91-100
+    base     kl        2.50e-08 -> 1.33e-06
+    base     clipfrac  0.00e+00 -> 8.57e-04
+    chunk4   kl        8.52e-09 -> 5.32e-07
+    chunk4   clipfrac  0.00e+00 -> 7.68e-05
+    steps20  kl        1.79e-08 -> 9.17e-07
+    steps20  clipfrac  0.00e+00 -> 4.86e-04
+    net512   kl        1.01e-05 -> 8.57e-06
+    net512   clipfrac  1.41e-02 -> 1.82e-02
+    all      kl        5.43e-07 -> 3.48e-06
+    all      clipfrac  1.28e-04 -> 3.05e-03
+
+reported: the actor's relative movement, iteration 20 to 100, per seed
+    base     40.43%, 42.73%, 43.88%
+    chunk4   41.55%, 42.00%, 43.05%
+    steps20  40.60%, 42.07%, 42.86%
+    net512   18.35%, 19.38%, 20.03%
+    all      22.19%, 23.55%, 22.95%
+
+reported: first iteration and mean of the last ten, return and episode length
+    base     seed 0  return    16.7 ->    89.9   length   22.7 ->   57.2
+    base     seed 1  return    21.2 ->   110.0   length   23.6 ->   63.2
+    base     seed 2  return    19.6 ->   125.7   length   23.8 ->   76.2
+    chunk4   seed 0  return    19.5 ->    67.6   length   24.2 ->   47.1
+    chunk4   seed 1  return    17.7 ->    77.8   length   22.8 ->   55.1
+    chunk4   seed 2  return    18.0 ->    63.2   length   22.5 ->   45.7
+    steps20  seed 0  return    16.9 ->    81.0   length   22.5 ->   52.6
+    steps20  seed 1  return    23.0 ->   107.9   length   24.2 ->   62.3
+    steps20  seed 2  return    20.2 ->   120.6   length   23.4 ->   73.4
+    net512   seed 0  return    18.1 ->   351.9   length   23.2 ->  138.4
+    net512   seed 1  return    18.0 ->   351.6   length   22.4 ->  137.8
+    net512   seed 2  return    17.2 ->   356.6   length   22.4 ->  132.4
+    all      seed 0  return    19.9 ->   761.8   length   24.2 ->  627.3
+    all      seed 1  return    19.8 ->   872.6   length   23.8 ->  830.4
+    all      seed 2  return    20.9 ->   989.3   length   25.0 ->  908.8
+
+wrote /home/guangzhao/zuogou/plugrl/e30/experiments/e30-fpo-dppo-factors/summary.tsv
