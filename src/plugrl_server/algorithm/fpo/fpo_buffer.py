@@ -16,7 +16,7 @@ from plugrl_server.policy.base_policy_gradient_flow_policy import (
 )
 from plugrl_server.policy.state import PolicyTrainState
 
-from .utils import compute_cfm_loss
+from .utils import ChunkReduction, compute_cfm_loss
 
 TorchTree: TypeAlias = torch.Tensor | dict[str, "TorchTree"]
 
@@ -96,6 +96,7 @@ class FPOBuffer(GAEBuffer):
         *,
         batch_size: int,
         output_mode: str,
+        reduction: ChunkReduction = ChunkReduction(),
     ) -> None:
         if self.idx == 0:
             return
@@ -118,6 +119,7 @@ class FPOBuffer(GAEBuffer):
                 loss_eps=loss_eps[i:j],
                 loss_t=loss_t[i:j],
                 obs_cache=obs_cache,
+                reduction=reduction,
             )
             self.initial_cfm_loss[i:j] = initial_cfm_loss.detach().cpu().numpy()
 

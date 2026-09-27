@@ -72,6 +72,24 @@ class FPOAlgoConfig(BaseAlgoConfig):
     n_samples_per_action: int = 8
     discretize_t_for_training: bool = True
     average_losses_before_exp: bool = True
+    # How each Monte Carlo sample's squared error over an action chunk becomes
+    # the loss its ratio compares. Unset, FPO averages every element of the
+    # chunk. FPO++ (Yi, Choi et al. 2026; amazon-far/fpo-control), fine-tuning
+    # pretrained flow policies, takes the mean over action dimensions and sums
+    # it over the chunk's steps, all of which it executes.
+    #
+    # For pi0.5 on LIBERO the average ran over 10 steps of 32 dimensions; the
+    # environment uses 7 and the client replans after 5, so 89% of it was
+    # padding or actions never taken. E26's first iteration raised that
+    # average from 0.0005 to 0.142 inside a clip of 0.05.
+    cfm_loss_steps: int | None = None  # only a chunk's first this-many steps
+    cfm_loss_dims: int | None = None  # only the first this-many action dims
+    cfm_loss_sum_over_steps: bool = False
+    # One ratio per Monte Carlo sample, each clipped on its own, with the
+    # log-ratio clamped straight-through at +-5: FPO++'s per-sample ratio.
+    # Off keeps one ratio per action, the samples averaged as
+    # `average_losses_before_exp` says and the difference clamped at +-3.
+    ratio_per_sample: bool = False
     save_interval: int = 10
     # A checkpoint to start this run from, and how much of it to take.
     #
