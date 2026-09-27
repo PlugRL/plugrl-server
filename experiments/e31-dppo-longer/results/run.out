@@ -1,0 +1,8 @@
+start 2026-09-27 04:42:08
+code:   f8ffec0 (src /home/guangzhao/zuogou/plugrl/e31/src)
+client: 931ab56
+iters:  300
+end   2026-09-27 05:32:02
+dppo-hopper  failed seeds: 0
+dppo-walker  failed seeds: 0
+E31_DONE
