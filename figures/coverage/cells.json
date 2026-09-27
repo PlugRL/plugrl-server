@@ -1,5 +1,5 @@
 {
-  "_about": "The coverage figure's cells. `runs` is relative to the machine's PlugRL home and takes {seed}; `seed` is the one whose mean return over its last ten iterations is the median of the three (ties: the lowest seed). `status` is what the experiments established, not what the video shows.",
+  "_about": "The coverage figure's cells. `runs` is relative to the machine's PlugRL home and takes {seed}; `seed` is the one whose mean return over its last ten iterations is the median of the three (ties: the lowest seed). `seeds`, when present, are the three the experiment ran; otherwise 0-2. `status` is what the experiments established, not what the video shows.",
   "rows": [
     {"id": "fpo-fpo", "label": "fpo-policy · FPO"},
     {"id": "fpo-dppo", "label": "fpo-policy · DPPO"},
@@ -63,7 +63,7 @@
       "id": "fpo-dppo-hopper", "row": "fpo-dppo", "column": "hopper",
       "status": "learns", "experiments": ["E28", "E29", "E30", "E33"],
       "note": "998–1,037 with dppo-policy's structure, mostly by staying up", "note_zh": "换成 dppo-policy 的结构后 998–1037，主要靠站住不倒",
-      "runs": "e33/experiments/e33-fpo-dppo-structure/results/fpo-hopper/dppo/fpo-policy/fpo-hopper-seed{seed}", "seed": 3,
+      "runs": "e33/experiments/e33-fpo-dppo-structure/results/fpo-hopper/dppo/fpo-policy/fpo-hopper-seed{seed}", "seed": 3, "seeds": [3, 4, 5],
       "server": ["fpo-policy", "default", "eval", "default", "--policy.obs-dim", "11", "--policy.action-dim", "3",
                  "--policy.action-horizon", "4", "--policy.flow-steps", "20", "--policy.hidden-dims", "512", "512", "512"],
       "client": ["mujoco-v1", "--env.name", "Hopper-v5", "--env.render"],

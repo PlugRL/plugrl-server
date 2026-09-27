@@ -33,8 +33,8 @@
       "env": "mujoco", "source": "experiments/e33-fpo-dppo-structure/run.sh"
     },
     "fpo-dppo-hopper": {
-      "server": ["fpo-policy default dppo hopper", "--port 8000 --seed 3 --policy.device cpu", "--policy.obs-dim 11 --policy.action-dim 3", "--policy.action-horizon 4 --policy.flow-steps 20 --policy.hidden-dims 512 512 512", "--algo.sampling-noise-level 1.0 --algo.logprob-noise-level 1.0", "--algo.buffer-size 1024 --algo.batch-size 512 --algo.train-itrs 300"],
-      "client": ["mujoco-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-episodes 100000", "--env.name Hopper-v5 --runner.replan-steps 4 --runner.seed 3"],
+      "server": ["fpo-policy default dppo hopper", "--port 8000 --seed 0 --policy.device cpu", "--policy.obs-dim 11 --policy.action-dim 3", "--policy.action-horizon 4 --policy.flow-steps 20 --policy.hidden-dims 512 512 512", "--algo.sampling-noise-level 1.0 --algo.logprob-noise-level 1.0", "--algo.buffer-size 1024 --algo.batch-size 512 --algo.train-itrs 300"],
+      "client": ["mujoco-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-episodes 100000", "--env.name Hopper-v5 --runner.replan-steps 4 --runner.seed 0"],
       "env": "mujoco", "source": "experiments/e33-fpo-dppo-structure/run.sh"
     },
     "fpo-dppo-walker": {
