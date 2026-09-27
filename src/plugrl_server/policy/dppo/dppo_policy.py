@@ -5,6 +5,7 @@ except ImportError:
         'dppo is not installed. Please install it with pip install "plugrl-server[dppo]".'
     )
 
+import copy
 import pathlib
 import dataclasses
 import omegaconf
@@ -44,6 +45,11 @@ class DPPOPolicyConfig(BasePolicyGradientDiffusionPolicyConfig):
     env_type: str = "gym"
     env_name: str = "hopper-medium-v2"
     checkpoint_path: pathlib.Path | None = None
+    # Fine-tune only the chain's last this-many denoising steps; the earlier
+    # ones run a frozen copy of the network as loaded, and only the fine-tuned
+    # steps are recorded as PPO samples. DPPO's robomimic fine-tuning uses 10
+    # of 20 (`ft_denoising_steps`). None fine-tunes every step.
+    ft_denoising_steps: int | None = None
     critic: DPPOCriticObsConfig = dataclasses.field(default_factory=DPPOCriticObsConfig)
 
 
@@ -115,6 +121,18 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         self.action_horizon = self.actor.horizon_steps
         self.num_denoising_steps = self.actor.denoising_steps
 
+        ft = self.config.ft_denoising_steps
+        if ft is not None and not 0 < ft <= self.num_denoising_steps:
+            raise ValueError(
+                f"ft_denoising_steps={ft}, but the chain has "
+                f"{self.num_denoising_steps} denoising steps"
+            )
+        # Taken after the checkpoint is loaded: the early steps stay the
+        # pretrained policy's, as in DPPO's VPGDiffusion.
+        self.actor_frozen: torch.nn.Module | None = None
+        if ft is not None and ft < self.num_denoising_steps:
+            self.actor_frozen = copy.deepcopy(self.actor).requires_grad_(False)
+
         normalization_path = (
             PACKAGE_DIR
             / "meta"
@@ -127,6 +145,33 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         self.normalization = np.load(normalization_path)
 
         self.to(self.device)
+
+    @property
+    def num_recorded_denoising_steps(self) -> int:
+        return self.config.ft_denoising_steps or self.num_denoising_steps
+
+    def _mean_logvar(
+        self, x: torch.Tensor, t: torch.Tensor, cond: TorchTree
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """DDPM step t's mean and log-variance, from the frozen copy for t >= ft."""
+        if self.actor_frozen is None:
+            return self.actor.p_mean_var(x=x, t=t, cond=cond)
+        frozen = t >= self.config.ft_denoising_steps
+        if not frozen.any():
+            return self.actor.p_mean_var(x=x, t=t, cond=cond)
+        with torch.no_grad():
+            frozen_mean, frozen_logvar = self.actor_frozen.p_mean_var(
+                x=x, t=t, cond=cond
+            )
+        if frozen.all():
+            return frozen_mean, frozen_logvar
+        # Neither sampling nor DPPO's loss mixes the two in one batch.
+        mean, logvar = self.actor.p_mean_var(x=x, t=t, cond=cond)
+        pick = frozen.view(-1, *([1] * (x.dim() - 1)))
+        return (
+            torch.where(pick, frozen_mean, mean),
+            torch.where(pick, frozen_logvar, logvar),
+        )
 
     def _get_timesteps(self) -> torch.Tensor:
         timesteps = list(reversed(range(self.actor.denoising_steps)))
@@ -196,20 +241,19 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         device = self.actor.betas.device
         t = t.to(device)
         if b_cond != b:
-            assert b == b_cond * self.actor.denoising_steps
+            steps = self.num_recorded_denoising_steps
+            assert b == b_cond * steps
             cond = torch_tree_repeat_interleave(
                 torch_tree_to_device(cond, device),
-                self.actor.denoising_steps,
+                steps,
                 dim=0,
             )
         else:
             cond = torch_tree_to_device(cond, device)
         x = x.to(device)
 
-        mean_logvar: Tuple[torch.Tensor, torch.Tensor] = self.actor.p_mean_var(
-            x=x,
-            t=t.long(),
-            cond=cond,
+        mean_logvar: Tuple[torch.Tensor, torch.Tensor] = self._mean_logvar(
+            x, t.long(), cond
         )
         mean, logvar = mean_logvar
         if sampling_noise_level is not None:
