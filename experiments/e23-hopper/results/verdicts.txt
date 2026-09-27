@@ -1,0 +1,21 @@
+P1  the platform completes the runs
+    seed 0: 100 iterations, checkpoint near 409600: True, traceback: False, client rc 0  ok
+    seed 1: 100 iterations, checkpoint near 409600: True, traceback: False, client rc 0  ok
+    seed 2: 100 iterations, checkpoint near 409600: True, traceback: False, client rc 0  ok
+    HOLDS
+
+P3  wall clock under 150 minutes
+    75.8 minutes  HOLDS
+
+P2  FPO learns Hopper: end >= 500 on at least 2 of 3
+    seed 0: start     16.3   end   1587.1   >= 500
+    seed 1: start     19.1   end   2005.8   >= 500
+    seed 2: start     14.5   end   1776.1   >= 500
+    HOLDS  (3 of 3 seeds)
+
+reported: gain, episode length, best iteration
+    seed    start      end     gain   length at start   length at end   best
+       0     16.3   1587.1  +1570.8              21.0           555.1   2320.3
+       1     19.1   2005.8  +1986.7              22.4           716.6   2575.4
+       2     14.5   1776.1  +1761.6              20.4           598.4   2316.0
+    seeds whose end is 1,000 or more: [0, 1, 2]

@@ -1,0 +1,13 @@
+server:  /d/75128/Desktop/plugrl-work/plugrl-server/.claude/worktrees/fix-pi0-image-mask-batching/.venv/Scripts/python.exe
+client:  /d/75128/Desktop/plugrl-work/plugrl-env-client/.venv/Scripts/python.exe  (/d/75128/Desktop/plugrl-work/plugrl-env-client)
+out:     /d/75128/Desktop/plugrl-work/plugrl-server/.claude/worktrees/fix-pi0-image-mask-batching/experiments/e23-hopper/results
+steps:   409600  seeds: 0 1 2
+start 2026-09-25 15:42:57
+      0 [main] bash 94695 dofork: child -1 - forked process 35556 died unexpectedly, retry 0, exit code 0xC000026B, errno 11
+experiments/e23-hopper/run.sh: fork: retry: Resource temporarily unavailable
+      0 [main] bash 94605 dofork: child -1 - forked process 35860 died unexpectedly, retry 0, exit code 0xC000026B, errno 11
+experiments/e23-hopper/run.sh: fork: retry: Resource temporarily unavailable
+1046136 [main] bash 94695 dofork: child -1 - forked process 26060 died unexpectedly, retry 0, exit code 0xC000026B, errno 11
+experiments/e23-hopper/run.sh: fork: retry: Resource temporarily unavailable
+1016140 [main] bash 94605 dofork: child -1 - forked process 20784 died unexpectedly, retry 0, exit code 0xC000026B, errno 11
+experiments/e23-hopper/run.sh: fork: retry: Resource temporarily unavailable
