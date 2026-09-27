@@ -17,9 +17,10 @@ In FPO's own configurations it often does not:
                          trunk and the disjoint critic and nothing else
 
 Measured on the bandit: coefficients 0.25, 1.0 and 4.0 give byte-identical
-results across five seeds. The apparent effect below about 0.05 is Adam's
-epsilon becoming comparable to the scaled second moment, not the critic
-learning differently.
+results across five seeds on the machine that measured it - identical to
+float32 rounding is what holds everywhere (see the test below). The apparent
+effect below about 0.05 is Adam's epsilon becoming comparable to the scaled
+second moment, not the critic learning differently.
 
 This is not a behaviour change. Redefining the knob would silently alter what
 it means for anyone reading it, and nothing can depend on it today because it
@@ -70,20 +71,32 @@ def test_the_critic_receives_no_gradient_from_the_policy_loss():
 
 
 def test_scaling_the_value_loss_changes_nothing():
-    """0.25, 1.0 and 4.0 give the same weights, to the bit."""
+    """0.25, 1.0 and 4.0 give the same weights, to float32 rounding.
+
+    Not to the bit. The factors are powers of two, so the scaled gradients
+    and moments are exact, but `eps` is added to sqrt(v) unscaled and leaves
+    a trace in the last bits of any element whose gradient is within a few
+    orders of it. Which elements, and whether the trace survives rounding,
+    depends on the platform's kernels: after #86 changed this toy's returns,
+    one parameter came out a few bits apart on CI and identical on Windows
+    and on a Linux workstation, all on torch 2.7.1.
+    """
     baseline = _run(0.25)
     for coeff in (1.0, 4.0):
         other = _run(coeff)
         assert len(baseline) == len(other)
-        differing = [
-            i for i, (a, b) in enumerate(zip(baseline, other)) if not torch.equal(a, b)
-        ]
-        assert not differing, (
-            f"value_loss_coeff={coeff} changed {len(differing)} parameters "
-            "against 0.25. If this starts failing, either the critic is no "
-            "longer disjoint or the optimizer is no longer scale-invariant, "
-            "and the docstring above needs rewriting rather than the test."
-        )
+        for i, (a, b) in enumerate(zip(baseline, other)):
+            torch.testing.assert_close(
+                b,
+                a,
+                msg=lambda m, i=i: (
+                    f"value_loss_coeff={coeff} moved parameter {i} against 0.25 "
+                    f"beyond float32 rounding: {m} If this fails, either the "
+                    "critic is no longer disjoint or the optimizer is no "
+                    "longer scale-invariant, and the docstring above needs "
+                    "rewriting rather than the test."
+                ),
+            )
 
 
 def test_a_learning_rate_is_not_cancelled():
