@@ -340,22 +340,22 @@ class GAEBuffer(RolloutBuffer):
 
         for step in reversed(range(self.idx)):
             next_idx = self.next_indices[step]
+            # Whether this frame's own transition ended its episode. The
+            # servers pass a step's `terminated`/`truncated` as the step
+            # before it's outcome - a frame carrying them begins an episode -
+            # and `next_*` as its own, and they chain the first frame of an
+            # episode to the last of the one before. Reading the frame's own
+            # `dones` here, as this did from 48042e5 on, ended every episode
+            # one step late.
+            if self.treat_truncated_as_done:
+                terminated = float(self.next_done[step])
+                truncated = 0.0
+            else:
+                terminated = float(self.next_terminated[step])
+                truncated = float(self.next_truncated[step])
             if next_idx == 0:
                 next_values = self.last_values[step]
                 next_gae_lam = 0
-                if self.treat_truncated_as_done:
-                    if self.dones[step]:
-                        terminated = float(self.dones[step])
-                    else:
-                        terminated = float(self.next_done[step])
-                    truncated = 0.0
-                else:
-                    if self.dones[step]:
-                        terminated = float(self.terminated[step])
-                        truncated = float(self.truncated[step])
-                    else:
-                        terminated = float(self.next_terminated[step])
-                        truncated = float(self.next_truncated[step])
                 # check last values not overflow or abs extreme large
                 assert abs(next_values).max() < 1e6, (
                     f"last_values overflow: {next_values}"
@@ -363,12 +363,6 @@ class GAEBuffer(RolloutBuffer):
             else:
                 next_values = self.values[next_idx]
                 next_gae_lam = self.advantages[next_idx]
-                if self.treat_truncated_as_done:
-                    terminated = float(self.dones[step])
-                    truncated = 0.0
-                else:
-                    terminated = float(self.terminated[step])
-                    truncated = float(self.truncated[step])
             next_non_terminal = 1.0 - terminated
             trunc_mask = 1.0 - truncated
             delta = (
