@@ -1,0 +1,11 @@
+cell:    ppo-walker = gaussian-policy/default x ppo/default x Walker2d-v5
+iters:   488 x 2048  batch: 64  replan: 1  seeds: 0 1 2
+extra:   algo none; policy --policy.obs-dim 17 --policy.action-dim 6
+out:     /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker
+start 2026-09-27 18:05:38
+seed 1 finished rc=0 at 18:33:35
+seed 0 finished rc=0 at 18:33:55
+seed 2 finished rc=0 at 18:34:01
+end   2026-09-27 18:34:01
+failed seeds: 0
+CELL_DONE ppo-walker

@@ -1,0 +1,50 @@
+P1  every cell runs end to end
+    ppo-cheetah  HalfCheetah-v5  HOLDS   (28 min)
+    ppo-hopper   Hopper-v5       HOLDS   (28 min)
+    ppo-walker   Walker2d-v5     HOLDS   (28 min)
+
+V1  every iteration learned at CleanRL's annealed rate
+    ppo-cheetah  0.0003 to 6.15e-07  PASS
+    ppo-hopper   0.0003 to 6.15e-07  PASS
+    ppo-walker   0.0003 to 6.15e-07  PASS
+
+status  learns: Hopper, Walker2d 479-488 >= 500; HalfCheetah 479-488 minus the first >= +200; on 2 of 3
+    ppo-cheetah  +1848.2, +1827.1, +1951.7    3 of 3  -> learns
+    ppo-hopper   2298.7, 2207.4, 2181.3       3 of 3  -> learns
+    ppo-walker   2957.2, 3260.0, 3154.2       3 of 3  -> learns
+
+P2  gaussian-policy learns Hopper under ppo
+    HOLDS
+
+P3  gaussian-policy learns Walker2d under ppo
+    HOLDS
+
+P4  gaussian-policy learns HalfCheetah under ppo
+    HOLDS
+
+reported: mean return over iterations 91-100, 241-250 and 479-488, beside CleanRL's on the -v4 task
+    ppo-cheetah  seed 0     744.4    1322.5    1512.9
+    ppo-cheetah  seed 1     999.0    1348.1    1442.5
+    ppo-cheetah  seed 2     925.5    1428.5    1557.8
+    ppo-cheetah  CleanRL  1442.64 +/- 46.03
+    ppo-hopper   seed 0    1623.2    2242.8    2298.7
+    ppo-hopper   seed 1    1297.1    2486.9    2207.4
+    ppo-hopper   seed 2     920.3    2440.6    2181.3
+    ppo-hopper   CleanRL  2382.86 +/- 271.74
+    ppo-walker   seed 0     514.9    2747.0    2957.2
+    ppo-walker   seed 1     476.6    2037.8    3260.0
+    ppo-walker   seed 2     652.6    3344.2    3154.2
+    ppo-walker   CleanRL  2287.95 +/- 571.78
+
+reported: first iteration and mean of the last ten, return and episode length
+    ppo-cheetah  seed 0  return   -335.2 ->   1512.9   length 1000.0 -> 1000.0
+    ppo-cheetah  seed 1  return   -384.6 ->   1442.5   length 1000.0 -> 1000.0
+    ppo-cheetah  seed 2  return   -393.9 ->   1557.8   length 1000.0 -> 1000.0
+    ppo-hopper   seed 0  return     12.1 ->   2298.7   length   17.6 ->  636.3
+    ppo-hopper   seed 1  return     15.2 ->   2207.4   length   19.5 ->  585.8
+    ppo-hopper   seed 2  return     14.2 ->   2181.3   length   18.7 ->  600.9
+    ppo-walker   seed 0  return     -0.7 ->   2957.2   length   19.1 ->  685.8
+    ppo-walker   seed 1  return     -1.8 ->   3260.0   length   17.7 ->  754.6
+    ppo-walker   seed 2  return     -0.6 ->   3154.2   length   18.9 ->  792.4
+
+wrote /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/summary.tsv

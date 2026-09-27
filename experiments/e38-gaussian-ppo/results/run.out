@@ -1,0 +1,9 @@
+start 2026-09-27 18:04:58
+code:   2f70733 (src /home/guangzhao/zuogou/plugrl/e38/src)
+client: 931ab56
+iters:  488  seeds: 0 1 2
+end   2026-09-27 18:34:01
+ppo-cheetah  failed seeds: 0
+ppo-hopper   failed seeds: 0
+ppo-walker   failed seeds: 0
+E38_DONE

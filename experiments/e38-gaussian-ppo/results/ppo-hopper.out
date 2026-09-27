@@ -1,0 +1,11 @@
+cell:    ppo-hopper = gaussian-policy/default x ppo/default x Hopper-v5
+iters:   488 x 2048  batch: 64  replan: 1  seeds: 0 1 2
+extra:   algo none; policy --policy.obs-dim 11 --policy.action-dim 3
+out:     /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper
+start 2026-09-27 18:05:18
+seed 0 finished rc=0 at 18:32:53
+seed 2 finished rc=0 at 18:32:55
+seed 1 finished rc=0 at 18:33:02
+end   2026-09-27 18:33:02
+failed seeds: 0
+CELL_DONE ppo-hopper

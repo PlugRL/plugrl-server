@@ -1,0 +1,43 @@
+18:05:51|INFO|plugrl_server version: 0.1.0
+18:05:51|INFO|Algorithm: ppo, Config: PPOAlgoConfig(global_steps=999424, learning_rate=0.0003, anneal_lr=True, buffer_size=2048, batch_size=64, update_epochs=10, gamma=0.99, gae_lambda=0.95, norm_adv=True, clip_coef=0.2, clip_vloss=True, ent_coef=0.0, vf_coef=0.5, max_grad_norm=0.5, target_kl=None, normalize_rewards=True, reward_clip=10.0, train_itrs=488, save_interval=20)
+18:05:51|INFO|Policy: gaussian-policy, Config: GaussianPolicyConfig(algo='ppo', device=device(type='cpu'), obs_dim=17, action_dim=6, hidden_dims=(64, 64), state_keys=('obs',), normalize_observations=True, obs_clip=10.0, freeze_obs_stats=False, action_clip=1.0)
+18:05:51|INFO|Seeded python, numpy and torch with 2. One env client is then reproducible; several are not, because batch composition depends on when their requests arrive.
+18:05:51|INFO|Checkpoint Manager created: 
+<plugrl_server.common.checkpoint_manager.CheckpointManager object at 0x7fb29a411450> at /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2
+18:05:51|INFO|Policy created...
+18:05:51|INFO|Initialized RolloutBuffer buffer_size=2048 action_shape=(2048, 6) value_shape=(2048,)
+18:05:51|INFO|Algorithm created: 
+<plugrl_server.algorithm.ppo.ppo.PPOAlgorithm object at 0x7fb29a496210>
+18:05:51|INFO|Agent Server is listening on 0.0.0.0:9962
+18:06:56|INFO|Checkpoint saved at step 40961 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/40961
+18:08:04|INFO|Checkpoint saved at step 81921 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/81921
+18:09:16|INFO|Checkpoint saved at step 122881 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/122881
+18:10:36|INFO|Checkpoint saved at step 163841 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/163841
+18:11:56|INFO|Checkpoint saved at step 204801 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/204801
+18:13:11|INFO|Checkpoint saved at step 245761 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/245761
+18:14:19|INFO|Checkpoint saved at step 286721 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/286721
+18:15:25|INFO|Checkpoint saved at step 327681 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/327681
+18:16:29|INFO|Checkpoint saved at step 368641 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/368641
+18:17:34|INFO|Checkpoint saved at step 409601 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/409601
+18:18:37|INFO|Checkpoint saved at step 450561 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/450561
+18:19:40|INFO|Checkpoint saved at step 491521 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/491521
+18:20:45|INFO|Checkpoint saved at step 532481 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/532481
+18:21:53|INFO|Checkpoint saved at step 573441 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/573441
+18:23:12|INFO|Checkpoint saved at step 614401 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/614401
+18:24:32|INFO|Checkpoint saved at step 655361 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/655361
+18:25:49|INFO|Checkpoint saved at step 696321 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/696321
+18:26:57|INFO|Checkpoint saved at step 737281 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/737281
+18:28:04|INFO|Checkpoint saved at step 778241 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/778241
+18:29:08|INFO|Checkpoint saved at step 819201 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/819201
+18:30:12|INFO|Checkpoint saved at step 860161 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/860161
+18:31:15|INFO|Checkpoint saved at step 901121 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/901121
+18:32:19|INFO|Checkpoint saved at step 942081 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/942081
+18:33:28|INFO|Checkpoint saved at step 983041 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/983041
+18:34:01|INFO|Checkpoint saved at step 999425 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-walker/ppo/gaussian-policy/ppo-walker-seed2/999425
+18:34:01|INFO|Stopping server as the algorithm signaled to stop.
+18:34:01|INFO|Shutdown started: aborting pending infer requests.
+18:34:01|INFO|Shutdown cleanup finished: pending_futures=1, drained_requests=1
+18:34:01|INFO|Shutdown closing 1 websocket connection(s).
+18:34:01|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 53540).
+18:34:01|INFO|WebSocket server closed.
+18:34:01|INFO|Scheduler task cancelled and cleaned up.
