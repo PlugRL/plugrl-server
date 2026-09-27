@@ -51,30 +51,33 @@
     },
     {
       "id": "fpo-dppo-cheetah", "row": "fpo-dppo", "column": "cheetah",
-      "status": "flat", "experiments": ["E17", "E18"],
-      "note": "no learning in 409,600 steps", "note_zh": "409,600 步内没学会",
-      "runs": "coverage/stage/e18/halfcheetah-seed{seed}", "seed": 1,
-      "server": ["fpo-policy", "default", "eval", "default", "--policy.obs-dim", "17", "--policy.action-dim", "6"],
+      "status": "learns", "experiments": ["E17", "E18", "E30", "E33"],
+      "note": "+1,294 to +1,411 with dppo-policy's structure", "note_zh": "换成 dppo-policy 的结构后 +1294 到 +1411",
+      "runs": "e33/experiments/e33-fpo-dppo-structure/results/fpo-cheetah/dppo/fpo-policy/fpo-cheetah-seed{seed}", "seed": 0,
+      "server": ["fpo-policy", "default", "eval", "default", "--policy.obs-dim", "17", "--policy.action-dim", "6",
+                 "--policy.action-horizon", "4", "--policy.flow-steps", "20", "--policy.hidden-dims", "512", "512", "512"],
       "client": ["mujoco-v1", "--env.name", "HalfCheetah-v5", "--env.render"],
-      "replan": 1, "native_fps": 20
+      "replan": 4, "native_fps": 20
     },
     {
       "id": "fpo-dppo-hopper", "row": "fpo-dppo", "column": "hopper",
-      "status": "flat", "experiments": ["E28", "E29"],
-      "note": "no learning; with 10× the noise, +74 to +106", "note_zh": "没学会；噪声放大 10 倍后 +74 到 +106",
-      "runs": "e28/experiments/e28-dppo-learns/results/fpodppo-hopper/dppo/fpo-policy/fpodppo-hopper-seed{seed}", "seed": 0,
-      "server": ["fpo-policy", "default", "eval", "default", "--policy.obs-dim", "11", "--policy.action-dim", "3"],
+      "status": "learns", "experiments": ["E28", "E29", "E30", "E33"],
+      "note": "998–1,037 with dppo-policy's structure, mostly by staying up", "note_zh": "换成 dppo-policy 的结构后 998–1037，主要靠站住不倒",
+      "runs": "e33/experiments/e33-fpo-dppo-structure/results/fpo-hopper/dppo/fpo-policy/fpo-hopper-seed{seed}", "seed": 3,
+      "server": ["fpo-policy", "default", "eval", "default", "--policy.obs-dim", "11", "--policy.action-dim", "3",
+                 "--policy.action-horizon", "4", "--policy.flow-steps", "20", "--policy.hidden-dims", "512", "512", "512"],
       "client": ["mujoco-v1", "--env.name", "Hopper-v5", "--env.render"],
-      "replan": 1, "native_fps": 125
+      "replan": 4, "native_fps": 125
     },
     {
       "id": "fpo-dppo-walker", "row": "fpo-dppo", "column": "walker",
-      "status": "flat", "experiments": ["E28"],
-      "note": "no learning in 409,600 steps", "note_zh": "409,600 步内没学会",
-      "runs": "e28/experiments/e28-dppo-learns/results/fpodppo-walker/dppo/fpo-policy/fpodppo-walker-seed{seed}", "seed": 2,
-      "server": ["fpo-policy", "default", "eval", "default", "--policy.obs-dim", "17", "--policy.action-dim", "6"],
+      "status": "learns", "experiments": ["E28", "E33"],
+      "note": "283–569 with dppo-policy's structure; 2 of 3 seeds past the bar", "note_zh": "换成 dppo-policy 的结构后 283–569，3 个种子里 2 个过线",
+      "runs": "e33/experiments/e33-fpo-dppo-structure/results/fpo-walker/dppo/fpo-policy/fpo-walker-seed{seed}", "seed": 0,
+      "server": ["fpo-policy", "default", "eval", "default", "--policy.obs-dim", "17", "--policy.action-dim", "6",
+                 "--policy.action-horizon", "4", "--policy.flow-steps", "20", "--policy.hidden-dims", "512", "512", "512"],
       "client": ["mujoco-v1", "--env.name", "Walker2d-v5", "--env.render"],
-      "replan": 1, "native_fps": 125
+      "replan": 4, "native_fps": 125
     },
     {
       "id": "fpo-dppo-square", "row": "fpo-dppo", "column": "square",
@@ -97,18 +100,18 @@
     },
     {
       "id": "dppo-dppo-hopper", "row": "dppo-dppo", "column": "hopper",
-      "status": "rising", "experiments": ["E28"],
-      "note": "11–16 → 276–430, still rising; the bar is 500", "note_zh": "从 11–16 升到 276–430，还在涨；线是 500",
-      "runs": "e28/experiments/e28-dppo-learns/results/dppo-hopper/dppo/dppo-policy/dppo-hopper-seed{seed}", "seed": 0,
+      "status": "learns", "experiments": ["E28", "E31"],
+      "note": "812–961 at 300 iterations; 3 of 3 seeds past the bar", "note_zh": "300 轮后 812–961，3 个种子全部过线",
+      "runs": "e31/experiments/e31-dppo-longer/results/dppo-hopper/dppo/dppo-policy/dppo-hopper-seed{seed}", "seed": 0,
       "server": ["dppo-policy", "hopper", "eval", "default"],
       "client": ["mujoco-v1", "--env.name", "Hopper-v5", "--env.render"],
       "replan": 4, "native_fps": 125
     },
     {
       "id": "dppo-dppo-walker", "row": "dppo-dppo", "column": "walker",
-      "status": "rising", "experiments": ["E28"],
-      "note": "about −2 → 260–292, then flat; the bar is 500", "note_zh": "从约 −2 升到 260–292 后走平；线是 500",
-      "runs": "e28/experiments/e28-dppo-learns/results/dppo-walker/dppo/dppo-policy/dppo-walker-seed{seed}", "seed": 2,
+      "status": "learns", "experiments": ["E28", "E31"],
+      "note": "528–622 at 300 iterations; 3 of 3 seeds past the bar", "note_zh": "300 轮后 528–622，3 个种子全部过线",
+      "runs": "e31/experiments/e31-dppo-longer/results/dppo-walker/dppo/dppo-policy/dppo-walker-seed{seed}", "seed": 2,
       "server": ["dppo-policy", "walker", "eval", "default"],
       "client": ["mujoco-v1", "--env.name", "Walker2d-v5", "--env.render"],
       "replan": 4, "native_fps": 125
