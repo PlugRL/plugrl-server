@@ -86,6 +86,13 @@ class FPOPolicyConfig(BasePolicyGradientFlowPolicyConfig):
     feather_std: float = 0.0
     policy_mlp_output_scale: float = 0.25
     normalize_observations: bool = True
+    # Keep the observation statistics as they were loaded instead of updating
+    # them with every rollout buffer. A policy cloned from demonstrations
+    # arrives with the demonstrations' statistics, and updating them with its
+    # own rollouts changes what it does before it has learned anything (E37's
+    # pilot: 0.51 to 0.39 across an iteration that trained only the critic).
+    # DPPO and FPO++ fine-tune with the demonstrations' normalisation, fixed.
+    freeze_obs_stats: bool = False
     hidden_dims: tuple[int, ...] = (32, 32, 32, 32)
     value_hidden_dims: tuple[int, ...] = (256, 256, 256, 256, 256)
     # The observation's state keys, concatenated in this order into the
@@ -146,7 +153,7 @@ class FPOPolicy(BasePolicyGradientFlowPolicy):
 
     @torch.no_grad()
     def update_obs_stats(self, state: TorchTree) -> None:
-        if not self.config.normalize_observations:
+        if not self.config.normalize_observations or self.config.freeze_obs_stats:
             return
         assert isinstance(state, torch.Tensor)
         (
