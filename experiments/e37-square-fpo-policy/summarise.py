@@ -36,6 +36,7 @@ CELLS = {
             "n_critic_warmup_itrs=1",
             "clipping_epsilon=0.01",
             "restore='except-critic'",
+            "freeze_obs_stats=True",
         ),
     ),
     "dppo-square": (
@@ -48,6 +49,7 @@ CELLS = {
             "logprob_noise_level=1.0",
             "batch_size=500",
             "restore='except-critic'",
+            "freeze_obs_stats=True",
         ),
     ),
 }
