@@ -1,0 +1,7 @@
+mod     74 tensors  dtypes {'torch.float32': 74}  dims {1: 37, 2: 37}
+attn    72 tensors  dtypes {'torch.bfloat16': 72}  dims {2: 72}
+mlp     54 tensors  dtypes {'torch.bfloat16': 54}  dims {2: 54}
+io       8 tensors  dtypes {'torch.float32': 8}  dims {1: 4, 2: 4}
+total 208
+changed but unmatched or matched twice: []
+unchanged trainable tensors: ['actor.paligemma_with_expert.gemma_expert.lm_head.weight']

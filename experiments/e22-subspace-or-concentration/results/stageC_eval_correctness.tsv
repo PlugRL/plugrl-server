@@ -1,0 +1,9 @@
+cell	policy	client_exit	wall_s	client_episodes	client_steps	server_episodes	server_length_sum	episode_accounting	step_accounting	no_step_state_warnings	reconnects	valid
+e22-keep-in-s1	keep-in-s1	0	1862	50	22631	50	22631	true	true	0	0	true
+e22-rot-s1	rot-s1	0	1882	50	22953	50	22953	true	true	0	0	true
+e22-rot-s2	rot-s2	0	1941	50	22714	50	22714	true	true	0	0	true
+e22-only-mod	only-mod	0	1976	50	23463	50	23463	true	true	0	0	true
+e22-rot-s3	rot-s3	0	1903	50	23426	50	23426	true	true	0	0	true
+e22-only-io	only-io	0	1930	50	23277	50	23277	true	true	0	0	true
+e22-only-attn	only-attn	0	1976	50	23461	50	23461	true	true	0	0	true
+e22-only-mlp	only-mlp	0	2063	50	26000	50	26000	true	true	0	0	true

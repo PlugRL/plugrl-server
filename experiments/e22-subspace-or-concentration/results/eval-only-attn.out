@@ -1,0 +1,15 @@
+[20:28:49] cell=e22-only-attn policy=only-attn suite=libero_10 task_id=8 episodes=50 procs=1 port=8492 budget=21600s checkpoint=/home/gotham/tmp/plugrl/e22/arms/only-attn res=/home/gotham/tmp/plugrl/e22/results
+[20:28:49] ALLOW_SIBLINGS=1: not checking for other clients or servers
+[20:28:50] source manifest: 105 files, sha256 b8302e96dec23e81
+[20:29:34] checkpoint sha256: 470a980f42b83f6a
+[20:33:29] server listening
+[21:06:25] client exited with 0 after 1976s
+[21:06:30] after teardown, env client processes: 2 process(es) alive
+  PID  PPID  PGID ELAPSED COMMAND
+54781 46726 54781    1979 timeout 21600 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8493 --num-envs 1 --
+54785 54781 54781    1979 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8493 --num-envs 1 --num-procs 1 --
+[21:06:30] TEARDOWN_NOT_CLEAN
+server scalar tags: ['episode/length', 'episode/reward', 'episode/success']
+CELL e22-only-attn | only-attn | task 8 | episodes 50 | successes 26 | sr 0.5200 [0.3851, 0.6520] | valid True
+correctness: warnings 0 | reconnects 0 | episodes client 50 server 50 (true) | steps client 23461 server 23461 (true)
+[21:06:31] STAGEC_EVAL_DONE e22-only-attn

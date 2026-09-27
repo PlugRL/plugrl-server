@@ -1,0 +1,28 @@
+null: 7 evaluations of an unperturbed actor
+  eval-baseline            29  11.1.111.111..111.11..1..1.....111..11.11..1.11111
+  eval-baseline-repeat     29  11.1.111.111..111.11..1..1.....111..11.11..1.11111
+  eval-baseline-third      29  11.1.111.1111.111.11..1..1.....111..11..1.11.1111.
+  eval-base-roundtrip      35  11.1.111.1111.111.11..1111..1.1111.111.11..1.11111
+  eval-base-roundtrip2     28  11.1.111.111..111.11..1..1.....111..11.11..1.1111.
+  eval-base-roundtrip3     29  11.1.1111.11..111.11..1..1.....111..11.11..1.11111
+  eval-lr0-control         37  11.1.111.1111.111.11..1.11.11.111111111.1.11.11111
+unanimous states: 36 of 50 (26 always succeed, 10 always fail)
+
+leave one out: each null evaluation against the other six's unanimous states
+  eval-baseline             0 of 36
+  eval-baseline-repeat      0 of 36
+  eval-baseline-third       0 of 36
+  eval-base-roundtrip       1 of 37
+  eval-base-roundtrip2      0 of 36
+  eval-base-roundtrip3      2 of 38
+  eval-lr0-control          3 of 39
+
+arm           score  disagrees with the unanimous states
+  rot-s1        28     9 of 36  (lost 7 the base always wins, won 2 it always loses)  1..1.111.1.1..11.1.1.....1.11.1111111...1.11111.1.
+  rot-s2        33     7 of 36  (lost 4 the base always wins, won 3 it always loses)  11.111111.111.11..11....11.1.111..1111..1..1111111
+  rot-s3        29     9 of 36  (lost 7 the base always wins, won 2 it always loses)  1..1.111...1...11.1...1.11.1111.1.1111.11..1111.11
+  keep-in-s1    31    10 of 36  (lost 7 the base always wins, won 3 it always loses)  11.111111.11...11111...1.1.11.1..1....111.11111.11
+  only-mod      25    12 of 36  (lost 10 the base always wins, won 2 it always loses)  .1...1..1111..1....1..1..1.1.111.1.11...1.11111.11
+  only-attn     26    17 of 36  (lost 13 the base always wins, won 4 it always loses)  1...111.11.1.11111...11.1..1......111.1.1.11.1..11
+  only-mlp       0    26 of 36  (lost 26 the base always wins, won 0 it always loses)  ..................................................
+  only-io       24    12 of 36  (lost 10 the base always wins, won 2 it always loses)  1....1111.1...111.1.....11111..1...11...1111...11.

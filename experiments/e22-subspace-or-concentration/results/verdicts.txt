@@ -1,0 +1,26 @@
+V1-V4  pass (results/construction.txt)
+V5     8 of 8 evaluations valid
+
+null, an unperturbed actor: 30.9 +/- 3.6, range 28-37 (E15 correction 2)
+
+P1  FPO's concentration in a random subspace scores at least 20 of 50
+    rot-s1             28
+    rot-s2             33
+    rot-s3             29
+    HOLDS - the subspace, not the concentration, destroys the policy
+
+keep-in-s1  FPO's input side, a random output side (not predicted)
+    keep-in-s1         31
+    FPO's output directions matter too; the same change elsewhere is absorbed
+
+P2  FPO's update to the modulation alone scores at most 5 of 50
+    only-mod           25
+    FALSIFIED
+
+the other groups, alone (reported)
+    only-attn          26
+    only-mlp            0
+    only-io            24
+    only-attn    not sufficient alone
+    only-mlp     sufficient alone
+    only-io      not sufficient alone

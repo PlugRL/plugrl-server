@@ -1,0 +1,11 @@
+[19:50:13] cell=e22-only-mod policy=only-mod suite=libero_10 task_id=8 episodes=50 procs=1 port=8494 budget=21600s checkpoint=/home/gotham/tmp/plugrl/e22/arms/only-mod res=/home/gotham/tmp/plugrl/e22/results
+[19:50:13] ALLOW_SIBLINGS=1: not checking for other clients or servers
+[19:50:14] source manifest: 105 files, sha256 b8302e96dec23e81
+[19:51:11] checkpoint sha256: ca8a75a16993f1e6
+[19:55:48] server listening
+[20:28:44] client exited with 0 after 1976s
+[20:28:49] teardown clean
+server scalar tags: ['episode/length', 'episode/reward', 'episode/success']
+CELL e22-only-mod | only-mod | task 8 | episodes 50 | successes 25 | sr 0.5000 [0.3664, 0.6336] | valid True
+correctness: warnings 0 | reconnects 0 | episodes client 50 server 50 (true) | steps client 23463 server 23463 (true)
+[20:28:49] STAGEC_EVAL_DONE e22-only-mod

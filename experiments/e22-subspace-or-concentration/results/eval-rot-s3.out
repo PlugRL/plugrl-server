@@ -1,0 +1,19 @@
+[20:28:49] cell=e22-rot-s3 policy=rot-s3 suite=libero_10 task_id=8 episodes=50 procs=1 port=8491 budget=21600s checkpoint=/home/gotham/tmp/plugrl/e22/arms/rot-s3 res=/home/gotham/tmp/plugrl/e22/results
+[20:28:49] ALLOW_SIBLINGS=1: not checking for other clients or servers
+[20:28:50] source manifest: 105 files, sha256 b8302e96dec23e81
+[20:29:34] checkpoint sha256: 202715a8ff8529e0
+[20:33:28] server listening
+[21:05:11] client exited with 0 after 1903s
+[21:05:18] after teardown, env client processes: 6 process(es) alive
+  PID  PPID  PGID ELAPSED COMMAND
+54680 46724 54680    1908 timeout 21600 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8492 --num-envs 1 --
+54684 54680 54680    1908 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8492 --num-envs 1 --num-procs 1 --
+54781 46726 54781    1906 timeout 21600 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8493 --num-envs 1 --
+54785 54781 54781    1906 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8493 --num-envs 1 --num-procs 1 --
+54950 46725 54950    1896 timeout 21600 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8494 --num-envs 1 --
+54954 54950 54950    1896 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8494 --num-envs 1 --num-procs 1 --
+[21:05:18] TEARDOWN_NOT_CLEAN
+server scalar tags: ['episode/length', 'episode/reward', 'episode/success']
+CELL e22-rot-s3 | rot-s3 | task 8 | episodes 50 | successes 29 | sr 0.5800 [0.4423, 0.7062] | valid True
+correctness: warnings 0 | reconnects 0 | episodes client 50 server 50 (true) | steps client 23426 server 23426 (true)
+[21:05:19] STAGEC_EVAL_DONE e22-rot-s3
