@@ -139,9 +139,9 @@
       },
       {
         "id": "pi0-fpo", "label": "pi0-policy · FPO", "label_zh": "pi0-policy · FPO",
-        "status": "collapses", "experiments": ["E14", "E26"], "score": [0, 50],
-        "note": "one iteration takes it to 0; our defect, under investigation",
-        "note_zh": "一轮后掉到 0；是我们平台的问题，正在排查",
+        "status": "holds", "experiments": ["E14", "E26", "E32"], "score": [33, 50],
+        "note": "one update with FPO++'s chunk loss leaves it intact; FPO's own took it to 0",
+        "note_zh": "换成 FPO++ 的块损失后一次更新没毁掉它；原版 FPO 会让它归零",
         "video_key": "base", "native_fps": 20, "whole": true
       },
       {
