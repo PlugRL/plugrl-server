@@ -1,0 +1,10 @@
+cell:    dppo-cheetah = dppo-policy/cheetah x dppo/cheetah x HalfCheetah-v5
+iters:   20 x 1024  batch: 512  replan: 4  seeds: 0 1 2
+out:     /home/guangzhao/zuogou/plugrl/plugrl-server/experiments/e24-coverage/results/dppo-cheetah
+start 2026-09-25 18:12:33
+seed 0 finished rc=0 at 18:15:42
+seed 1 finished rc=0 at 18:15:48
+seed 2 finished rc=0 at 18:15:58
+end   2026-09-25 18:15:58
+failed seeds: 0
+CELL_DONE dppo-cheetah

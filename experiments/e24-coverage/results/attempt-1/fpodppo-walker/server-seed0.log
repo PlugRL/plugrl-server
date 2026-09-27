@@ -1,0 +1,13 @@
+17:42:41|INFO|plugrl_server version: 0.1.0
+17:42:41|INFO|Algorithm: dppo, Config: DPPOAlgoConfigWalker(global_steps=81920, gamma=0.99, gamma_denoising=0.99, actor_lr=0.0001, critic_lr=0.001, actor_weight_decay=0.0, critic_weight_decay=0.0, actor_lr_scheduler=SchedulerConfig(min_lr=0.0001, warmup_steps=10), critic_lr_scheduler=SchedulerConfig(min_lr=0.001, warmup_steps=10), buffer_size=4096, gae_lambda=0.95, update_epochs=5, norm_adv=True, clip_ploss_coef=0.01, clip_ploss_coef_base=0.01, clip_ploss_coef_rate=3, clip_vloss_coef=inf, ent_coef=0.0, vf_coef=0.5, max_grad_norm=inf, target_kl=inf, logprob_noise_level=0.1, sampling_noise_level=0.1, clip_advantage_lower_quantile=0, clip_advantage_upper_quantile=1, n_critic_warmup_itrs=0, use_normalized_rewards=True, batch_size=2048, train_itrs=20, save_interval=20, grad_accum_steps=8, policy_checkpoint_path=None, restore='all')
+17:42:41|INFO|Policy: fpo-policy, Config: FPOPolicyConfig(algo='dppo', device=device(type='cpu'), obs_dim=17, action_dim=6, flow_steps=10, timestep_embed_dim=8, action_horizon=1, feather_std=0.0, policy_mlp_output_scale=0.25, normalize_observations=True, hidden_dims=(32, 32, 32, 32), value_hidden_dims=(256, 256, 256, 256, 256))
+17:42:41|INFO|Seeded python, numpy and torch with 0. One env client is then reproducible; several are not, because batch composition depends on when their requests arrive.
+17:42:41|INFO|Checkpoint Manager created: 
+<plugrl_server.common.checkpoint_manager.CheckpointManager object at 0x00000265F8ABAE10> at D:\75128\Desktop\plugrl-work\plugrl-server\.claude\worktrees\fix-pi0-image-mask-batching\experiments\e24-coverage\results\fpodppo-walker\dppo\fpo-policy\fpodppo-walker-seed0
+17:42:47|INFO|Policy created...
+17:42:47|INFO|Initialized RolloutBuffer buffer_size=4096 action_shape=(4096, 10, 1, 6) value_shape=(4096,)
+17:42:47|INFO|Algorithm created: 
+<plugrl_server.algorithm.dppo.dppo.DPPOAlgorithm object at 0x00000265F9DDC2D0>
+17:42:47|INFO|Agent Server is listening on 0.0.0.0:9320
+D:\75128\Desktop\plugrl-work\plugrl-server\.claude\worktrees\fix-pi0-image-mask-batching\.venv\Lib\site-packages\torch\utils\data\dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
