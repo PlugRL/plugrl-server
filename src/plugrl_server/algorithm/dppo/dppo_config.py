@@ -164,3 +164,43 @@ class DPPOAlgoConfigLibero(DPPOAlgoConfig):
     use_normalized_rewards: bool = False
 
     save_interval: int = 2
+
+
+@register_algo_config(UID, "square")
+@dataclasses.dataclass
+class DPPOAlgoConfigSquare(DPPOAlgoConfig):
+    """DPPO's own fine-tuning of its released square policy.
+
+    Every value is the one in DPPO's
+    cfg/robomimic/finetune/square/ft_ppo_diffusion_mlp.yaml, in PlugRL's
+    units: the buffer counts action chunks (DPPO's 50 envs x 400 steps,
+    80,000 environment steps), and a minibatch counts entries of the 10
+    fine-tuned denoising steps `dppo-policy square` records (DPPO's 10,000
+    samples), each its own optimizer step. DPPO's learning-rate schedulers
+    run from each rate to a minimum equal to it, so the rates are constant.
+    """
+
+    gamma: float = 0.999
+    gamma_denoising: float = 0.99
+    actor_lr: float = 1e-4
+    critic_lr: float = 1e-3
+    actor_lr_scheduler: SchedulerConfig | None = None
+    critic_lr_scheduler: SchedulerConfig | None = None
+
+    buffer_size: int = 50 * 400
+    gae_lambda: float = 0.95
+    batch_size: int = 1000
+    grad_accum_steps: int = 1
+    update_epochs: int = 10
+    vf_coef: float = 0.5
+    target_kl: float = 1.0
+    norm_adv: bool = True
+    clip_ploss_coef: float = 0.01
+    clip_ploss_coef_base: float = 0.001
+    clip_ploss_coef_rate: float = 3
+
+    logprob_noise_level: float = 0.1
+    sampling_noise_level: float = 0.1
+    n_critic_warmup_itrs: int = 2
+    use_normalized_rewards: bool = True
+    train_itrs: int = 201

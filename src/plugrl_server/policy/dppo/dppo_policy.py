@@ -71,6 +71,19 @@ class DPPOPolicyConfigCheetah(DPPOPolicyConfig):
     env_name: str = "halfcheetah-medium-v2"
 
 
+@register_policy_config(UID, "square")
+@dataclasses.dataclass
+class DPPOPolicyConfigSquare(DPPOPolicyConfig):
+    """DPPO's square policy, fine-tuned through the last 10 of its 20 steps.
+
+    Pass the released pretrained checkpoint as --policy.checkpoint-path.
+    """
+
+    env_type: str = "robomimic"
+    env_name: str = "square"
+    ft_denoising_steps: int | None = 10
+
+
 @register_policy(UID)
 class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
     config: DPPOPolicyConfig
