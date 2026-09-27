@@ -19,7 +19,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 RESULTS = pathlib.Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else HERE / "results"
 CELL = "dppo-square"
 SEEDS = (0, 1, 2)
-ITERS = 50
+ITERS = 40
 START = 3  # iterations 1-3: the released policy, unchanged
 GAIN = 0.2  # learns: end minus start, in success rate, on 2 of 3
 
@@ -118,7 +118,7 @@ def main() -> int:
     passed = sum(g >= GAIN for g in gains.values())
     learns = p1 and v1 and passed >= 2
     print(
-        f"    {passed} of 3  -> {'learns' if learns else 'does not learn in 50 iterations'}"
+        f"    {passed} of 3  -> {'learns' if learns else 'does not learn in 40 iterations'}"
     )
 
     print("\nP2  dppo-policy learns square under DPPO's own fine-tuning")

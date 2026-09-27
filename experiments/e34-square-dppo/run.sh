@@ -13,7 +13,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 R="$HERE/${OUT:-results}"
-ITERS="${ITERS:-50}"
+ITERS="${ITERS:-40}"
 export SEEDS="${SEEDS:-0 1 2}"
 export NPROC="${NPROC:-6}"
 export CKPT="${CKPT:-$ROOT/../ckpt/dppo-square/state_8000.pt}"

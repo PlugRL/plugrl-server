@@ -1,0 +1,26 @@
+# E34 pilot, 2026-09-27 06:55-07:17 (guangzhao), before PROTOCOL.md was written.
+# ITERS=3 SEEDS=0 OUT=pilot bash run.sh: one seed, three iterations, six
+# client processes. Code 6f6b9e1 (#77 plus E34's scripts), client 931ab56.
+# Checkpoint ~/zuogou/plugrl/ckpt/dppo-square/state_8000.pt, 18,454,123
+# bytes, sha256 368ce587294896b2..., uploaded from DPPO's Google Drive copy.
+
+Ran end to end: seed 0 finished rc=0, no traceback, 21 minutes.
+
+Server log: DPPOPolicyConfigSquare(... ft_denoising_steps=10 ...) and
+"Loaded the ema weights of .../state_8000.pt".
+
+Tensorboard, iterations 1 / 2 / 3 (1 and 2 train only the critic, so all
+three are collected by the released policy unchanged):
+  rollout/success          0.313   0.288   0.345
+  rollout/reward           49.2    41.1    53.7
+  rollout/length           400     400     400
+  losses/approx_kl         0       0       0.0016
+  losses/clipfrac          0       0       0.19
+  losses/entropy          -0.2336 -0.2336 -0.2336
+  progress/collection_time 165 s   161 s   164 s
+  progress/learn_time      262 s   268 s   258 s
+
+Clients: about 82 environment steps per second each, 44% of it waiting for
+the single-threaded server's inference (batches of 6, 15 ms each).
+
+Not a result: one seed, three iterations, one policy update.
