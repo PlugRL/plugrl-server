@@ -1,0 +1,55 @@
+V1  the first iteration left each arm's actor as it was
+    control    PASS
+    chunk      PASS
+    persample  PASS
+    fpopp      PASS
+
+V2  every arm's flags took
+    control    PASS
+    chunk      PASS
+    persample  PASS
+    fpopp      PASS
+
+V3  every evaluation valid
+    base       valid
+    control    valid
+    chunk      valid
+    persample  valid
+    fpopp      valid
+
+null, an unperturbed actor on the older code: 30.9 +/- 3.6, range 28-37
+E26 on today's code: base 29, one vanilla FPO iteration 0
+
+P1  the collapse reproduces: control at most 5
+    control    0 of 50
+    HOLDS
+
+P2  FPO++ prevents it: fpopp at least 20
+    fpopp      33 of 50
+    HOLDS
+
+P3  its chunk loss alone does: chunk at least 20
+    chunk      26 of 50
+    HOLDS
+
+P4  its per-sample ratio alone does not: persample at most 5
+    persample  0 of 50
+    HOLDS
+
+reported: base on this code
+    base       36 of 50
+
+reported: relative distance from the base after iteration 2, per group
+    group        control        chunk    persample        fpopp
+    mod           2.661%       2.368%       2.559%       2.378%
+    attn          2.407%       1.642%       2.354%       1.709%
+    mlp           2.058%       1.617%       2.084%       1.697%
+    io            1.430%       1.428%       1.361%       1.655%
+    expert        2.021%       1.585%       2.005%       1.641%
+
+reported: the policy update's learn-step statistics (iteration 2)
+    arm          initial_cfm_loss_mean           cfm_loss_mean       policy_ratio_mean      clipped_ratio_mean
+    control                0.000509579               0.0818421                0.925429                0.510376
+    chunk                     0.130364                0.223424                0.920416                0.560547
+    persample              0.000571337               0.0690333                0.938575                0.412735
+    fpopp                     0.130272                0.272354                0.907017                0.561264

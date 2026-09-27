@@ -1,0 +1,22 @@
+[09:55:17] cell=control iterations=2 master_device=cuda:1 lr=1e-5 updates=4 clip=0.05 drift=0 warmup=0 srv_gpus=0,1 cli_gpu=3 buffer=4096 batch=8
+[09:55:17] ALLOW_SIBLINGS=1: not checking for other clients or servers
+[09:55:17] arm flags: --algo.n-critic-warmup-itrs 1
+[09:57:21] server listening
+[12:30:19] clients exit 0 after 9178s (server_died=0)
+[12:30:24] after teardown, clients: 36 alive
+  PID ELAPSED COMMAND
+ 4207    9103 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 
+ 4637    9098 /home/gotham/tmp/plugrl/venv-libero/bin/python -c from multiprocessing.resource_tracker import main;main(4
+ 4638    9098 /home/gotham/tmp/plugrl/venv-libero/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main
+ 4639    9098 /home/gotham/tmp/plugrl/venv-libero/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main
+[12:30:25] TEARDOWN_NOT_CLEAN
+[12:30:25] === learn steps seen ===
+12
+[12:30:25] === out of memory? ===
+0
+[12:30:25] === peak memory, GPU0 and GPU1 ===
+gpu0_peak_mib=19945  gpu1_peak_mib=9070
+[12:30:25] === checkpoints ===
+11:13 8528818570 /home/gotham/tmp/plugrl/e32/control/ck/fpo/pi0-policy/control/4100/model.safetensors
+12:29 8528818570 /home/gotham/tmp/plugrl/e32/control/ck/fpo/pi0-policy/control/8200/model.safetensors
+[12:30:25] E32_TRAIN_DONE control

@@ -1,0 +1,6 @@
+policy	task_id	episodes	successes	sr	ci_lo	ci_hi	valid
+fpopp	8	50	33	0.6600	0.5215	0.7756	true
+base	8	50	36	0.7200	0.5833	0.8253	true
+chunk	8	50	26	0.5200	0.3851	0.6520	true
+persample	8	50	0	0.0000	0.0000	0.0713	true
+control	8	50	0	0.0000	0.0000	0.0713	true

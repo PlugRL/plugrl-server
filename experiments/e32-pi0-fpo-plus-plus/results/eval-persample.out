@@ -1,0 +1,15 @@
+[12:36:36] cell=e32-persample policy=persample suite=libero_10 task_id=8 episodes=50 procs=1 port=8374 budget=21600s checkpoint=/home/gotham/tmp/plugrl/e32/persample/ck/fpo/pi0-policy/persample/8200 res=/home/gotham/tmp/plugrl/e32/results
+[12:36:36] ALLOW_SIBLINGS=1: not checking for other clients or servers
+[12:36:39] source manifest: 109 files, sha256 397908458e5e2edd
+[12:37:38] checkpoint sha256: c8a7d98bccea5ae7
+[12:43:45] server listening
+[13:19:32] client exited with 0 after 2147s
+[13:19:36] after teardown, env client processes: 2 process(es) alive
+  PID  PPID  PGID ELAPSED COMMAND
+19105  3145 19105    2142 timeout 21600 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8372 --num-envs 1 --
+19109 19105 19105    2142 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 --server-port 8372 --num-envs 1 --num-procs 1 --
+[13:19:36] TEARDOWN_NOT_CLEAN
+server scalar tags: ['episode/length', 'episode/reward', 'episode/success']
+CELL e32-persample | persample | task 8 | episodes 50 | successes 0 | sr 0.0000 [0.0000, 0.0713] | valid True
+correctness: warnings 0 | reconnects 0 | episodes client 50 server 50 (true) | steps client 26000 server 26000 (true)
+[13:19:37] STAGEC_EVAL_DONE e32-persample
