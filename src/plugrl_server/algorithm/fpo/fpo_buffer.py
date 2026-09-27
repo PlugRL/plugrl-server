@@ -33,6 +33,7 @@ class FPOBuffer(GAEBuffer):
         *,
         n_samples_per_action: int,
         discretize_t_for_training: bool = True,
+        loss_t_beta: tuple[float, float] | None = None,
         gamma: float = 0.99,
         gae_lambda: float = 0.95,
         treat_truncated_as_done: bool = True,
@@ -46,6 +47,7 @@ class FPOBuffer(GAEBuffer):
         )
         self.n_samples_per_action = n_samples_per_action
         self.discretize_t_for_training = discretize_t_for_training
+        self.loss_t_beta = loss_t_beta
         action_shape = self.actions.shape[1:]
         self.loss_eps = np.empty(
             (buffer_size, n_samples_per_action) + action_shape,
@@ -130,6 +132,11 @@ class FPOBuffer(GAEBuffer):
     def _sample_loss_t(
         self, policy: BasePolicyGradientFlowPolicy, *, batch_size: int
     ) -> torch.Tensor:
+        if self.loss_t_beta is not None:
+            # openpi's pi0 time sampling: 0.999 * Beta(a, b) + 0.001.
+            beta = torch.distributions.Beta(*self.loss_t_beta)
+            t = beta.sample((batch_size, self.n_samples_per_action, 1))
+            return (0.999 * t + 0.001).to(policy.device)
         if self.discretize_t_for_training:
             timesteps = policy._get_timesteps().to(policy.device)
             indices = torch.randint(

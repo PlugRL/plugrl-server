@@ -71,6 +71,15 @@ class FPOAlgoConfig(BaseAlgoConfig):
     max_policy_drift: float = 0.0
     n_samples_per_action: int = 8
     discretize_t_for_training: bool = True
+    # Flow times for the CFM loss drawn as 0.999 * Beta(a, b) + 0.001 instead,
+    # overriding discretize_t_for_training - (1.5, 1.0) is how openpi trained
+    # pi0, weighted towards noise, where the default grid weights every
+    # denoising time the same. None keeps the grid.
+    loss_t_beta: tuple[float, float] | None = None
+    # A lower bound on the (normalised) advantage in the policy loss. 0 means
+    # a sample that did worse than expected carries no gradient: the update
+    # only pulls towards what went well. None leaves the advantage alone.
+    advantage_floor: float | None = None
     average_losses_before_exp: bool = True
     save_interval: int = 10
     # A checkpoint to start this run from, and how much of it to take.

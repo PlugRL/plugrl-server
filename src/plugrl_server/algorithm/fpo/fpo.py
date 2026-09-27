@@ -67,6 +67,7 @@ class FPOAlgorithm(BaseAlgorithm):
             example_train_state=example_train_state,
             n_samples_per_action=config.n_samples_per_action,
             discretize_t_for_training=config.discretize_t_for_training,
+            loss_t_beta=config.loss_t_beta,
             gamma=config.discounting,
             gae_lambda=config.gae_lambda,
             treat_truncated_as_done=config.treat_truncated_as_done,
@@ -454,12 +455,22 @@ class FPOAlgorithm(BaseAlgorithm):
                     3.0,
                 )
             ).mean(dim=-1)
-        surrogate_loss1 = rho_s * advantage.reshape(-1)
-        surrogate_loss2 = torch.clamp(
-            rho_s,
-            1 - self.config.clipping_epsilon,
-            1 + self.config.clipping_epsilon,
-        ) * advantage.reshape(-1)
+        # The floor applies to the policy loss only; the logged statistics
+        # below stay those of the advantage as it came.
+        policy_advantage = (
+            advantage
+            if self.config.advantage_floor is None
+            else advantage.clamp(min=self.config.advantage_floor)
+        ).reshape(-1)
+        surrogate_loss1 = rho_s * policy_advantage
+        surrogate_loss2 = (
+            torch.clamp(
+                rho_s,
+                1 - self.config.clipping_epsilon,
+                1 + self.config.clipping_epsilon,
+            )
+            * policy_advantage
+        )
         policy_loss = -torch.minimum(surrogate_loss1, surrogate_loss2).mean()
         _sync_cuda_if_needed(self.policy.device)
         ratio_policy_loss_time = time.perf_counter() - ratio_policy_loss_started_at
