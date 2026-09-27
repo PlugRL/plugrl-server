@@ -32,7 +32,7 @@ from plugrl_server.policy.state import (
 
 from .fpo_buffer import FPOBuffer
 from .fpo_config import FPOAlgoConfig, UID
-from .utils import compute_cfm_loss
+from .utils import ChunkReduction, compute_cfm_loss
 
 logger = get_logger(__name__)
 
@@ -41,6 +41,15 @@ logger = get_logger(__name__)
 # react within an iteration, large enough that one noisy minibatch does not
 # end it.
 _DRIFT_WINDOW = 8
+
+
+# FPO++'s straight-through clamp on a per-sample log-ratio (its `clamp_logratio`).
+_LOG_RATIO_CLAMP = 5.0
+
+
+def _clamp_straight_through(x: torch.Tensor, bound: float) -> torch.Tensor:
+    """Clamped in the forward pass, the gradient passed through unchanged."""
+    return x + (x.clamp(-bound, bound) - x).detach()
 
 
 def _sync_cuda_if_needed(device: torch.device) -> None:
@@ -155,11 +164,20 @@ class FPOAlgorithm(BaseAlgorithm):
         self.global_step += 1
         return current_node, self.global_step, dict()
 
+    @property
+    def chunk_reduction(self) -> ChunkReduction:
+        return ChunkReduction(
+            steps=self.config.cfm_loss_steps,
+            dims=self.config.cfm_loss_dims,
+            sum_over_steps=self.config.cfm_loss_sum_over_steps,
+        )
+
     def pre_learn(self) -> None:
         self.rollout_buffer.prepare_fpo_fields(
             self.policy,
             batch_size=self.config.batch_size,
             output_mode=self.config.output_mode,
+            reduction=self.chunk_reduction,
         )
         if not self.config.fpo_playground_trick:
             self.rollout_buffer.compute_advantages_and_returns(
@@ -438,28 +456,42 @@ class FPOAlgorithm(BaseAlgorithm):
             loss_eps=loss_eps,
             loss_t=loss_t,
             obs_cache=obs_cache,
+            reduction=self.chunk_reduction,
         )
         _sync_cuda_if_needed(self.policy.device)
         cfm_loss_time = time.perf_counter() - cfm_loss_started_at
-        loss_delta = (initial_cfm_loss - cfm_loss).clamp(-3, 3)
 
         ratio_policy_loss_started_at = time.perf_counter()
-        if self.config.average_losses_before_exp:
-            rho_s = torch.exp(loss_delta.mean(dim=-1))
+        if self.config.ratio_per_sample:
+            # FPO++: a ratio for every (t, eps) sample, (batch, samples), each
+            # carrying its action's advantage and clipped on its own.
+            loss_delta = _clamp_straight_through(
+                initial_cfm_loss - cfm_loss, _LOG_RATIO_CLAMP
+            )
+            rho_s = torch.exp(loss_delta)
+            ratio_advantage = advantage.reshape(-1, 1)
         else:
-            rho_s = torch.exp(
-                torch.clamp(
-                    loss_delta,
-                    -3.0,
-                    3.0,
-                )
-            ).mean(dim=-1)
-        surrogate_loss1 = rho_s * advantage.reshape(-1)
-        surrogate_loss2 = torch.clamp(
-            rho_s,
-            1 - self.config.clipping_epsilon,
-            1 + self.config.clipping_epsilon,
-        ) * advantage.reshape(-1)
+            loss_delta = (initial_cfm_loss - cfm_loss).clamp(-3, 3)
+            if self.config.average_losses_before_exp:
+                rho_s = torch.exp(loss_delta.mean(dim=-1))
+            else:
+                rho_s = torch.exp(
+                    torch.clamp(
+                        loss_delta,
+                        -3.0,
+                        3.0,
+                    )
+                ).mean(dim=-1)
+            ratio_advantage = advantage.reshape(-1)
+        surrogate_loss1 = rho_s * ratio_advantage
+        surrogate_loss2 = (
+            torch.clamp(
+                rho_s,
+                1 - self.config.clipping_epsilon,
+                1 + self.config.clipping_epsilon,
+            )
+            * ratio_advantage
+        )
         policy_loss = -torch.minimum(surrogate_loss1, surrogate_loss2).mean()
         _sync_cuda_if_needed(self.policy.device)
         ratio_policy_loss_time = time.perf_counter() - ratio_policy_loss_started_at

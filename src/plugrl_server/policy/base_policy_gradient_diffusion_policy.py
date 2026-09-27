@@ -65,6 +65,15 @@ class BasePolicyGradientDiffusionPolicy(BaseTorchPolicy):
 
     def build_obs_cache(self, obs: TorchTree) -> Any: ...
 
+    @property
+    def num_recorded_denoising_steps(self) -> int:
+        """How many steps a runtime state keeps: the last ones of the chain.
+
+        All of them, unless a policy fine-tunes fewer and runs the earlier
+        ones through a frozen network, as DPPO does on robomimic.
+        """
+        return self.num_denoising_steps
+
     def get_action_and_runtime_state(
         self, _obs: dict[str, Any], sampling_noise_level: float | None = None
     ) -> tuple[Any, DiffusionRuntimeState]:
@@ -75,6 +84,7 @@ class BasePolicyGradientDiffusionPolicy(BaseTorchPolicy):
         x = self._initialize_x(b)
 
         runtime_state: DiffusionRuntimeState = self.fake_runtime_state(b)
+        first_recorded = len(timesteps) - self.num_recorded_denoising_steps
         for i, t in enumerate(timesteps):
             x_next, logprob, entropy = self._denoising_step(
                 x,
@@ -83,11 +93,13 @@ class BasePolicyGradientDiffusionPolicy(BaseTorchPolicy):
                 cond_cache=obs_cache,
                 sampling_noise_level=sampling_noise_level,
             )
-            runtime_state.obs.x[:, i] = x
-            runtime_state.obs.t[:, i] = t.repeat(b)
-            runtime_state.action[:, i] = x_next
-            runtime_state.logprob[:, i] = logprob
-            runtime_state.entropy[:, i] = entropy
+            if i >= first_recorded:
+                j = i - first_recorded
+                runtime_state.obs.x[:, j] = x
+                runtime_state.obs.t[:, j] = t.repeat(b)
+                runtime_state.action[:, j] = x_next
+                runtime_state.logprob[:, j] = logprob
+                runtime_state.entropy[:, j] = entropy
             x = self._iterative_process_action(x_next)
 
         x = self._postprocess_action(x, model_obs)
@@ -107,27 +119,15 @@ class BasePolicyGradientDiffusionPolicy(BaseTorchPolicy):
     def fake_diffusion_cond(self, batch_size: int) -> TorchTree: ...
 
     def fake_runtime_state(self, batch_size: int) -> DiffusionRuntimeState:
-        action = torch.zeros(
-            (batch_size, self.num_denoising_steps, self.action_horizon, self.action_dim)
-        )
+        steps = self.num_recorded_denoising_steps
+        action = torch.zeros((batch_size, steps, self.action_horizon, self.action_dim))
         obs = DiffusionObs(
-            x=torch.zeros(
-                (
-                    batch_size,
-                    self.num_denoising_steps,
-                    self.action_horizon,
-                    self.action_dim,
-                )
-            ),
-            t=torch.zeros((batch_size, self.num_denoising_steps)),
+            x=torch.zeros((batch_size, steps, self.action_horizon, self.action_dim)),
+            t=torch.zeros((batch_size, steps)),
             cond=self.fake_diffusion_cond(batch_size),
         )
-        logprob = torch.zeros(
-            (batch_size, self.num_denoising_steps, self.action_horizon, self.action_dim)
-        )
-        entropy = torch.zeros(
-            (batch_size, self.num_denoising_steps, self.action_horizon, self.action_dim)
-        )
+        logprob = torch.zeros((batch_size, steps, self.action_horizon, self.action_dim))
+        entropy = torch.zeros((batch_size, steps, self.action_horizon, self.action_dim))
         value = torch.zeros((batch_size,))
         return DiffusionRuntimeState(
             obs=obs, action=action, logprob=logprob, entropy=entropy, value=value
