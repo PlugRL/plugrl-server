@@ -44,7 +44,7 @@ on HalfCheetah with no GPU and nothing to download, is at
 
 ## What runs on it
 
-<a href="https://plugrl.github.io/#what-runs-on-it"><img src="https://plugrl.github.io/media/coverage-grid.jpg" width="720"
+<a href="https://plugrl.github.io/#what-runs-on-it"><img src="https://plugrl.github.io/media/coverage-grid.jpg" width="100%"
    alt="Twelve cells, three policy-algorithm pairs by four tasks, each with a frame from its trained policy, a training curve and a status. fpo-policy with FPO learns HalfCheetah, Hopper and Walker2d; dppo-policy with DPPO learns HalfCheetah and is still rising on Hopper and Walker2d; fpo-policy with DPPO has not learned; all three run end to end on robomimic square."></a>
 
 Every combination of the two MLP policies and the two algorithms on four
