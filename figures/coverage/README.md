@@ -1,7 +1,8 @@
 # The coverage figure
 
 The figure on the project page's home page: every combination of the two MLP
-policies and the two algorithms on four tasks, and pi0.5 on LIBERO. This
+policies and the two algorithms on four tasks, the Gaussian policy with PPO
+as the baseline beneath them, and pi0.5 on LIBERO. This
 directory made its clips, stills and data; the page itself lives in
 [plugrl.github.io](https://github.com/PlugRL/plugrl.github.io)
 (`docs/media/coverage/`, `docs/javascripts/coverage.js`).
@@ -16,7 +17,8 @@ and the run to take the clip from.
   the median of the three (ties go to the lowest seed).
 - **The checkpoint** is that seed's final one.
 - **The episode**: the checkpoint is evaluated for five episodes with the
-  `eval` algorithm, which acts without training's sampling noise, on MuJoCo
+  `eval` algorithm, which acts without training's sampling noise (the
+  Gaussian policy with its mean, `--policy.deterministic`), on MuJoCo
   seed 100 (robomimic refuses a seed). The clip is the episode whose return
   is the median, not the best.
 - **The timing**: real time, at most 25 fps, cut to eight seconds. An

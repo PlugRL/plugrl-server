@@ -45,21 +45,23 @@ on HalfCheetah with no GPU and nothing to download, is at
 ## What runs on it
 
 <a href="https://plugrl.github.io/#what-runs-on-it"><img src="https://plugrl.github.io/media/coverage-grid.jpg" width="100%"
-   alt="Twelve cells, three policy-algorithm pairs by four tasks, each with a frame from its trained policy, a training curve and a status. fpo-policy with FPO learns HalfCheetah, Hopper and Walker2d; dppo-policy with DPPO learns HalfCheetah and is still rising on Hopper and Walker2d; fpo-policy with DPPO has not learned; all three run end to end on robomimic square."></a>
+   alt="Fifteen cells, four policy-algorithm pairs on HalfCheetah, Hopper, Walker2d and robomimic square, each with a frame from its trained policy, a training curve and a status. All four pairs learn the three MuJoCo tasks. On square, dppo-policy with DPPO learns, the two fpo-policy pairs run end to end, and the Gaussian policy with PPO was not run."></a>
 
 Every combination of the two MLP policies and the two algorithms on four
-tasks. [On the project page](https://plugrl.github.io/#what-runs-on-it) each
+tasks, and the baseline they are measured against: a Gaussian policy with
+PPO, as CleanRL runs it. [On the project page](https://plugrl.github.io/#what-runs-on-it) each
 cell plays its clip and shows the two commands that trained it, and pi0.5 on
 LIBERO sits below. Moving between cells means changing a few words. On
-Hopper, the three servers were:
+Hopper, the four servers were:
 
 ```bash
 plugrl-run-server fpo-policy default fpo default --policy.obs-dim 11 --policy.action-dim 3 --algo.buffer-size 4096 --algo.global-steps 409600
 plugrl-run-server fpo-policy default dppo hopper --policy.obs-dim 11 --policy.action-dim 3 --algo.buffer-size 4096 --algo.train-itrs 100
 plugrl-run-server dppo-policy hopper dppo hopper --algo.buffer-size 1024 --algo.batch-size 512 --algo.train-itrs 100
+plugrl-run-server gaussian-policy default ppo default --policy.obs-dim 11 --policy.action-dim 3
 ```
 
-The env client is the same for all three, except that DPPO's own policy acts
+The env client is the same for all four, except that DPPO's own policy acts
 in chunks of four (`--runner.replan-steps 4`). None of these servers has
 MuJoCo, robosuite or gymnasium installed. The env clients have them, in three
 separate environments: MuJoCo 3 for these tasks, and MuJoCo 2.3.7 with
