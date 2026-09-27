@@ -1,0 +1,11 @@
+[00:55:54] cell=e25-dppo-iter2 policy=dppo-iter2 suite=libero_10 task_id=8 episodes=50 procs=1 port=8591 budget=21600s checkpoint=/home/gotham/tmp/plugrl/e25/runs/dppo-libero/ck/dppo/pi0-policy/dppo-libero/8200 res=/home/gotham/tmp/plugrl/e25/results
+[00:55:54] ALLOW_SIBLINGS=1: not checking for other clients or servers
+[00:55:55] source manifest: 105 files, sha256 b8302e96dec23e81
+[00:57:01] checkpoint sha256: dc58a6930054b200
+[00:59:00] server listening
+[01:33:42] client exited with 0 after 2082s
+[01:33:50] teardown clean
+server scalar tags: ['episode/length', 'episode/reward', 'episode/success']
+CELL e25-dppo-iter2 | dppo-iter2 | task 8 | episodes 50 | successes 30 | sr 0.6000 [0.4618, 0.7239] | valid True
+correctness: warnings 0 | reconnects 0 | episodes client 50 server 50 (true) | steps client 22959 server 22959 (true)
+[01:33:51] STAGEC_EVAL_DONE e25-dppo-iter2

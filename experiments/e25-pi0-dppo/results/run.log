@@ -1,0 +1,20 @@
+[09-25 22:45:17] code: 8812b54+cdd053d
+[09-26 00:55:45] END train rc=0
+[09-25 22:45:17] cell=dppo-libero iters=2 buffer=4096 batch=8 port=8590 src=8812b54+cdd053d
+[09-25 22:45:17] ALLOW_SIBLINGS=1: not checking for other clients or servers
+[09-25 22:47:40] server listening
+[09-26 00:55:43] server exited after 7683s
+[09-26 00:55:45] teardown clean
+[09-26 00:55:45] checkpoints: dppo/pi0-policy/dppo-libero/4100/model.safetensors dppo/pi0-policy/dppo-libero/8200/model.safetensors 
+[09-26 00:55:45] peak MiB on cards 0 and 1: 21318, 5
+[09-26 00:55:45] E25_CELL_DONE dppo-libero
+[09-26 00:55:45] checkpoints: 4100 8200  - evaluating 8200
+/home/gotham/tmp/plugrl/e25/runs/dppo-libero/ck/dppo/pi0-policy/dppo-libero/8200/model.safetensors
+  mod   moved  74  unchanged   0  relative distance 0.002577
+  attn  moved  72  unchanged   0  relative distance 0.000309
+  mlp   moved  54  unchanged   0  relative distance 0.000313
+  io    moved   8  unchanged   0  relative distance 0.002497
+[09-26 01:33:51] END eval rc=0
+policy	task_id	episodes	successes	sr	ci_lo	ci_hi	valid
+dppo-iter2	8	50	30	0.6000	0.4618	0.7239	true
+[09-26 01:33:51] E25_DONE
