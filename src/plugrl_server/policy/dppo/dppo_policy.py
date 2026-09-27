@@ -99,9 +99,17 @@ class DPPOPolicy(BasePolicyGradientDiffusionPolicy):
         )
 
         if self.config.checkpoint_path is not None:
-            checkpoint = torch.load(self.config.checkpoint_path, map_location="cpu")
-            self.actor.load_state_dict(checkpoint["model"], strict=False)
-            logger.info(f"Loaded model weights from {self.config.checkpoint_path}")
+            # DPPO's pretraining saves `model` and `ema`, and DPPO's own
+            # DiffusionModel fine-tunes from `ema` whenever a checkpoint has
+            # it; in the released square checkpoint they are 14.6% apart.
+            # Strict, because a mismatched checkpoint would otherwise leave
+            # the network at its random initialisation without a word.
+            checkpoint = torch.load(
+                self.config.checkpoint_path, map_location="cpu", weights_only=True
+            )
+            key = "ema" if "ema" in checkpoint else "model"
+            self.actor.load_state_dict(checkpoint[key], strict=True)
+            logger.info(f"Loaded the {key} weights of {self.config.checkpoint_path}")
         self.low_dim_keys = cfg.low_dim_keys
         self.action_dim = self.actor.action_dim
         self.action_horizon = self.actor.horizon_steps
