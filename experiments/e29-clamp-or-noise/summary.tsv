@@ -1,0 +1,10 @@
+arm	seed	iterations	runs	first_return	last10_return	gain	first_length	last10_length
+control	0	100	true	14.9	25.5	10.6	20.2	27.4
+control	1	100	true	19.7	24.2	4.5	22.8	25.3
+control	2	100	true	17.0	26.7	9.7	21.9	27.4
+noclamp	0	100	true	14.9	21.9	7.0	20.2	25.3
+noclamp	1	100	true	19.7	22.7	3.0	22.8	24.2
+noclamp	2	100	true	17.0	24.8	7.8	21.9	26.3
+wide	0	100	true	16.7	90.3	73.6	22.7	58.4
+wide	1	100	true	21.2	105.7	84.6	23.6	61.5
+wide	2	100	true	19.6	125.8	106.2	23.8	75.9
