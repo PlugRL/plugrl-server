@@ -414,8 +414,9 @@ def test_ppo_learns_a_bandit_with_a_known_answer_and_keeps_it(seed: int):
 
     A Gaussian at mean zero with unit deviation scores about -0.78 here. It
     has to end at a quarter of that, and no worse than twice its best - the
-    bar four of FPO's ten cases fail. Measured, last over best: 1.00, 1.12,
-    1.00, 1.00, 1.02, ending between -0.115 and -0.145.
+    bar `test_fpo_holds_what_it_learns` sets FPO, and which some of FPO's
+    cases fail. Measured, last over best: 1.00, 1.14, 1.00, 1.00, 1.03,
+    ending between -0.120 and -0.160.
 
     The rate is 3e-3, not CleanRL's 3e-4, because the floor on this reward is
     set by how far the deviation narrows, and at 3e-4, annealed over thirty
