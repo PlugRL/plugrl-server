@@ -78,6 +78,9 @@ class GaussianPolicyConfig(BaseTorchPolicyConfig):
     freeze_obs_stats: bool = False
     # HalfCheetah, Hopper and Walker2d all act in [-1, 1].
     action_clip: float = 1.0
+    # Act with the mean instead of a sample: for evaluation, which acts
+    # without training's sampling noise. `ppo` refuses it.
+    deterministic: bool = False
 
 
 @register_policy(UID)
@@ -152,7 +155,7 @@ class GaussianPolicy(BaseTorchPolicy):
         x = self.extract_model_obs_tensor(_obs)
         z = self.normalize_obs(x)
         dist = self._distribution(z)
-        sample = dist.sample()
+        sample = dist.mean if self.config.deterministic else dist.sample()
         state = GaussianRuntimeState(
             obs=x,
             action=sample,

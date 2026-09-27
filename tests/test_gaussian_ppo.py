@@ -201,6 +201,20 @@ class TestThePolicy:
         far = policy.normalize_obs(torch.full((1, OBS_DIM), 1e6))
         assert far.max().item() == 10.0
 
+    def test_deterministic_acts_with_the_mean(self):
+        """For evaluation, which acts without training's sampling noise."""
+        policy = _policy(deterministic=True)
+        obs = _obs(8, np.random.default_rng(0))
+        with torch.inference_mode():
+            first, _ = policy.get_action_and_runtime_state(obs)
+            second, _ = policy.get_action_and_runtime_state(obs)
+            mean = policy.actor_mean(
+                policy.normalize_obs(policy.extract_model_obs_tensor(obs))
+            )
+
+        np.testing.assert_array_equal(first, second)
+        np.testing.assert_allclose(first[:, 0], mean.clamp(-1, 1).numpy())
+
     def test_frozen_statistics_do_not_move(self):
         policy = _policy(freeze_obs_stats=True)
 
@@ -353,6 +367,11 @@ class TestTheAlgorithm:
         seen = [_iteration(algo, rng)[1]["models"]["learning_rate"] for _ in range(2)]
 
         np.testing.assert_allclose(seen, [1e-3, 1e-3])
+
+    def test_it_refuses_a_policy_that_does_not_sample(self):
+        """The ratio is of the density of what was done; a mean has none."""
+        with pytest.raises(ValueError, match="deterministic"):
+            PPOAlgorithm(PPOAlgoConfig(), _policy(deterministic=True))
 
     def test_one_adam_over_every_parameter_with_cleanrl_epsilon(self):
         algo = _algo()
