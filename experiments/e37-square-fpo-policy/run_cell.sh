@@ -8,7 +8,10 @@
 # * The policy is fpo-policy as E35 cloned it - chunks of 4, three hidden
 #   layers of 1024, the four low-dimensional keys - started from BC (the
 #   cloned checkpoint) with `--algo.restore except-critic`, so the value head
-#   starts from the run's own initialisation.
+#   starts from the run's own initialisation, and the observation statistics
+#   stay the demonstrations' (`--policy.freeze-obs-stats`, #82): the first
+#   pilot showed them drifting under a critic-only iteration and the cloned
+#   policy's success falling with them.
 # * fpo: FPO++'s square fine-tuning as far as this FPO has it (PROTOCOL.md):
 #   the chunk loss over the 4 executed steps and 7 dimensions, velocity error,
 #   uniform times, one ratio per sample, one critic-only iteration, clip 0.01,
@@ -42,7 +45,8 @@ KEYS=(robot0_eef_pos robot0_eef_quat robot0_gripper_qpos object)
 mkdir -p "$OUT"
 
 POLICY_ARGS=(--policy.obs-dim 23 --policy.action-dim 7 --policy.action-horizon 4
-  --policy.hidden-dims 1024 1024 1024 --policy.state-keys "${KEYS[@]}")
+  --policy.hidden-dims 1024 1024 1024 --policy.state-keys "${KEYS[@]}"
+  --policy.freeze-obs-stats)
 START=(--algo.policy-checkpoint-path "$BC" --algo.restore except-critic)
 if [ "$ALGO" = fpo ]; then
   VARIANT=default
