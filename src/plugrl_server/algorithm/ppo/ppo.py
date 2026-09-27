@@ -46,6 +46,11 @@ class PPOAlgorithm(BaseAlgorithm):
                 f"ppo needs a policy with evaluate_actions, such as "
                 f"gaussian-policy; {type(policy).__name__} has none"
             )
+        if getattr(policy.config, "deterministic", False):
+            raise ValueError(
+                "ppo needs a policy that samples: --policy.deterministic is for "
+                "evaluation, and a mean action has no density to form a ratio from"
+            )
         self.rollout_buffer = PPOBuffer(
             buffer_size=config.buffer_size,
             example_train_state=self.example_train_state(batch_size=1),
