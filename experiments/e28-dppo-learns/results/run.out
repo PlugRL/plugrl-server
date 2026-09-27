@@ -1,0 +1,12 @@
+start 2026-09-25 19:34:10
+code:   d1f4783 (src /home/guangzhao/zuogou/plugrl/e28/src)
+client: 931ab56 (/home/guangzhao/zuogou/plugrl/e28/../plugrl-env-client/.venv/bin/python)
+--- wave 1: dppo-policy
+--- wave 2: fpo-policy
+end   2026-09-25 20:11:12
+dppo-hopper     failed seeds: 0
+dppo-walker     failed seeds: 0
+dppo-cheetah    failed seeds: 0
+fpodppo-hopper  failed seeds: 0
+fpodppo-walker  failed seeds: 0
+E28_DONE

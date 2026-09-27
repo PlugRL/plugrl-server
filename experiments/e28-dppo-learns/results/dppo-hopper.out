@@ -1,0 +1,10 @@
+cell:    dppo-hopper = dppo-policy/hopper x dppo/hopper x Hopper-v5
+iters:   100 x 1024  batch: 512  replan: 4  seeds: 0 1 2
+out:     /home/guangzhao/zuogou/plugrl/e28/experiments/e28-dppo-learns/results/dppo-hopper
+start 2026-09-25 19:34:10
+seed 0 finished rc=0 at 19:49:35
+seed 1 finished rc=0 at 19:49:37
+seed 2 finished rc=0 at 19:49:44
+end   2026-09-25 19:49:44
+failed seeds: 0
+CELL_DONE dppo-hopper

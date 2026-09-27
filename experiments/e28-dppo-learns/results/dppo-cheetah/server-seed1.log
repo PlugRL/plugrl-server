@@ -1,0 +1,26 @@
+19:34:57|INFO|plugrl_server version: 0.1.0
+19:34:57|INFO|Algorithm: dppo, Config: DPPOAlgoConfigCheetah(global_steps=102400, gamma=0.99, gamma_denoising=0.99, actor_lr=0.0001, critic_lr=0.001, actor_weight_decay=0.0, critic_weight_decay=0.0, actor_lr_scheduler=SchedulerConfig(min_lr=0.0001, warmup_steps=10), critic_lr_scheduler=SchedulerConfig(min_lr=0.001, warmup_steps=10), buffer_size=1024, gae_lambda=0.95, update_epochs=5, norm_adv=True, clip_ploss_coef=0.01, clip_ploss_coef_base=0.01, clip_ploss_coef_rate=3, clip_vloss_coef=inf, ent_coef=0.0, vf_coef=0.5, max_grad_norm=inf, target_kl=inf, logprob_noise_level=0.1, sampling_noise_level=0.1, clip_advantage_lower_quantile=0, clip_advantage_upper_quantile=1, n_critic_warmup_itrs=0, use_normalized_rewards=True, batch_size=512, train_itrs=100, save_interval=20, grad_accum_steps=8, policy_checkpoint_path=None, restore='all')
+19:34:57|INFO|Policy: dppo-policy, Config: DPPOPolicyConfigCheetah(algo='dppo', device=device(type='cpu'), env_type='gym', env_name='halfcheetah-medium-v2', checkpoint_path=None, critic=DPPOCriticObsConfig(mlp_dims=[256, 256, 256], activation='Mish', residual_style=True))
+19:34:57|INFO|Seeded python, numpy and torch with 1. One env client is then reproducible; several are not, because batch composition depends on when their requests arrive.
+19:34:57|INFO|Checkpoint Manager created: 
+<plugrl_server.common.checkpoint_manager.CheckpointManager object at 0x7fc1f149aed0> at /home/guangzhao/zuogou/plugrl/e28/experiments/e28-dppo-learns/results/dppo-cheetah/dppo/dppo-policy/dppo-cheetah-seed1
+19:34:57|INFO|Number of network parameters: 568392
+19:34:57|INFO|Policy created...
+19:34:57|INFO|Initialized RolloutBuffer buffer_size=1024 action_shape=(1024, 20, 4, 6) value_shape=(1024,)
+19:34:57|INFO|Algorithm created: 
+<plugrl_server.algorithm.dppo.dppo.DPPOAlgorithm object at 0x7fc1f14b8390>
+19:34:57|INFO|Agent Server is listening on 0.0.0.0:9521
+/home/guangzhao/zuogou/plugrl/plugrl-server/.venv/lib/python3.11/site-packages/torch/utils/data/dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+19:37:58|INFO|Checkpoint saved at step 20481 to /home/guangzhao/zuogou/plugrl/e28/experiments/e28-dppo-learns/results/dppo-cheetah/dppo/dppo-policy/dppo-cheetah-seed1/20481
+19:40:59|INFO|Checkpoint saved at step 40961 to /home/guangzhao/zuogou/plugrl/e28/experiments/e28-dppo-learns/results/dppo-cheetah/dppo/dppo-policy/dppo-cheetah-seed1/40961
+19:43:59|INFO|Checkpoint saved at step 61441 to /home/guangzhao/zuogou/plugrl/e28/experiments/e28-dppo-learns/results/dppo-cheetah/dppo/dppo-policy/dppo-cheetah-seed1/61441
+19:46:59|INFO|Checkpoint saved at step 81921 to /home/guangzhao/zuogou/plugrl/e28/experiments/e28-dppo-learns/results/dppo-cheetah/dppo/dppo-policy/dppo-cheetah-seed1/81921
+19:49:59|INFO|Checkpoint saved at step 102401 to /home/guangzhao/zuogou/plugrl/e28/experiments/e28-dppo-learns/results/dppo-cheetah/dppo/dppo-policy/dppo-cheetah-seed1/102401
+19:49:59|INFO|Stopping server as the algorithm signaled to stop.
+19:49:59|INFO|Shutdown started: aborting pending infer requests.
+19:49:59|INFO|Shutdown cleanup finished: pending_futures=1, drained_requests=1
+19:49:59|INFO|Shutdown closing 1 websocket connection(s).
+19:49:59|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 53350).
+19:49:59|INFO|WebSocket server closed.
+19:49:59|INFO|Scheduler task cancelled and cleaned up.
