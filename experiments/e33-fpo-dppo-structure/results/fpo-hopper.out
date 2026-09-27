@@ -1,0 +1,11 @@
+cell:    fpo-hopper = fpo-policy/default x dppo/hopper x Hopper-v5
+iters:   300 x 1024  batch: 512  replan: 4  seeds: 3 4 5
+extra:   algo --algo.sampling-noise-level 1.0 --algo.logprob-noise-level 1.0; policy --policy.action-horizon 4 --policy.flow-steps 20 --policy.hidden-dims 512 512 512
+out:     /home/guangzhao/zuogou/plugrl/e33/experiments/e33-fpo-dppo-structure/results/fpo-hopper
+start 2026-09-27 06:11:36
+seed 3 finished rc=0 at 06:53:05
+seed 4 finished rc=0 at 06:53:19
+seed 5 finished rc=0 at 06:53:20
+end   2026-09-27 06:53:20
+failed seeds: 0
+CELL_DONE fpo-hopper

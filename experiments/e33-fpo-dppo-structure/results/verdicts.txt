@@ -1,0 +1,47 @@
+P1  every cell runs end to end
+    fpo-cheetah  HalfCheetah-v5  HOLDS   (40 min)
+    fpo-hopper   Hopper-v5       HOLDS   (42 min)
+    fpo-walker   Walker2d-v5     HOLDS   (42 min)
+
+V1  logged entropy within 0.005 of -0.0040, every iteration
+    fpo-cheetah  -0.0040 to -0.0040  PASS
+    fpo-hopper   -0.0040 to -0.0040  PASS
+    fpo-walker   -0.0040 to -0.0040  PASS
+
+status  learns: Hopper, Walker2d 291-300 >= 500; HalfCheetah 291-300 minus the first >= +200; on 2 of 3
+    fpo-cheetah  +1331.1, +1411.3, +1293.5    3 of 3  -> learns
+    fpo-hopper   1024.6, 998.0, 1036.7        3 of 3  -> learns
+    fpo-walker   562.0, 282.8, 568.5          2 of 3  -> learns
+
+P2  fpo-policy learns Hopper under DPPO, on seeds E30 did not use
+    HOLDS
+
+P3  fpo-policy learns Walker2d under DPPO
+    HOLDS
+
+P4  fpo-policy learns HalfCheetah under DPPO
+    HOLDS
+
+reported: mean return over iterations 91-100 (E30's length), 191-200, 291-300
+    fpo-cheetah  seed 0    -199.5    -119.2    1145.3
+    fpo-cheetah  seed 1    -198.8     -65.0    1185.1
+    fpo-cheetah  seed 2    -169.7     318.4    1022.5
+    fpo-hopper   seed 3     938.8     930.6    1024.6
+    fpo-hopper   seed 4     667.9    1008.0     998.0
+    fpo-hopper   seed 5     943.8     986.0    1036.7
+    fpo-walker   seed 0     270.6     321.5     562.0
+    fpo-walker   seed 1     280.0     282.3     282.8
+    fpo-walker   seed 2     282.4     315.3     568.5
+
+reported: first iteration and mean of the last ten, return and episode length
+    fpo-cheetah  seed 0  return   -185.8 ->   1145.3   length 1000.0 -> 1000.0
+    fpo-cheetah  seed 1  return   -226.2 ->   1185.1   length 1000.0 -> 1000.0
+    fpo-cheetah  seed 2  return   -271.0 ->   1022.5   length 1000.0 -> 1000.0
+    fpo-hopper   seed 3  return     19.2 ->   1024.6   length   23.3 ->  967.6
+    fpo-hopper   seed 4  return     16.4 ->    998.0   length   21.5 -> 1000.0
+    fpo-hopper   seed 5  return     17.6 ->   1036.7   length   23.0 ->  991.3
+    fpo-walker   seed 0  return      2.5 ->    562.0   length   21.5 ->  513.5
+    fpo-walker   seed 1  return      3.0 ->    282.8   length   22.5 ->  202.0
+    fpo-walker   seed 2  return      2.5 ->    568.5   length   21.4 ->  558.3
+
+wrote /home/guangzhao/zuogou/plugrl/e33/experiments/e33-fpo-dppo-structure/summary.tsv

@@ -1,0 +1,35 @@
+06:11:48|INFO|plugrl_server version: 0.1.0
+06:11:48|INFO|Algorithm: dppo, Config: DPPOAlgoConfigHopper(global_steps=307200, gamma=0.99, gamma_denoising=0.99, actor_lr=0.0001, critic_lr=0.001, actor_weight_decay=0.0, critic_weight_decay=0.0, actor_lr_scheduler=SchedulerConfig(min_lr=0.0001, warmup_steps=10), critic_lr_scheduler=SchedulerConfig(min_lr=0.001, warmup_steps=10), buffer_size=1024, gae_lambda=0.95, update_epochs=5, norm_adv=True, clip_ploss_coef=0.01, clip_ploss_coef_base=0.01, clip_ploss_coef_rate=3, clip_vloss_coef=inf, ent_coef=0.0, vf_coef=0.5, max_grad_norm=inf, target_kl=inf, logprob_noise_level=1.0, sampling_noise_level=1.0, logprob_clamp_min=-5.0, logprob_clamp_max=2.0, clip_advantage_lower_quantile=0, clip_advantage_upper_quantile=1, n_critic_warmup_itrs=0, use_normalized_rewards=True, batch_size=512, train_itrs=300, save_interval=20, grad_accum_steps=8, policy_checkpoint_path=None, restore='all')
+06:11:48|INFO|Policy: fpo-policy, Config: FPOPolicyConfig(algo='dppo', device=device(type='cpu'), obs_dim=11, action_dim=3, flow_steps=20, timestep_embed_dim=8, action_horizon=4, feather_std=0.0, policy_mlp_output_scale=0.25, normalize_observations=True, hidden_dims=(512, 512, 512), value_hidden_dims=(256, 256, 256, 256, 256), state_keys=('obs',))
+06:11:48|INFO|Seeded python, numpy and torch with 5. One env client is then reproducible; several are not, because batch composition depends on when their requests arrive.
+06:11:48|INFO|Checkpoint Manager created: 
+<plugrl_server.common.checkpoint_manager.CheckpointManager object at 0x7c90615bb790> at /home/guangzhao/zuogou/plugrl/e33/experiments/e33-fpo-dppo-structure/results/fpo-hopper/dppo/fpo-policy/fpo-hopper-seed5
+06:11:48|INFO|Policy created...
+06:11:48|INFO|Initialized RolloutBuffer buffer_size=1024 action_shape=(1024, 20, 4, 3) value_shape=(1024,)
+06:11:48|INFO|Algorithm created: 
+<plugrl_server.algorithm.dppo.dppo.DPPOAlgorithm object at 0x7c9060868b10>
+06:11:48|INFO|Agent Server is listening on 0.0.0.0:9915
+/home/guangzhao/zuogou/plugrl/plugrl-server/.venv/lib/python3.11/site-packages/torch/utils/data/dataloader.py:665: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+06:14:33|INFO|Checkpoint saved at step 20481 to /home/guangzhao/zuogou/plugrl/e33/experiments/e33-fpo-dppo-structure/results/fpo-hopper/dppo/fpo-policy/fpo-hopper-seed5/20481
+06:17:18|INFO|Checkpoint saved at step 40961 to /home/guangzhao/zuogou/plugrl/e33/experiments/e33-fpo-dppo-structure/results/fpo-hopper/dppo/fpo-policy/fpo-hopper-seed5/40961
+06:20:04|INFO|Checkpoint saved at step 61441 to /home/guangzhao/zuogou/plugrl/e33/experiments/e33-fpo-dppo-structure/results/fpo-hopper/dppo/fpo-policy/fpo-hopper-seed5/61441
+06:22:55|INFO|Checkpoint saved at step 81921 to /home/guangzhao/zuogou/plugrl/e33/experiments/e33-fpo-dppo-structure/results/fpo-hopper/dppo/fpo-policy/fpo-hopper-seed5/81921
+06:25:42|INFO|Checkpoint saved at step 102401 to /home/guangzhao/zuogou/plugrl/e33/experiments/e33-fpo-dppo-structure/results/fpo-hopper/dppo/fpo-policy/fpo-hopper-seed5/102401
+06:28:27|INFO|Checkpoint saved at step 122881 to /home/guangzhao/zuogou/plugrl/e33/experiments/e33-fpo-dppo-structure/results/fpo-hopper/dppo/fpo-policy/fpo-hopper-seed5/122881
+06:31:15|INFO|Checkpoint saved at step 143361 to /home/guangzhao/zuogou/plugrl/e33/experiments/e33-fpo-dppo-structure/results/fpo-hopper/dppo/fpo-policy/fpo-hopper-seed5/143361
+06:34:01|INFO|Checkpoint saved at step 163841 to /home/guangzhao/zuogou/plugrl/e33/experiments/e33-fpo-dppo-structure/results/fpo-hopper/dppo/fpo-policy/fpo-hopper-seed5/163841
+06:36:47|INFO|Checkpoint saved at step 184321 to /home/guangzhao/zuogou/plugrl/e33/experiments/e33-fpo-dppo-structure/results/fpo-hopper/dppo/fpo-policy/fpo-hopper-seed5/184321
+06:39:34|INFO|Checkpoint saved at step 204801 to /home/guangzhao/zuogou/plugrl/e33/experiments/e33-fpo-dppo-structure/results/fpo-hopper/dppo/fpo-policy/fpo-hopper-seed5/204801
+06:42:24|INFO|Checkpoint saved at step 225280 to /home/guangzhao/zuogou/plugrl/e33/experiments/e33-fpo-dppo-structure/results/fpo-hopper/dppo/fpo-policy/fpo-hopper-seed5/225280
+06:45:13|INFO|Checkpoint saved at step 245761 to /home/guangzhao/zuogou/plugrl/e33/experiments/e33-fpo-dppo-structure/results/fpo-hopper/dppo/fpo-policy/fpo-hopper-seed5/245761
+06:48:02|INFO|Checkpoint saved at step 266241 to /home/guangzhao/zuogou/plugrl/e33/experiments/e33-fpo-dppo-structure/results/fpo-hopper/dppo/fpo-policy/fpo-hopper-seed5/266241
+06:50:49|INFO|Checkpoint saved at step 286721 to /home/guangzhao/zuogou/plugrl/e33/experiments/e33-fpo-dppo-structure/results/fpo-hopper/dppo/fpo-policy/fpo-hopper-seed5/286721
+06:53:20|INFO|Checkpoint saved at step 307201 to /home/guangzhao/zuogou/plugrl/e33/experiments/e33-fpo-dppo-structure/results/fpo-hopper/dppo/fpo-policy/fpo-hopper-seed5/307201
+06:53:20|INFO|Stopping server as the algorithm signaled to stop.
+06:53:20|INFO|Shutdown started: aborting pending infer requests.
+06:53:20|INFO|Shutdown cleanup finished: pending_futures=1, drained_requests=1
+06:53:20|INFO|Shutdown closing 1 websocket connection(s).
+06:53:20|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 44342).
+06:53:20|INFO|WebSocket server closed.
+06:53:20|INFO|Scheduler task cancelled and cleaned up.
