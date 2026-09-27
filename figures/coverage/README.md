@@ -56,6 +56,12 @@ bash libero_record.sh       # three one-episode evaluations at once
 then copied to `media/raw/pi0-{base,fpo,dppo}/` and encoded with
 `pick.py pi0-base` and so on.
 
+For the READMEs, which cannot run the page's figure:
+
+```bash
+python grid_still.py        # media/site/coverage-grid.jpg: stills, status borders, curves
+```
+
 Everything under `media/` stays out of git here. Copy
 `media/site/*.{mp4,jpg}` and `coverage.json` to the page's
-`docs/media/coverage/`.
+`docs/media/coverage/`, and `coverage-grid.jpg` to its `docs/media/`.
