@@ -118,10 +118,10 @@
     },
     {
       "id": "dppo-dppo-square", "row": "dppo-dppo", "column": "square",
-      "status": "runs", "experiments": ["E27"],
-      "note": "no success yet: sparse reward, random start", "note_zh": "还没成功过：稀疏奖励、随机初始化",
-      "runs": "e27/experiments/e27-robomimic/results/dppo-rm/dppo/dppo-policy/dppo-rm-seed{seed}", "seed": 0,
-      "server": ["dppo-policy", "default", "eval", "default", "--policy.env-type", "robomimic", "--policy.env-name", "square"],
+      "status": "learns", "experiments": ["E27", "E34"],
+      "note": "from DPPO's released policy, success 0.33–0.36 → 0.65–0.70", "note_zh": "从 DPPO 官方预训练策略起步，成功率 0.33–0.36 → 0.65–0.70",
+      "runs": "e34/experiments/e34-square-dppo/results/dppo-square/dppo/dppo-policy/dppo-square-seed{seed}", "seed": 2,
+      "server": ["dppo-policy", "square", "eval", "default"],
       "client": ["robomimic-v1", "--env.name", "square-img", "--env.agentview-image-size", "256", "256"],
       "replan": 4, "native_fps": 20
     }

@@ -63,9 +63,9 @@
       "env": "mujoco", "source": "experiments/e31-dppo-longer/run.sh"
     },
     "dppo-dppo-square": {
-      "server": ["dppo-policy default dppo default", "--port 8000 --seed 0 --policy.device cpu", "--policy.env-type robomimic --policy.env-name square", "--algo.buffer-size 1024 --algo.batch-size 256 --algo.train-itrs 20"],
-      "client": ["robomimic-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-episodes 100000", "--env.name square-img --env.agentview-image-size 84 84", "--runner.replan-steps 4"],
-      "env": "robomimic", "source": "experiments/e27-robomimic/run_cell.sh"
+      "server": ["dppo-policy square dppo square", "--port 8000 --seed 0 --policy.device cpu", "--policy.checkpoint-path DPPO_SQUARE_CHECKPOINT", "--algo.train-itrs 40"],
+      "client": ["robomimic-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-procs 6 --num-episodes 100000", "--env.name square-img --env.agentview-image-size 84 84", "--env.no-terminate-on-success --runner.replan-steps 4"],
+      "env": "robomimic", "source": "experiments/e34-square-dppo/run_cell.sh"
     },
     "pi0-base": {
       "server": ["pi0-policy default eval default", "--port 8000 --policy.device cuda", "--policy.name pi05_libero --policy.checkpoint-path PI05_LIBERO_CHECKPOINT"],
