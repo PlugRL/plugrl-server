@@ -1,0 +1,34 @@
+P1  the cell runs end to end
+    seed 0  HOLDS  (40 iterations)
+    seed 1  HOLDS  (40 iterations)
+    seed 2  HOLDS  (40 iterations)
+
+V1  every server started from the released checkpoint's ema, 10 of 20 steps
+    seed 0  ema yes  ft 10 yes
+    seed 1  ema yes  ft 10 yes
+    seed 2  ema yes  ft 10 yes
+    PASS
+
+status  learns: success, mean of the last ten minus iterations 1-3, at least +0.2 on 2 of 3
+    seed 0  0.361 -> 0.649  (+0.288)
+    seed 1  0.361 -> 0.675  (+0.313)
+    seed 2  0.330 -> 0.702  (+0.372)
+    3 of 3  -> learns
+
+P2  dppo-policy learns square under DPPO's own fine-tuning
+    HOLDS
+
+reported: success by window of ten iterations
+    seed 0  0.365  0.493  0.553  0.649
+    seed 1  0.372  0.506  0.609  0.675
+    seed 2  0.386  0.526  0.591  0.702
+
+reported: update diagnostics, mean over iterations 3-12 and the last ten
+    seed 0  kl        4.39e-04 -> 1.62e-04
+    seed 0  clipfrac  1.67e-01 -> 1.32e-01
+    seed 1  kl        8.95e-04 -> 1.79e-04
+    seed 1  clipfrac  1.76e-01 -> 1.34e-01
+    seed 2  kl        3.24e-04 -> 1.60e-04
+    seed 2  clipfrac  1.65e-01 -> 1.32e-01
+
+wrote /home/guangzhao/zuogou/plugrl/e34/experiments/e34-square-dppo/summary.tsv

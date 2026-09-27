@@ -1,0 +1,7 @@
+start 2026-09-27 07:18:26
+code:   360acaf (src /home/guangzhao/zuogou/plugrl/e34/src)
+client: 931ab56
+iters:  40  seeds: 0 1 2  clients per seed: 6  out: /home/guangzhao/zuogou/plugrl/e34/experiments/e34-square-dppo/results
+end   2026-09-27 12:29:38
+dppo-square  failed seeds: 0
+E34_DONE

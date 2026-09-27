@@ -1,0 +1,13 @@
+cell:    dppo-square = dppo-policy/square x dppo/square x robomimic square
+iters:   40  clients per seed: 6  seeds: 0 1 2
+ckpt:    /home/guangzhao/zuogou/plugrl/e34/../ckpt/dppo-square/state_8000.pt sha256 368ce587294896b2
+server:  /home/guangzhao/zuogou/plugrl/e34/../plugrl-server/.venv/bin/python (src /home/guangzhao/zuogou/plugrl/e34/src)
+client:  /home/guangzhao/zuogou/plugrl/e34/../plugrl-env-client/.venv-robomimic/bin/python
+out:     /home/guangzhao/zuogou/plugrl/e34/experiments/e34-square-dppo/results/dppo-square
+start 2026-09-27 07:18:26
+seed 1 finished rc=0 at 12:27:59
+seed 2 finished rc=0 at 12:29:20
+seed 0 finished rc=0 at 12:29:38
+end   2026-09-27 12:29:38
+failed seeds: 0
+CELL_DONE dppo-square
