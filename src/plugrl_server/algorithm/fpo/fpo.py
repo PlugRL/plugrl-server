@@ -88,10 +88,12 @@ class FPOAlgorithm(BaseAlgorithm):
             + list(self.policy.critic.parameters()),
             device=config.master_weights_device,
         )
-        self.optimizer = torch.optim.Adam(
-            self.master_weights.optimizer_params,
-            lr=config.learning_rate,
+        # MasterWeights keeps the order it was given and drops what is frozen,
+        # so the actor's optimizer parameters are the first this many.
+        self._n_actor_params = sum(
+            1 for p in self.policy.actor.parameters() if p.requires_grad
         )
+        self.optimizer = self._build_optimizer()
         self.global_step = 0
         self.curr_train_itrs = 0
         self.last_saved_itr = 0
@@ -170,6 +172,7 @@ class FPOAlgorithm(BaseAlgorithm):
             steps=self.config.cfm_loss_steps,
             dims=self.config.cfm_loss_dims,
             sum_over_steps=self.config.cfm_loss_sum_over_steps,
+            huber_delta=self.config.cfm_loss_huber_delta,
         )
 
     def pre_learn(self) -> None:
@@ -373,7 +376,90 @@ class FPOAlgorithm(BaseAlgorithm):
         # third iteration on and none of its metrics could show it, because the
         # only advantage statistic logged was measured after normalising.
         self._advantage_raw_std = float(advantage.std().detach().cpu())
-        if not self.config.normalize_advantage:
+        if (
+            not self.config.normalize_advantage
+            or self.config.normalize_advantage_per_minibatch
+        ):
+            return advantage
+        return (advantage - advantage.mean()) / (advantage.std() + 1e-8)
+
+    @property
+    def _split_optimizer(self) -> bool:
+        """Whether FPO++'s optimizer settings are in use, rather than FPO's one Adam."""
+        config = self.config
+        return (
+            config.critic_learning_rate is not None
+            or config.weight_decay != 0.0
+            or config.adam_eps != 1e-8
+            or config.actor_adam_beta2 != 0.999
+        )
+
+    @property
+    def _actor_optimizer_params(self) -> list[torch.nn.Parameter]:
+        return self.master_weights.optimizer_params[: self._n_actor_params]
+
+    @property
+    def _critic_optimizer_params(self) -> list[torch.nn.Parameter]:
+        return self.master_weights.optimizer_params[self._n_actor_params :]
+
+    def _build_optimizer(self) -> torch.optim.Optimizer:
+        """FPO's one Adam over actor and critic, or FPO++'s two AdamW groups.
+
+        FPO++ keeps two AdamW optimizers; two parameter groups of one AdamW
+        are the same arithmetic and keep a single optimizer state to save.
+        """
+        config = self.config
+        if not self._split_optimizer:
+            return torch.optim.Adam(
+                self.master_weights.optimizer_params, lr=config.learning_rate
+            )
+        critic_lr = (
+            config.learning_rate
+            if config.critic_learning_rate is None
+            else config.critic_learning_rate
+        )
+        return torch.optim.AdamW(
+            [
+                dict(
+                    params=self._actor_optimizer_params,
+                    lr=config.learning_rate,
+                    betas=(0.9, config.actor_adam_beta2),
+                ),
+                dict(
+                    params=self._critic_optimizer_params,
+                    lr=critic_lr,
+                    betas=(0.9, 0.999),
+                ),
+            ],
+            eps=config.adam_eps,
+            weight_decay=config.weight_decay,
+        )
+
+    def _clip_gradients(self) -> tuple[float, float] | None:
+        """Clip the actor's and the critic's gradients separately, as FPO++ does.
+
+        Returns their norms before clipping, or None when clipping is off.
+        """
+        limit = self.config.max_grad_norm
+        if limit is None:
+            return None
+        norms = []
+        for params in (self._actor_optimizer_params, self._critic_optimizer_params):
+            with_grad = [p for p in params if p.grad is not None]
+            norms.append(
+                float(torch.nn.utils.clip_grad_norm_(with_grad, limit))
+                if with_grad
+                else 0.0
+            )
+        return norms[0], norms[1]
+
+    def _minibatch_advantage(self, advantage: torch.Tensor) -> torch.Tensor:
+        """Normalise one minibatch's advantages, only when asked to, as FPO++ does.
+
+        Off by default: `_scale_advantage` explains why the buffer is the
+        default here.
+        """
+        if not self.config.normalize_advantage_per_minibatch or advantage.numel() < 2:
             return advantage
         return (advantage - advantage.mean()) / (advantage.std() + 1e-8)
 
@@ -438,10 +524,12 @@ class FPOAlgorithm(BaseAlgorithm):
         initial_cfm_loss,
     ) -> tuple[torch.Tensor, dict[str, float], dict[str, float]]:
         # `advantage` arrives already normalised over the whole buffer, in
-        # `_build_train_batch_cache`. It is deliberately not normalised again
-        # here: this method sees one minibatch, and at the batch sizes a VLA
-        # forces, a per-minibatch statistic manufactures signal rather than
-        # removing scale.
+        # `_build_train_batch_cache`. It is not normalised again here unless
+        # `normalize_advantage_per_minibatch` asks, as FPO++ does: this method
+        # sees one minibatch, and at the batch sizes a VLA forces, a
+        # per-minibatch statistic manufactures signal rather than removing
+        # scale.
+        advantage = self._minibatch_advantage(advantage)
         obs_cache_started_at = time.perf_counter()
         obs_cache = self.policy.build_obs_cache(obs)
         _sync_cuda_if_needed(self.policy.device)
@@ -550,6 +638,11 @@ class FPOAlgorithm(BaseAlgorithm):
         batch_to_device_total = 0.0
         compute_loss_total = 0.0
         stopped_early = False
+        grad_norms: dict[str, list[float]] = dict(actor=[], critic=[])
+        # How much of the return the critic that collected this buffer
+        # explains, read once the buffer's returns exist: before the first
+        # epoch, or after its refresh under `fpo_playground_trick`.
+        rollout_summary: dict | None = None
         # Read once, here: `curr_train_itrs` is incremented at the end of this
         # method, so asking again where the metrics are assembled would report
         # the next iteration's answer.
@@ -588,6 +681,7 @@ class FPOAlgorithm(BaseAlgorithm):
             ret_all = torch.from_numpy(self.rollout_buffer.returns[:num_items]).to(
                 self.policy.device
             )
+            rollout_summary = self.rollout_buffer.description()
 
         for _ in range(self.config.num_updates_per_batch):
             if self.config.fpo_playground_trick:
@@ -595,6 +689,8 @@ class FPOAlgorithm(BaseAlgorithm):
                 value_all, advantage_all, ret_all = self._refresh_epoch_value_targets(
                     obs_all
                 )
+                if rollout_summary is None:
+                    rollout_summary = self.rollout_buffer.description()
                 dataloader_total += time.perf_counter() - dataloader_started_at
             dataloader_started_at = time.perf_counter()
             indices = torch.randperm(num_items, device=self.policy.device)
@@ -634,6 +730,15 @@ class FPOAlgorithm(BaseAlgorithm):
                 if self.in_critic_warmup():
                     self._zero_actor_grads()
                 self.master_weights.grads_to_masters()
+                if in_warmup and self._split_optimizer:
+                    # AdamW decays every parameter it steps, gradient or
+                    # not, and skips one without a gradient altogether.
+                    for param in self._actor_optimizer_params:
+                        param.grad = None
+                norms = self._clip_gradients()
+                if norms is not None:
+                    grad_norms["actor"].append(norms[0])
+                    grad_norms["critic"].append(norms[1])
                 self.optimizer.step()
                 self.master_weights.masters_to_model()
                 _sync_cuda_if_needed(self.policy.device)
@@ -657,6 +762,7 @@ class FPOAlgorithm(BaseAlgorithm):
         learn_loop_time = time.perf_counter() - learn_started_at
         return self.global_step, dict(
             train=dict(train_itrs=float(self.curr_train_itrs)),
+            rollout=rollout_summary or {},
             losses=dict(
                 policy_loss=float(np.mean(metric_history["policy_loss"])),
                 value_loss=float(np.mean(metric_history["value_loss"])),
@@ -678,6 +784,16 @@ class FPOAlgorithm(BaseAlgorithm):
                 loss_delta_mean=float(np.mean(metric_history["loss_delta_mean"])),
                 loss_delta_min=float(np.min(metric_history["loss_delta_min"])),
                 loss_delta_max=float(np.max(metric_history["loss_delta_max"])),
+                # Before clipping, the largest of the iteration; only when
+                # `max_grad_norm` is set.
+                **(
+                    dict(
+                        actor_grad_norm_max=max(grad_norms["actor"]),
+                        critic_grad_norm_max=max(grad_norms["critic"]),
+                    )
+                    if grad_norms["actor"]
+                    else {}
+                ),
             ),
             learn_runtime=dict(
                 dataloader_time=dataloader_total,
