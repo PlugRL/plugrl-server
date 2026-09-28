@@ -1,0 +1,4 @@
+seed	iterations	runs	start_success	end_success	gain	start_return	end_return
+0	40	true	0.185	0.547	+0.362	30.3	109.0
+1	40	true	0.195	0.537	+0.342	36.4	114.2
+2	40	true	0.212	0.565	+0.352	34.3	109.9

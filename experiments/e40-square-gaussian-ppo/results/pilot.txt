@@ -1,0 +1,27 @@
+E40 pilot, 2026-09-27 22:15-22:27, guangzhao, code 822c5a7 (#92 plus E40's
+scripts), client 931ab56, CKPT ~/zuogou/plugrl/ckpt/dppo-square-gaussian/
+state_5000.pt (sha256 bf787a879dcaffe3, DPPO's square_pre_gaussian_mlp_ta4).
+
+  ITERS=2 SEEDS=0 OUT=pilot bash run.sh
+
+Seed 0, two client processes, two iterations of 20,000 chunks. rc 0, no
+traceback. Server log: "Loaded the model weights of ... the deviation is
+bounded at 1 by the checkpoint's logvar_max", and PPOAlgoConfigDPPOSquare
+with every value of ft_ppo_gaussian_mlp.yaml.
+
+  iteration                      1 (critic only)   2
+  rollout/success                0.250             0.235
+  rollout/reward                 40.8              38.7
+  rollout/explained_variance     -0.201            0.439
+  losses/approx_kl               8.6e-09           0.0375
+  losses/clipfrac                0                 0.781
+  losses/entropy (per element)   -0.884            -0.883
+  train/max_grad_norm            0.69              8.13
+  collection / learn (s)         316 / 27          319 / 27
+
+The entropy is a normal's of deviation 0.1 per element, the initial std. A
+clip fraction near 0.8 at the first update follows from a deviation of 0.1,
+a clip of 0.01, and a ratio of the mean per-element log-probability. A shift
+of the mean by 0.005 moves one element's log-density by about 0.05.
+
+About 5.7 minutes an iteration: 40 iterations in about 4 hours.
