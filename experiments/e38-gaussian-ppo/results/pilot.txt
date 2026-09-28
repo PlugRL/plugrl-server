@@ -1,0 +1,28 @@
+E38 pilot, 2026-09-27, guangzhao, code ab6e32f (#85 plus E38's scripts, before
+the GAE fix), client 931ab56.
+
+  ITERS=3 SEEDS=0 bash experiments/e38-gaussian-ppo/run.sh
+
+  start 17:38:10, end 17:39:04; failed seeds: 0 in every cell.
+
+  cell          seed 0 rc   traceback   env steps   client effective_fps
+  ppo-cheetah   0           none        6,145       528.19
+  ppo-hopper    0           none        6,145       563.74
+  ppo-walker    0           none        6,145       584.20
+
+Each run took about 12 s for 3 iterations of 2,048 steps including learning;
+488 iterations alone would take about 30 minutes. Returns were not read.
+
+GAE diagnostic, 2026-09-27 17:55-18:03, guangzhao. gaussian-policy under ppo
+on Hopper-v5, 100 iterations of 2,048 (the schedule annealed over 100),
+seeds 0-2, through E30's run_cell.sh, once in a checkout before the GAE
+episode-boundary fix (ab6e32f) and once after it (274929c, #85 with #86
+merged). Every run rc=0, no traceback, 100 iterations logged.
+
+  mean return   seed   first   41-50   91-100   length 91-100
+  before          0     12.1   266.5    431.5          150.4
+                  1     15.2   588.7   1512.1          486.6
+                  2     14.2   366.5    909.9          295.1
+  after           0     12.1   674.3   1005.1          312.7
+                  1     15.2   673.1    868.0          271.4
+                  2     14.2   453.6    949.3          296.0

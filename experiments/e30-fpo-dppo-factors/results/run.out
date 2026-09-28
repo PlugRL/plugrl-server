@@ -1,0 +1,13 @@
+start 2026-09-27 04:53:05
+code:   c5d3ce4 (src /home/guangzhao/zuogou/plugrl/e30/src)
+client: 931ab56
+iters:  100  seeds: 0 1 2  out: /home/guangzhao/zuogou/plugrl/e30/experiments/e30-fpo-dppo-factors/results
+--- wave 1
+--- wave 2
+end   2026-09-27 06:00:09
+base     failed seeds: 0
+chunk4   failed seeds: 0
+steps20  failed seeds: 0
+net512   failed seeds: 0
+all      failed seeds: 0
+E30_DONE

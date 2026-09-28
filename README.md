@@ -45,21 +45,23 @@ on HalfCheetah with no GPU and nothing to download, is at
 ## What runs on it
 
 <a href="https://plugrl.github.io/#what-runs-on-it"><img src="https://plugrl.github.io/media/coverage-grid.jpg" width="100%"
-   alt="Twelve cells, three policy-algorithm pairs by four tasks, each with a frame from its trained policy, a training curve and a status. fpo-policy with FPO learns HalfCheetah, Hopper and Walker2d; dppo-policy with DPPO learns HalfCheetah and is still rising on Hopper and Walker2d; fpo-policy with DPPO has not learned; all three run end to end on robomimic square."></a>
+   alt="Fifteen cells, four policy-algorithm pairs on HalfCheetah, Hopper, Walker2d and robomimic square, each with a frame from its trained policy, a training curve and a status. All four pairs learn the three MuJoCo tasks. On square, dppo-policy with DPPO learns, the two fpo-policy pairs run end to end, and the Gaussian policy with PPO was not run."></a>
 
 Every combination of the two MLP policies and the two algorithms on four
-tasks. [On the project page](https://plugrl.github.io/#what-runs-on-it) each
+tasks, and the baseline they are measured against: a Gaussian policy with
+PPO, as CleanRL runs it. [On the project page](https://plugrl.github.io/#what-runs-on-it) each
 cell plays its clip and shows the two commands that trained it, and pi0.5 on
 LIBERO sits below. Moving between cells means changing a few words. On
-Hopper, the three servers were:
+Hopper, the four servers were:
 
 ```bash
 plugrl-run-server fpo-policy default fpo default --policy.obs-dim 11 --policy.action-dim 3 --algo.buffer-size 4096 --algo.global-steps 409600
 plugrl-run-server fpo-policy default dppo hopper --policy.obs-dim 11 --policy.action-dim 3 --algo.buffer-size 4096 --algo.train-itrs 100
 plugrl-run-server dppo-policy hopper dppo hopper --algo.buffer-size 1024 --algo.batch-size 512 --algo.train-itrs 100
+plugrl-run-server gaussian-policy default ppo default --policy.obs-dim 11 --policy.action-dim 3
 ```
 
-The env client is the same for all three, except that DPPO's own policy acts
+The env client is the same for all four, except that DPPO's own policy acts
 in chunks of four (`--runner.replan-steps 4`). None of these servers has
 MuJoCo, robosuite or gymnasium installed. The env clients have them, in three
 separate environments: MuJoCo 3 for these tasks, and MuJoCo 2.3.7 with
@@ -126,10 +128,15 @@ We use `uv` to manage dependencies and development environments.
 - `dppo` - DPPO (Diffusion Policy Policy Optimization). No extras needed,
   and it runs against `fpo-policy`.
 - `dppo-dist` - Distributed DPPO (experimental)
+- `ppo` - PPO as CleanRL's `ppo_continuous_action.py` runs it, every
+  default included. Drives `gaussian-policy`; no extras needed.
 - `eval` - Evaluation only, no learning
 
 **Policies:**
 - `fpo-policy` - Flow policy. Defaults to `obs_dim=17`, `action_dim=6`
+- `gaussian-policy` - CleanRL's Gaussian MLP: tanh layers of 64, a log std
+  that does not depend on the observation. Defaults to `obs_dim=17`,
+  `action_dim=6`
 - `dummy-policy` - Outputs random actions (for testing)
 - `dppo-policy` - DPPO policy (requires `plugrl-server[dppo]` and a checkpoint)
 - `pi0-policy` - PI0 policy (OpenPI). Needs more than a checkpoint. The
@@ -212,6 +219,27 @@ last step. At the default `buffer_size=983040`, any run shorter than about a
 million steps therefore learns exactly once, at the very end - producing a
 single point rather than a curve. 4096 gives one update per 4096 environment
 steps.
+
+#### The baseline: a Gaussian policy with PPO
+
+The pair every other one is measured against, written to CleanRL's
+`ppo_continuous_action.py`: a rollout of 2048 steps, ten epochs of 32
+minibatches, clip 0.2, a learning rate of 3e-4 annealed to zero over 488
+iterations (a million steps), observations and rewards normalised. CleanRL
+does the normalising and the action clipping in gymnasium wrappers; PlugRL's
+client does not wrap, so the policy and the algorithm do it on the server.
+
+```bash
+# Terminal 1: Hopper-v5 has an 11-dimensional observation and 3 actions
+python -m plugrl_server.cli gaussian-policy default ppo default \
+    --port 8000 --policy.device cpu \
+    --policy.obs-dim 11 --policy.action-dim 3
+
+# Terminal 2
+python -m plugrl_env_client.cli mujoco-v1 \
+    --server-port 8000 --num-envs 1 --num-episodes 100000 \
+    --env.name Hopper-v5 --runner.replan-steps 1 --runner.seed 0
+```
 
 #### Quick Start: Testing with Dummy Components
 

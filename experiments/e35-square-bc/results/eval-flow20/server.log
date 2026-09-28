@@ -1,0 +1,22 @@
+09:02:08|INFO|plugrl_server version: 0.1.0
+09:02:08|INFO|Algorithm: eval, Config: EvalConfig(global_steps=None, break_action_chunk=False, policy_checkpoint_path=PosixPath('/home/guangzhao/zuogou/plugrl/ckpt/e35-bc/400000'), num_episodes=50)
+09:02:08|INFO|Policy: fpo-policy, Config: FPOPolicyConfig(algo='eval', device=device(type='cpu'), obs_dim=23, action_dim=7, flow_steps=20, timestep_embed_dim=8, action_horizon=4, feather_std=0.0, policy_mlp_output_scale=0.25, normalize_observations=True, hidden_dims=(1024, 1024, 1024), value_hidden_dims=(256, 256, 256, 256, 256), state_keys=('robot0_eef_pos', 'robot0_eef_quat', 'robot0_gripper_qpos', 'object'))
+09:02:08|INFO|Seeded python, numpy and torch with 0. One env client is then reproducible; several are not, because batch composition depends on when their requests arrive.
+09:02:08|INFO|Checkpoint Manager created: 
+<plugrl_server.common.checkpoint_manager.CheckpointManager object at 0x77e6fc440910> at /home/guangzhao/zuogou/plugrl/e35/experiments/e35-square-bc/results/eval-flow20/ck/eval/fpo-policy/bc-flow20
+09:02:08|INFO|Policy created...
+09:02:08|INFO|Loading policy checkpoint from /home/guangzhao/zuogou/plugrl/ckpt/e35-bc/400000
+09:02:08|INFO|Loading model state from /home/guangzhao/zuogou/plugrl/ckpt/e35-bc/400000...
+09:02:08|INFO|Loading optimizer state from /home/guangzhao/zuogou/plugrl/ckpt/e35-bc/400000...
+09:02:08|INFO|Loading metadata from /home/guangzhao/zuogou/plugrl/ckpt/e35-bc/400000...
+09:02:08|WARNING|Metadata file not found. Resuming step may be inaccurate.
+09:02:08|INFO|Checkpoint loaded from /home/guangzhao/zuogou/plugrl/ckpt/e35-bc/400000.
+09:02:08|INFO|Algorithm created: 
+<plugrl_server.algorithm.evaluation.Evaluation object at 0x77e6fc75a090>
+09:02:08|INFO|Agent Server is listening on 0.0.0.0:9601
+09:04:40|INFO|Checkpoint saved at step 0 to /home/guangzhao/zuogou/plugrl/e35/experiments/e35-square-bc/results/eval-flow20/ck/eval/fpo-policy/bc-flow20/0
+09:04:40|INFO|Stopping server as the algorithm signaled to stop.
+09:04:40|INFO|Shutdown started: aborting pending infer requests.
+09:04:40|INFO|Shutdown closing 1 websocket connection(s).
+09:04:40|INFO|WebSocket server closed.
+09:04:40|INFO|Scheduler task cancelled and cleaned up.

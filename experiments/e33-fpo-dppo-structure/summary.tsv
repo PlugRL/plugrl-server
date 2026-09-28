@@ -1,0 +1,10 @@
+cell	policy	algorithm	task	claim	seed	iterations	runs	first_return	last10_return	first_length	last10_length
+fpo-cheetah	fpo-policy	dppo	HalfCheetah-v5	learns	0	300	true	-185.8	1145.3	1000.0	1000.0
+fpo-cheetah	fpo-policy	dppo	HalfCheetah-v5	learns	1	300	true	-226.2	1185.1	1000.0	1000.0
+fpo-cheetah	fpo-policy	dppo	HalfCheetah-v5	learns	2	300	true	-271.0	1022.5	1000.0	1000.0
+fpo-hopper	fpo-policy	dppo	Hopper-v5	learns	3	300	true	19.2	1024.6	23.3	967.6
+fpo-hopper	fpo-policy	dppo	Hopper-v5	learns	4	300	true	16.4	998.0	21.5	1000.0
+fpo-hopper	fpo-policy	dppo	Hopper-v5	learns	5	300	true	17.6	1036.7	23.0	991.3
+fpo-walker	fpo-policy	dppo	Walker2d-v5	learns	0	300	true	2.5	562.0	21.5	513.5
+fpo-walker	fpo-policy	dppo	Walker2d-v5	learns	1	300	true	3.0	282.8	22.5	202.0
+fpo-walker	fpo-policy	dppo	Walker2d-v5	learns	2	300	true	2.5	568.5	21.4	558.3

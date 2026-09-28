@@ -48,7 +48,9 @@ def main() -> int:
 
     cells = []
     for cell in spec["cells"]:
-        curves = [returns(HOME / cell["runs"].format(seed=s)) for s in range(3)]
+        # Most cells ran seeds 0-2; a cell that ran others names them.
+        seeds = cell.get("seeds", [0, 1, 2])
+        curves = [returns(HOME / cell["runs"].format(seed=s)) for s in seeds]
         cells.append(
             {
                 "id": cell["id"],

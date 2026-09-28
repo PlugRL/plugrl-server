@@ -1,0 +1,10 @@
+cell	policy	algorithm	task	claim	seed	iterations	runs	first_return	last10_return	first_length	last10_length
+ppo-cheetah	gaussian-policy	ppo	HalfCheetah-v5	learns	0	488	true	-335.2	1512.9	1000.0	1000.0
+ppo-cheetah	gaussian-policy	ppo	HalfCheetah-v5	learns	1	488	true	-384.6	1442.5	1000.0	1000.0
+ppo-cheetah	gaussian-policy	ppo	HalfCheetah-v5	learns	2	488	true	-393.9	1557.8	1000.0	1000.0
+ppo-hopper	gaussian-policy	ppo	Hopper-v5	learns	0	488	true	12.1	2298.7	17.6	636.3
+ppo-hopper	gaussian-policy	ppo	Hopper-v5	learns	1	488	true	15.2	2207.4	19.5	585.8
+ppo-hopper	gaussian-policy	ppo	Hopper-v5	learns	2	488	true	14.2	2181.3	18.7	600.9
+ppo-walker	gaussian-policy	ppo	Walker2d-v5	learns	0	488	true	-0.7	2957.2	19.1	685.8
+ppo-walker	gaussian-policy	ppo	Walker2d-v5	learns	1	488	true	-1.8	3260.0	17.7	754.6
+ppo-walker	gaussian-policy	ppo	Walker2d-v5	learns	2	488	true	-0.6	3154.2	18.9	792.4

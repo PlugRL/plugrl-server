@@ -1,0 +1,27 @@
+{
+  "exp_name": "bc-flow10-9600",
+  "process_id": 0,
+  "total_processes": null,
+  "completed_episodes": 50,
+  "total_episode_count": 50,
+  "metric_window": 100,
+  "mean_return": 0.4399999976158142,
+  "mean_success_rate": 0.4399999976158142,
+  "timing": {
+    "env_steps": 16857,
+    "infer_calls": 4222,
+    "feedback_calls": 4222,
+    "infer_wait_s": 24.65426366822794,
+    "infer_obs_pack_s": 0.187786161666736,
+    "env_step_s": 114.68414714490063,
+    "feedback_s": 0.8228452436160296,
+    "feedback_obs_pack_s": 0.2673140459228307,
+    "feedback_info_pack_s": 0.013945399783551693,
+    "collect_time_s": 140.34904221841134,
+    "effective_fps": 120.10769531128767,
+    "infer_wait_frac": 0.17566392530033048,
+    "infer_obs_pack_frac": 0.001337993895067007,
+    "env_step_frac": 0.8171352317918139,
+    "feedback_frac": 0.0058628490127885366
+  }
+}

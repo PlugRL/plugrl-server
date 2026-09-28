@@ -1,0 +1,8 @@
+checkpoint: /home/guangzhao/zuogou/plugrl/ckpt/e35-bc/400000 sha256 7fe7a706c2c4601d
+flow steps: 10  episodes: 50
+start 2026-09-27 08:59:40
+client exited rc=0
+episodes 50 window 100 success rate 0.4399999976158142 mean return 0.4399999976158142
+end   2026-09-27 09:02:06
+BC_EVAL_DONE
+Terminated

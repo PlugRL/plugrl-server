@@ -1,0 +1,11 @@
+cell:    chunk4 = fpo-policy/default x dppo/hopper x Hopper-v5
+iters:   100 x 1024  batch: 512  replan: 4  seeds: 0 1 2
+extra:   algo --algo.sampling-noise-level 1.0 --algo.logprob-noise-level 1.0; policy --policy.action-horizon 4
+out:     /home/guangzhao/zuogou/plugrl/e30/experiments/e30-fpo-dppo-factors/results/chunk4
+start 2026-09-27 04:53:20
+seed 0 finished rc=0 at 05:00:56
+seed 1 finished rc=0 at 05:00:59
+seed 2 finished rc=0 at 05:01:05
+end   2026-09-27 05:01:05
+failed seeds: 0
+CELL_DONE chunk4

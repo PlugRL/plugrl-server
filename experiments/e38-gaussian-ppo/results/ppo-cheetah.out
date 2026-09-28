@@ -1,0 +1,11 @@
+cell:    ppo-cheetah = gaussian-policy/default x ppo/default x HalfCheetah-v5
+iters:   488 x 2048  batch: 64  replan: 1  seeds: 0 1 2
+extra:   algo none; policy --policy.obs-dim 17 --policy.action-dim 6
+out:     /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-cheetah
+start 2026-09-27 18:04:58
+seed 0 finished rc=0 at 18:32:53
+seed 2 finished rc=0 at 18:33:15
+seed 1 finished rc=0 at 18:33:16
+end   2026-09-27 18:33:16
+failed seeds: 0
+CELL_DONE ppo-cheetah

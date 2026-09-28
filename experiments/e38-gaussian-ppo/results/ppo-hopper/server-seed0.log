@@ -1,0 +1,43 @@
+18:05:21|INFO|plugrl_server version: 0.1.0
+18:05:21|INFO|Algorithm: ppo, Config: PPOAlgoConfig(global_steps=999424, learning_rate=0.0003, anneal_lr=True, buffer_size=2048, batch_size=64, update_epochs=10, gamma=0.99, gae_lambda=0.95, norm_adv=True, clip_coef=0.2, clip_vloss=True, ent_coef=0.0, vf_coef=0.5, max_grad_norm=0.5, target_kl=None, normalize_rewards=True, reward_clip=10.0, train_itrs=488, save_interval=20)
+18:05:21|INFO|Policy: gaussian-policy, Config: GaussianPolicyConfig(algo='ppo', device=device(type='cpu'), obs_dim=11, action_dim=3, hidden_dims=(64, 64), state_keys=('obs',), normalize_observations=True, obs_clip=10.0, freeze_obs_stats=False, action_clip=1.0)
+18:05:21|INFO|Seeded python, numpy and torch with 0. One env client is then reproducible; several are not, because batch composition depends on when their requests arrive.
+18:05:21|INFO|Checkpoint Manager created: 
+<plugrl_server.common.checkpoint_manager.CheckpointManager object at 0x7f788c17b150> at /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0
+18:05:21|INFO|Policy created...
+18:05:21|INFO|Initialized RolloutBuffer buffer_size=2048 action_shape=(2048, 3) value_shape=(2048,)
+18:05:21|INFO|Algorithm created: 
+<plugrl_server.algorithm.ppo.ppo.PPOAlgorithm object at 0x7f788c0b6890>
+18:05:21|INFO|Agent Server is listening on 0.0.0.0:9950
+18:06:26|INFO|Checkpoint saved at step 40961 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/40961
+18:07:30|INFO|Checkpoint saved at step 81921 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/81921
+18:08:36|INFO|Checkpoint saved at step 122881 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/122881
+18:09:53|INFO|Checkpoint saved at step 163841 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/163841
+18:11:12|INFO|Checkpoint saved at step 204801 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/204801
+18:12:29|INFO|Checkpoint saved at step 245761 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/245761
+18:13:37|INFO|Checkpoint saved at step 286721 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/286721
+18:14:44|INFO|Checkpoint saved at step 327681 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/327681
+18:15:47|INFO|Checkpoint saved at step 368641 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/368641
+18:16:51|INFO|Checkpoint saved at step 409601 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/409601
+18:17:53|INFO|Checkpoint saved at step 450561 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/450561
+18:18:56|INFO|Checkpoint saved at step 491521 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/491521
+18:19:59|INFO|Checkpoint saved at step 532481 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/532481
+18:21:04|INFO|Checkpoint saved at step 573441 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/573441
+18:22:14|INFO|Checkpoint saved at step 614401 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/614401
+18:23:32|INFO|Checkpoint saved at step 655361 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/655361
+18:24:49|INFO|Checkpoint saved at step 696321 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/696321
+18:26:04|INFO|Checkpoint saved at step 737281 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/737281
+18:27:10|INFO|Checkpoint saved at step 778241 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/778241
+18:28:15|INFO|Checkpoint saved at step 819201 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/819201
+18:29:17|INFO|Checkpoint saved at step 860161 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/860161
+18:30:21|INFO|Checkpoint saved at step 901121 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/901121
+18:31:24|INFO|Checkpoint saved at step 942081 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/942081
+18:32:27|INFO|Checkpoint saved at step 983041 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/983041
+18:32:53|INFO|Checkpoint saved at step 999425 to /home/guangzhao/zuogou/plugrl/e38/experiments/e38-gaussian-ppo/results/ppo-hopper/ppo/gaussian-policy/ppo-hopper-seed0/999425
+18:32:53|INFO|Stopping server as the algorithm signaled to stop.
+18:32:53|INFO|Shutdown started: aborting pending infer requests.
+18:32:53|INFO|Shutdown cleanup finished: pending_futures=1, drained_requests=1
+18:32:53|INFO|Shutdown closing 1 websocket connection(s).
+18:32:53|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 41568).
+18:32:53|INFO|WebSocket server closed.
+18:32:53|INFO|Scheduler task cancelled and cleaned up.

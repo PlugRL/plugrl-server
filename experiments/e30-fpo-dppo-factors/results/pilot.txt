@@ -1,0 +1,24 @@
+# E30 pilot, 2026-09-27 04:39-04:47, guangzhao, before PROTOCOL.md was written.
+# run.sh with ITERS=11 SEEDS=0 OUT=pilot: the five arms, seed 0, 11 iterations
+# (DPPO's scheduler refuses fewer than its 10-iteration warm-up), two waves.
+# Code 0d29c8c (main), client 931ab56.
+
+Every arm: seed 0 finished rc=0, no traceback in the server log. Wall clock:
+base 2.2 min, chunk4 0.6, steps20 2.9, net512 3.6, all 1.5.
+
+Tensorboard, iterations 1-11 (entropy min..max; approx_kl and clipfrac means;
+return at iteration 1 and the mean of iterations 9-11):
+
+  arm      entropy            approx_kl  clipfrac  return
+  base      0.3828..0.3828    2.7e-08    0.0       16.7 -> 17.2
+  chunk4    0.3828..0.3828    8.6e-09    0.0       19.5 -> 18.9
+  steps20  -0.0040..-0.0040   2.0e-08    0.0       16.9 -> 17.8
+  net512    0.3828..0.3828    1.0e-05    1.4e-02   18.1 -> 60.6
+  all      -0.0040..-0.0040   7.9e-07    3.5e-04   19.9 -> 25.9
+
+base reproduces E29's wide arm (entropy 0.3828, approx_kl 2.7e-08 in E29's own
+pilot). Twenty flow steps lower the entropy, as a smaller dt makes each
+step's deviation sigma_t * sqrt(dt) smaller at the same level. net512 is the
+only arm whose updates are of dppo-policy's size - E28 logged approx_kl
+around 1e-05 and clipfrac 1-2% for dppo-policy on Hopper - and the only one
+whose return moved in eleven iterations.
