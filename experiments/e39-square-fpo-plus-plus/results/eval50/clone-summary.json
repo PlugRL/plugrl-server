@@ -1,0 +1,27 @@
+{
+  "exp_name": "e39eval-clone-9901",
+  "process_id": 0,
+  "total_processes": null,
+  "completed_episodes": 50,
+  "total_episode_count": 50,
+  "metric_window": 100,
+  "mean_return": 0.5,
+  "mean_success_rate": 0.5,
+  "timing": {
+    "env_steps": 16144,
+    "infer_calls": 4045,
+    "feedback_calls": 4045,
+    "infer_wait_s": 18.98196991113946,
+    "infer_obs_pack_s": 0.1666160251479596,
+    "env_step_s": 100.17902264208533,
+    "feedback_s": 0.729239251697436,
+    "feedback_obs_pack_s": 0.23129451577551663,
+    "feedback_info_pack_s": 0.01254780893214047,
+    "collect_time_s": 120.05684783007018,
+    "effective_fps": 134.4696307773331,
+    "infer_wait_frac": 0.15810818170077856,
+    "infer_obs_pack_frac": 0.0013878094266125476,
+    "env_step_frac": 0.8344298926112057,
+    "feedback_frac": 0.006074116261403177
+  }
+}

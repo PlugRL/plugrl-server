@@ -1,0 +1,37 @@
+22:06:35|INFO|plugrl_server version: 0.1.0
+22:06:35|INFO|Algorithm: fpo, Config: FPOAlgoConfig(global_steps=1200000, buffer_size=12000, output_mode='u', fpo_playground_trick=False, treat_truncated_as_done=True, discounting=0.995, reward_scaling=1.0, gae_lambda=0.99, batch_size=1500, num_updates_per_batch=10, learning_rate=1e-05, value_loss_coeff=0.5, clipping_epsilon=0.01, normalize_advantage=True, n_critic_warmup_itrs=1, max_policy_drift=0.0, n_samples_per_action=8, discretize_t_for_training=False, average_losses_before_exp=True, cfm_loss_steps=4, cfm_loss_dims=7, cfm_loss_sum_over_steps=True, ratio_per_sample=True, critic_learning_rate=0.0001, adam_eps=1e-05, weight_decay=1e-06, actor_adam_beta2=0.99, max_grad_norm=25.0, normalize_advantage_per_minibatch=True, cfm_loss_huber_delta=1.0, save_interval=10, policy_checkpoint_path=PosixPath('/home/guangzhao/zuogou/plugrl/e39-reg/../ckpt/e35-bc/400000'), restore='except-critic', master_weights_device=None)
+22:06:35|INFO|Policy: fpo-policy, Config: FPOPolicyConfig(algo='fpo', device=device(type='cpu'), obs_dim=23, action_dim=7, flow_steps=10, timestep_embed_dim=8, action_horizon=4, feather_std=0.0, policy_mlp_output_scale=0.25, normalize_observations=True, freeze_obs_stats=True, hidden_dims=(1024, 1024, 1024), value_hidden_dims=(512, 256), state_keys=('robot0_eef_pos', 'robot0_eef_quat', 'robot0_gripper_qpos', 'object'))
+22:06:35|INFO|Seeded python, numpy and torch with 2. One env client is then reproducible; several are not, because batch composition depends on when their requests arrive.
+22:06:35|INFO|Checkpoint Manager created: 
+<plugrl_server.common.checkpoint_manager.CheckpointManager object at 0x7fa4474f37d0> at /home/guangzhao/zuogou/plugrl/e39-reg/experiments/e39-square-fpo-plus-plus/results/fpopp-square/fpo/fpo-policy/fpopp-square-seed2
+22:06:35|INFO|Policy created...
+22:06:35|INFO|Initialized RolloutBuffer buffer_size=12000 action_shape=(12000, 4, 7) value_shape=(12000, 1)
+22:06:35|INFO|Restoring from /home/guangzhao/zuogou/plugrl/e39-reg/../ckpt/e35-bc/400000 with restore=except-critic
+22:06:35|INFO|Loading model state from /home/guangzhao/zuogou/plugrl/e39-reg/../ckpt/e35-bc/400000...
+22:06:35|INFO|Loading optimizer state from /home/guangzhao/zuogou/plugrl/e39-reg/../ckpt/e35-bc/400000...
+22:06:35|INFO|Loading metadata from /home/guangzhao/zuogou/plugrl/e39-reg/../ckpt/e35-bc/400000...
+22:06:35|WARNING|Metadata file not found. Resuming step may be inaccurate.
+22:06:35|INFO|Checkpoint loaded from /home/guangzhao/zuogou/plugrl/e39-reg/../ckpt/e35-bc/400000.
+22:06:35|INFO|Holding back 12 critic tensors
+22:06:35|INFO|Algorithm created: 
+<plugrl_server.algorithm.fpo.fpo.FPOAlgorithm object at 0x7fa44737d690>
+22:06:35|INFO|Agent Server is listening on 0.0.0.0:9702
+22:53:21|INFO|Checkpoint saved at step 120002 to /home/guangzhao/zuogou/plugrl/e39-reg/experiments/e39-square-fpo-plus-plus/results/fpopp-square/fpo/fpo-policy/fpopp-square-seed2/120002
+23:40:54|INFO|Checkpoint saved at step 240002 to /home/guangzhao/zuogou/plugrl/e39-reg/experiments/e39-square-fpo-plus-plus/results/fpopp-square/fpo/fpo-policy/fpopp-square-seed2/240002
+00:28:25|INFO|Checkpoint saved at step 360002 to /home/guangzhao/zuogou/plugrl/e39-reg/experiments/e39-square-fpo-plus-plus/results/fpopp-square/fpo/fpo-policy/fpopp-square-seed2/360002
+01:15:50|INFO|Checkpoint saved at step 480002 to /home/guangzhao/zuogou/plugrl/e39-reg/experiments/e39-square-fpo-plus-plus/results/fpopp-square/fpo/fpo-policy/fpopp-square-seed2/480002
+02:04:00|INFO|Checkpoint saved at step 600002 to /home/guangzhao/zuogou/plugrl/e39-reg/experiments/e39-square-fpo-plus-plus/results/fpopp-square/fpo/fpo-policy/fpopp-square-seed2/600002
+02:51:27|INFO|Checkpoint saved at step 720002 to /home/guangzhao/zuogou/plugrl/e39-reg/experiments/e39-square-fpo-plus-plus/results/fpopp-square/fpo/fpo-policy/fpopp-square-seed2/720002
+03:34:29|INFO|Checkpoint saved at step 840002 to /home/guangzhao/zuogou/plugrl/e39-reg/experiments/e39-square-fpo-plus-plus/results/fpopp-square/fpo/fpo-policy/fpopp-square-seed2/840002
+04:17:18|INFO|Checkpoint saved at step 960002 to /home/guangzhao/zuogou/plugrl/e39-reg/experiments/e39-square-fpo-plus-plus/results/fpopp-square/fpo/fpo-policy/fpopp-square-seed2/960002
+05:00:12|INFO|Checkpoint saved at step 1080005 to /home/guangzhao/zuogou/plugrl/e39-reg/experiments/e39-square-fpo-plus-plus/results/fpopp-square/fpo/fpo-policy/fpopp-square-seed2/1080005
+05:43:07|INFO|Checkpoint saved at step 1200002 to /home/guangzhao/zuogou/plugrl/e39-reg/experiments/e39-square-fpo-plus-plus/results/fpopp-square/fpo/fpo-policy/fpopp-square-seed2/1200002
+05:43:07|INFO|Stopping server as the algorithm signaled to stop.
+05:43:07|INFO|Shutdown started: aborting pending infer requests.
+05:43:07|INFO|Shutdown cleanup finished: pending_futures=3, drained_requests=3
+05:43:07|INFO|Shutdown closing 3 websocket connection(s).
+05:43:07|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 45458).
+05:43:07|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 45444).
+05:43:07|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 45446).
+05:43:07|INFO|WebSocket server closed.
+05:43:07|INFO|Scheduler task cancelled and cleaned up.

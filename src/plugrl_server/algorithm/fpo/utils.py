@@ -18,17 +18,35 @@ class ChunkReduction:
     action dimensions - the ones the client executes and the environment
     uses - and `sum_over_steps` sums the per-step means instead of averaging
     them, as FPO++ does (Yi, Choi et al. 2026, amazon-far/fpo-control).
+    `huber_delta` replaces each element's squared error with FPO++'s Huber:
+    d^2 within delta, 2 delta |d| - delta^2 beyond, which meets d^2 at delta.
     """
 
     steps: int | None = None
     dims: int | None = None
     sum_over_steps: bool = False
+    huber_delta: float | None = None
+
+
+def _elementwise_error(diff: torch.Tensor, huber_delta: float | None) -> torch.Tensor:
+    if huber_delta is None:
+        return diff.pow(2)
+    magnitude = diff.abs()
+    return torch.where(
+        magnitude <= huber_delta,
+        diff.pow(2),
+        2.0 * huber_delta * magnitude - huber_delta**2,
+    )
 
 
 def _reduce(
     error: torch.Tensor, batch_size: int, sample_count: int, reduction: ChunkReduction
 ) -> torch.Tensor:
-    if reduction == ChunkReduction():
+    if (
+        reduction.steps is None
+        and reduction.dims is None
+        and not reduction.sum_over_steps
+    ):
         return error.reshape(batch_size, sample_count, -1).mean(dim=-1)
     if error.dim() != 4:
         raise ValueError(
@@ -75,8 +93,10 @@ def compute_cfm_loss(
 
     if output_mode == "u":
         target = loss_eps - action.unsqueeze(1)
-        return _reduce((v - target).pow(2), batch_size, sample_count, reduction)
+        error = _elementwise_error(v - target, reduction.huber_delta)
+        return _reduce(error, batch_size, sample_count, reduction)
 
     x0_pred = x_t - loss_t_expand * v
     x1_pred = x0_pred + v
-    return _reduce((loss_eps - x1_pred).pow(2), batch_size, sample_count, reduction)
+    error = _elementwise_error(loss_eps - x1_pred, reduction.huber_delta)
+    return _reduce(error, batch_size, sample_count, reduction)

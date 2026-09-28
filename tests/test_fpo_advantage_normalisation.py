@@ -40,6 +40,11 @@ def test_minibatch_loss_does_not_normalise_the_advantage():
     running a policy forward. Same approach as tests/test_seeding.py. It has
     to match the normalising expression rather than `advantage.std()`, which
     also appears there legitimately as a logged metric.
+
+    FPO++ does normalise per minibatch, at 375 chunks a minibatch, and
+    `normalize_advantage_per_minibatch` opts into that through
+    `_minibatch_advantage`, off by default. tests/test_fpo_plus_plus_
+    optimizer.py checks both ways, on a running learn step.
     """
     source = inspect.getsource(FPOAlgorithm._compute_loss)
     assert NORMALISE not in source, (

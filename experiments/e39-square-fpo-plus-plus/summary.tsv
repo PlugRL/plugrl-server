@@ -1,0 +1,4 @@
+cell	seed	iterations	start_success	end_success	gain
+fpopp-square	0	100	0.495	0.787	+0.292
+fpopp-square	1	100	0.524	0.684	+0.160
+fpopp-square	2	100	0.518	0.711	+0.193

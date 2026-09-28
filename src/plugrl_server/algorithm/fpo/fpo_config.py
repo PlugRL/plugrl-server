@@ -90,6 +90,32 @@ class FPOAlgoConfig(BaseAlgoConfig):
     # Off keeps one ratio per action, the samples averaged as
     # `average_losses_before_exp` says and the difference clamped at +-3.
     ratio_per_sample: bool = False
+    # FPO++'s square fine-tuning (amazon-far/fpo-control, `manipulation_
+    # experiments/finetune_online_rl.py`) has more than its policy loss, and
+    # E37, which ran only the loss, watched a behaviour-cloned policy fall
+    # while its randomly initialised critic never fit the returns. The rest,
+    # each off by default:
+    #
+    # Two AdamW optimizers. FPO++ gives the actor 1e-5 with betas (0.9, 0.99)
+    # and the critic 1e-4 with the default betas, both eps 1e-5 and weight
+    # decay 1e-6. Here they are two parameter groups of one AdamW, built when
+    # any of these differs from FPO's one Adam over both.
+    critic_learning_rate: float | None = None
+    adam_eps: float = 1e-8
+    weight_decay: float = 0.0
+    actor_adam_beta2: float = 0.999
+    # Clip the actor's and the critic's gradients separately to this norm
+    # (FPO++: 25 on square).
+    max_grad_norm: float | None = None
+    # Normalise the advantages within each minibatch rather than over the
+    # buffer, as FPO++ does with its 375-chunk minibatches. See
+    # `FPOAlgorithm._scale_advantage` for why the buffer is the default: at
+    # the minibatches of 8 a VLA forces, a per-minibatch statistic
+    # manufactures signal.
+    normalize_advantage_per_minibatch: bool = False
+    # FPO++'s Huber on the flow-matching error: d^2 within delta, 2 delta |d|
+    # - delta^2 beyond (FPO++: delta 1), before the chunk reduction.
+    cfm_loss_huber_delta: float | None = None
     save_interval: int = 10
     # A checkpoint to start this run from, and how much of it to take.
     #
@@ -128,4 +154,8 @@ class FPOAlgoConfig(BaseAlgoConfig):
         if self.restore != "all" and self.policy_checkpoint_path is None:
             raise ValueError(
                 "restore only means something with policy_checkpoint_path set"
+            )
+        if self.normalize_advantage_per_minibatch and not self.normalize_advantage:
+            raise ValueError(
+                "normalize_advantage_per_minibatch needs normalize_advantage on"
             )
