@@ -82,20 +82,25 @@
       "client": ["mujoco-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-episodes 100000", "--env.name Walker2d-v5 --runner.replan-steps 1 --runner.seed 0"],
       "env": "mujoco", "source": "experiments/e38-gaussian-ppo/run.sh"
     },
+    "gaussian-ppo-square": {
+      "server": ["dppo-gaussian-policy default ppo dppo-square", "--port 8000 --seed 0 --policy.device cpu", "--policy.checkpoint-path DPPO_SQUARE_GAUSSIAN_CHECKPOINT", "--algo.train-itrs 40"],
+      "client": ["robomimic-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-procs 2 --num-episodes 100000", "--env.name square-img --env.agentview-image-size 84 84", "--env.no-terminate-on-success --runner.replan-steps 4"],
+      "env": "robomimic", "source": "experiments/e40-square-gaussian-ppo/run_cell.sh"
+    },
     "pi0-base": {
       "server": ["pi0-policy default eval default", "--port 8000 --policy.device cuda", "--policy.name pi05_libero --policy.checkpoint-path PI05_LIBERO_CHECKPOINT"],
       "client": ["libero-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-procs 1 --num-episodes 50", "--env.task-suite-name libero_10 --env.task-id 8", "--env.no-randomize-initial-state --runner.replan-steps 5 --runner.seed 7"],
       "env": "libero", "source": "experiments/e26-frozen-mlp/eval.sh"
     },
     "pi0-fpo": {
-      "server": ["pi0-policy default fpo default", "--port 8000 --seed 7 --policy.device cuda:0", "--policy.name pi05_libero --policy.checkpoint-path PI05_LIBERO_CHECKPOINT", "--algo.learning-rate 1e-5 --algo.clipping-epsilon 0.05", "--algo.num-updates-per-batch 4 --algo.n-samples-per-action 4", "--algo.buffer-size 4096 --algo.batch-size 8 --algo.global-steps 8192", "--algo.master-weights-device cuda:1", "--algo.n-critic-warmup-itrs 1", "--algo.output-mode u --algo.no-discretize-t-for-training", "--algo.cfm-loss-steps 5 --algo.cfm-loss-dims 7 --algo.cfm-loss-sum-over-steps", "--algo.ratio-per-sample"],
+      "server": ["pi0-policy default fpo default", "--port 8000 --seed 7 --policy.device cuda:0", "--policy.name pi05_libero --policy.checkpoint-path PI05_LIBERO_CHECKPOINT", "--algo.learning-rate 1e-5 --algo.clipping-epsilon 0.05", "--algo.num-updates-per-batch 4 --algo.n-samples-per-action 4", "--algo.buffer-size 4096 --algo.batch-size 8 --algo.global-steps 40960", "--algo.master-weights-device cuda:1", "--algo.n-critic-warmup-itrs 1", "--algo.output-mode u --algo.no-discretize-t-for-training", "--algo.cfm-loss-steps 5 --algo.cfm-loss-dims 7 --algo.cfm-loss-sum-over-steps", "--algo.ratio-per-sample"],
       "client": ["libero-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-procs 10 --num-episodes 100000", "--env.task-suite-name libero_10 --env.task-id 8", "--env.randomize-initial-state --runner.replan-steps 5 --runner.seed 7"],
-      "env": "libero", "source": "experiments/e32-pi0-fpo-plus-plus/train.sh"
+      "env": "libero", "source": "experiments/e36-pi0-longer/train.sh"
     },
     "pi0-dppo": {
-      "server": ["pi0-policy default dppo libero", "--port 8000 --seed 7 --policy.device cuda:0", "--policy.name pi05_libero --policy.checkpoint-path PI05_LIBERO_CHECKPOINT", "--algo.buffer-size 4096 --algo.batch-size 8 --algo.train-itrs 2"],
+      "server": ["pi0-policy default dppo libero", "--port 8000 --seed 7 --policy.device cuda:0", "--policy.name pi05_libero --policy.checkpoint-path PI05_LIBERO_CHECKPOINT", "--algo.buffer-size 4096 --algo.batch-size 8 --algo.train-itrs 10"],
       "client": ["libero-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-procs 10 --num-episodes 100000", "--env.task-suite-name libero_10 --env.task-id 8", "--env.randomize-initial-state --runner.replan-steps 5 --runner.seed 7"],
-      "env": "libero", "source": "experiments/e25-pi0-dppo/cell.sh"
+      "env": "libero", "source": "experiments/e36-pi0-longer/dppo_cell.sh"
     }
   }
 }

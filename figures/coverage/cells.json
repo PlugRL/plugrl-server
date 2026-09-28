@@ -4,7 +4,7 @@
     {"id": "fpo-fpo", "label": "fpo-policy · FPO"},
     {"id": "fpo-dppo", "label": "fpo-policy · DPPO"},
     {"id": "dppo-dppo", "label": "dppo-policy · DPPO"},
-    {"id": "gaussian-ppo", "label": "gaussian-policy · PPO"}
+    {"id": "gaussian-ppo", "label": "Gaussian MLP · PPO"}
   ],
   "columns": [
     {"id": "cheetah", "label": "HalfCheetah-v5"},
@@ -154,6 +154,15 @@
       "server": ["gaussian-policy", "default", "eval", "default", "--policy.obs-dim", "17", "--policy.action-dim", "6", "--policy.deterministic"],
       "client": ["mujoco-v1", "--env.name", "Walker2d-v5", "--env.render"],
       "replan": 1, "native_fps": 125
+    },
+    {
+      "id": "gaussian-ppo-square", "row": "gaussian-ppo", "column": "square",
+      "status": "learns", "experiments": ["E40"],
+      "note": "DPPO's Gaussian MLP from its released policy, success 0.19–0.21 → 0.54–0.57", "note_zh": "DPPO 的高斯 MLP，从其官方预训练策略起步，成功率 0.19–0.21 → 0.54–0.57",
+      "runs": "e40-reg/experiments/e40-square-gaussian-ppo/results/gauss-square/ppo/dppo-gaussian-policy/gauss-square-seed{seed}", "seed": 0,
+      "server": ["dppo-gaussian-policy", "default", "eval", "default", "--policy.deterministic"],
+      "client": ["robomimic-v1", "--env.name", "square-img", "--env.agentview-image-size", "256", "256"],
+      "replan": 4, "native_fps": 20
     }
   ],
   "vla": {
@@ -169,16 +178,16 @@
       },
       {
         "id": "pi0-fpo", "label": "pi0-policy · FPO", "label_zh": "pi0-policy · FPO",
-        "status": "holds", "experiments": ["E14", "E26", "E32"], "score": [33, 50],
-        "note": "one update with FPO++'s chunk loss leaves it intact; FPO's own took it to 0",
-        "note_zh": "换成 FPO++ 的块损失后一次更新没毁掉它；原版 FPO 会让它归零",
+        "status": "collapses", "experiments": ["E14", "E26", "E32", "E36"], "score": [5, 50],
+        "note": "one update with FPO++'s chunk loss left it at 33; five took it to 5 and 0 on two seeds, FPO's own defaults still in place",
+        "note_zh": "换成 FPO++ 的块损失后一次更新还有 33；五轮后两个种子降到 5 和 0，当时 FPO 自己的默认设置还没换掉",
         "video_key": "base", "native_fps": 20, "whole": true
       },
       {
         "id": "pi0-dppo", "label": "pi0-policy · DPPO", "label_zh": "pi0-policy · DPPO",
-        "status": "holds", "experiments": ["E25"], "score": [30, 50],
-        "note": "two iterations leave it intact, having barely moved it",
-        "note_zh": "两轮后没被毁掉，但几乎没动它",
+        "status": "holds", "experiments": ["E25", "E36"], "score": [20, 50],
+        "note": "ten iterations leave it at 20 of 50, having barely moved it",
+        "note_zh": "十轮后 20/50，几乎没动它",
         "video_key": "base", "native_fps": 20, "whole": true
       }
     ]
