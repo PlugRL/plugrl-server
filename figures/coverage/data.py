@@ -3,7 +3,8 @@
     python data.py [--out media/site/coverage.json]
 
 For every cell in cells.json: its status, experiments and note; the return
-per iteration of all three seeds, from their tensorboards (preceded by the
+per iteration of all three seeds, or the column's `metric` if it names one,
+from their tensorboards (preceded by the
 runs they resumed from, if `resumed_from` names them); and what pick.py
 recorded about the clip, if it has run; and from commands.json, the two
 commands that trained it and the env-client environment it needs. The `vla`
@@ -22,15 +23,16 @@ HERE = pathlib.Path(__file__).resolve().parent
 HOME = pathlib.Path(os.environ.get("PLUGRL_HOME", "~/zuogou/plugrl")).expanduser()
 
 
-def returns(run: pathlib.Path) -> list[float]:
+def returns(run: pathlib.Path, tag: str = "rollout/reward") -> list[float]:
     events = sorted((run / "tensorboard").glob("events.*"))
     if not events:
         return []
     acc = EventAccumulator(str(events[-1]), size_guidance={"scalars": 0})
     acc.Reload()
-    if "rollout/reward" not in acc.Tags()["scalars"]:
+    if tag not in acc.Tags()["scalars"]:
         return []
-    return [round(e.value, 1) for e in acc.Scalars("rollout/reward")]
+    digits = 1 if tag == "rollout/reward" else 3
+    return [round(e.value, digits) for e in acc.Scalars(tag)]
 
 
 def clip(site: pathlib.Path, cell_id: str) -> dict | None:
@@ -47,15 +49,18 @@ def main() -> int:
     spec = json.loads((HERE / "cells.json").read_text())
     site = args.out.parent
 
+    # A task whose runs do not share a reward plots a measure they do share.
+    metric = {c["id"]: c.get("metric", "rollout/reward") for c in spec["columns"]}
     cells = []
     for cell in spec["cells"]:
         # Most cells ran seeds 0-2; a cell that ran others names them.
         seeds = cell.get("seeds", [0, 1, 2])
-        curves = [returns(HOME / cell["runs"].format(seed=s)) for s in seeds]
+        tag = metric[cell["column"]]
+        curves = [returns(HOME / cell["runs"].format(seed=s), tag) for s in seeds]
         # A cell whose runs resumed from earlier ones plots the whole run.
         if "resumed_from" in cell:
             curves = [
-                returns(HOME / cell["resumed_from"].format(seed=s)) + curve
+                returns(HOME / cell["resumed_from"].format(seed=s), tag) + curve
                 for s, curve in zip(seeds, curves)
             ]
         cells.append(

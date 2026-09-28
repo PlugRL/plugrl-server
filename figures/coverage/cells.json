@@ -1,5 +1,5 @@
 {
-  "_about": "The coverage figure's cells. `runs` is relative to the machine's PlugRL home and takes {seed}; `seed` is the one whose mean return over its last ten iterations is the median of the three (ties: the lowest seed). `seeds`, when present, are the three the experiment ran; otherwise 0-2. `resumed_from`, when present, names the runs `runs` resumed from, in the same form; their returns come first in the curves. `status` is what the experiments established, not what the video shows.",
+  "_about": "The coverage figure's cells. `runs` is relative to the machine's PlugRL home and takes {seed}; `seed` is the one whose mean return over its last ten iterations is the median of the three (ties: the lowest seed). `seeds`, when present, are the three the experiment ran; otherwise 0-2. `resumed_from`, when present, names the runs `runs` resumed from, in the same form; their returns come first in the curves. A column's `metric`, when present, is the tensorboard scalar its curves plot in place of `rollout/reward`: square's runs do not share a reward (DPPO's counts every step after success, FPO++'s ends the episode on it), so square plots the success rate. `status` is what the experiments established, not what the video shows.",
   "rows": [
     {"id": "fpo-fpo", "label": "fpo-policy · FPO"},
     {"id": "fpo-dppo", "label": "fpo-policy · DPPO"},
@@ -10,7 +10,7 @@
     {"id": "cheetah", "label": "HalfCheetah-v5"},
     {"id": "hopper", "label": "Hopper-v5"},
     {"id": "walker", "label": "Walker2d-v5"},
-    {"id": "square", "label": "robomimic square"}
+    {"id": "square", "label": "robomimic square", "metric": "rollout/success"}
   ],
   "cells": [
     {

@@ -11,6 +11,11 @@ directory made its clips, stills and data; the page itself lives in
 the status that experiment established, a short note in English and Chinese,
 and the run to take the clip from.
 
+Under each clip are the three seeds' training curves, the return per
+iteration on one vertical range per task. Square plots the success rate
+instead, since its runs do not share a reward: DPPO's settings count every
+step after success, FPO++'s end the episode on it.
+
 ## How a clip is chosen
 
 - **The seed** is the one whose mean return over its last ten iterations is
