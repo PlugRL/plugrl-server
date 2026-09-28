@@ -1,0 +1,26 @@
+## fpopp-s7
+/home/gotham/tmp/plugrl/e36/fpopp-s7/ck/fpo/pi0-policy/fpopp-s7/tensorboard/events.out.tfevents.1790515737.e88d1a355314.38426.0
+  fpo/policy_ratio_mean                1 0.9251 0.9428 0.9021 0.923 0.8417 0.8406 0.8189 0.4331
+  fpo/clipped_ratio_mean               0 0.4562 0.5206 0.4626 0.4264 0.5009 0.579 0.754 0.9633
+  fpo/initial_cfm_loss_mean            0.1147 0.1306 0.1622 0.2615 0.8139 5.848 28.08 73.75 114.4
+  fpo/cfm_loss_mean                    0.1147 0.2441 0.2526 0.954 6.069 30.24 74.4 151.5 239.8
+  rollout/success                      0.6 0.381 0.7333 0.4048 0.09756 0.1429 0.05 0 0
+  rollout/reward                       0.6 0.381 0.7333 0.4048 0.09756 0.1429 0.05 0 0
+  rollout/length                       458.1 483.3 438.7 482.6 509.6 504.2 512.4 520 520
+## fpopp-s8
+/home/gotham/tmp/plugrl/e36/fpopp-s8/ck/fpo/pi0-policy/fpopp-s8/tensorboard/events.out.tfevents.1790515793.e88d1a355314.39189.0
+  fpo/policy_ratio_mean                1 0.9292 0.8118 0.8335 0.7735 0.798 0.6176 0.3832 0.8228
+  fpo/clipped_ratio_mean               0 0.4927 0.4774 0.4361 0.5372 0.534 0.6457 0.992 0.6372
+  fpo/initial_cfm_loss_mean            0.1196 0.1226 0.1855 1.895 9.969 51.65 179.5 338.3 406.9
+  fpo/cfm_loss_mean                    0.1196 0.2307 5.222 12.02 62.97 191.6 362.6 527.9 924.2
+  rollout/success                      0.6667 0.5 0.4651 0.175 0.125 0 0 0 0
+  rollout/reward                       0.6667 0.5 0.4651 0.175 0.125 0 0 0 0
+  rollout/length                       461.2 470 475.2 510.2 512.6 520 520 520 520
+## dppo
+/home/gotham/tmp/plugrl/e36/runs/dppo/ck/dppo/pi0-policy/dppo/tensorboard/events.out.tfevents.1790515856.e88d1a355314.40900.0
+  losses/old_approx_kl                 5.379e-05 -0.0001036 8.709e-05 0.0002731 0.0001768 0.0002059 -3.392e-05 7.548e-05 0.0001538 0.0001972
+  losses/approx_kl                     2.563e-07 2.224e-07 2.941e-07 2.926e-07 1.284e-07 3.461e-07 2.403e-07 1.982e-07 1.721e-07 4.135e-07
+  losses/clipfrac                      0.07959 0.08201 0.08027 0.08383 0.08203 0.09467 0.08831 0.092 0.08889 0.092
+  rollout/success                      0.6 0.5349 0.6591 0.5682 0.6364 0.7551 0.561 0.6087 0.6279 0.4762
+  rollout/reward                       0.6 0.5349 0.6591 0.5682 0.6364 0.7551 0.561 0.6087 0.6279 0.4762
+  rollout/length                       467.7 465.2 450.3 474.9 457.6 442 465.9 465.6 460.1 478.7

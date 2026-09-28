@@ -1,0 +1,24 @@
+/home/gotham/tmp/plugrl/e36/fpopp-s7/ck/fpo/pi0-policy/fpopp-s7/20489/model.safetensors
+  mod    moved  74  unchanged   0  relative distance 0.041006
+  attn   moved  72  unchanged   0  relative distance 0.030011
+  mlp    moved  54  unchanged   0  relative distance 0.029143
+  io     moved   8  unchanged   0  relative distance 0.023628
+  expert moved 200  unchanged   1  relative distance 0.028341
+/home/gotham/tmp/plugrl/e36/fpopp-s8/ck/fpo/pi0-policy/fpopp-s8/20480/model.safetensors
+  mod    moved  74  unchanged   0  relative distance 0.040266
+  attn   moved  72  unchanged   0  relative distance 0.027416
+  mlp    moved  54  unchanged   0  relative distance 0.028762
+  io     moved   8  unchanged   0  relative distance 0.027476
+  expert moved 200  unchanged   1  relative distance 0.027503
+/home/gotham/tmp/plugrl/e36/runs/dppo/ck/dppo/pi0-policy/dppo/20490/model.safetensors
+  mod    moved  74  unchanged   0  relative distance 0.004403
+  attn   moved  72  unchanged   0  relative distance 0.000465
+  mlp    moved  54  unchanged   0  relative distance 0.000472
+  io     moved   8  unchanged   0  relative distance 0.004367
+  expert moved 200  unchanged   1  relative distance 0.001622
+/home/gotham/tmp/plugrl/e36/runs/dppo/ck/dppo/pi0-policy/dppo/40970/model.safetensors
+  mod    moved  74  unchanged   0  relative distance 0.006455
+  attn   moved  72  unchanged   0  relative distance 0.000613
+  mlp    moved  54  unchanged   0  relative distance 0.000629
+  io     moved   8  unchanged   0  relative distance 0.006365
+  expert moved 200  unchanged   1  relative distance 0.002366
