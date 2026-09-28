@@ -1,0 +1,7 @@
+cell	seed	iterations	start_success	end_success	gain
+fpo-square	0	60	0.517	0.256	-0.261
+fpo-square	1	60	0.531	0.353	-0.179
+fpo-square	2	60	0.550	0.392	-0.158
+dppo-square	0	40	0.390	0.781	+0.392
+dppo-square	1	40	0.411	0.784	+0.372
+dppo-square	2	40	0.372	0.798	+0.426

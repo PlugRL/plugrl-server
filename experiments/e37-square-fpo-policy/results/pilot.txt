@@ -1,0 +1,50 @@
+# E37 pilots, 2026-09-27 (guangzhao), before PROTOCOL.md was written.
+# FPO_ITERS=2 DPPO_ITERS=3 SEEDS=0 NPROC=1 OUT=pilot bash run.sh: both cells,
+# seed 0, one client process each, beside E34's run. Start: E35's clone,
+# ~/zuogou/plugrl/ckpt/e35-bc/400000 (sha256 7fe7a706c2c4601d).
+
+## Pilot 1, 09:46-10:04, code c03f6c6 - observation statistics updating
+
+Both servers restored the clone (`Restoring from ... with restore=except-critic`,
+"Holding back 12 critic tensors") and listened. Stopped after FPO's second
+iteration, once it showed the statistics problem; DPPO had not finished its
+first.
+
+fpo-square, iterations 1 (critic only) and 2 (collected by the same weights):
+  rollout/success          0.508   0.392
+  fpo/policy_ratio_mean    1.380   1.034
+  fpo/clipped_ratio_mean   0.720   0.674
+
+A critic-only iteration should give a ratio of exactly 1: FPO computes the
+initial CFM loss before updating the observation statistics and the current
+one after, and the statistics moved from the demonstrations' towards the
+rollouts'. The next iteration's success fell with them. #82 adds
+`--policy.freeze-obs-stats`; both cells now run with it.
+
+## Pilot 2, 10:17-11:14, code 7d55170 - statistics frozen
+
+Both cells ran end to end, seed 0 finished rc=0, no traceback.
+`freeze_obs_stats=True` in both config lines.
+
+fpo-square, iterations 1 (critic only) and 2 (the first update):
+  rollout/success          0.492   0.500
+  fpo/policy_ratio_mean    1.000   0.993
+  fpo/clipped_ratio_mean   0.000   0.434
+  fpo/cfm_loss_mean        0.702   0.746   (initial 0.702, 0.735)
+  progress/collection_time 380 s   377 s   (one client)
+  progress/learn_time      132 s   123 s
+
+dppo-square, iterations 1-2 (critic only) and 3 (the first update):
+  rollout/success          0.455   0.295   0.365
+  losses/approx_kl         0       0       0.00023
+  losses/clipfrac          0       0       0.102
+  losses/entropy          -0.0040 -0.0040 -0.0040
+  progress/collection_time 736 s   732 s   703 s   (one client)
+  progress/learn_time      530 s   520 s   504 s
+
+The three dppo-square iterations were collected by the same weights with the
+same statistics; 0.455 to 0.295 across about 200 episodes each is more than
+binomial noise. E34's pilot and run show the same size of swing between
+iterations of an unchanged policy (0.27 to 0.40).
+
+Not a result: one seed, one client, two or three iterations.
