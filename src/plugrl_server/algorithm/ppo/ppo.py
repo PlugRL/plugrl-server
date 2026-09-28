@@ -58,15 +58,39 @@ class PPOAlgorithm(BaseAlgorithm):
             gae_lambda=config.gae_lambda,
             normalize_rewards=config.normalize_rewards,
             reward_clip=config.reward_clip,
+            reward_scaling_gamma=config.reward_scaling_gamma,
         )
         self.global_step = 0
         self.curr_train_itrs = 0
         self.last_saved_itr = 0
 
+    def _critic_param_ids(self) -> set[int]:
+        return {id(p) for p in self.policy.critic.parameters()}
+
+    def _actor_params(self) -> list[torch.nn.Parameter]:
+        critic = self._critic_param_ids()
+        return [p for p in self.policy.parameters() if id(p) not in critic]
+
     def init_optimizers(self) -> None:
+        config = self.config
+        if config.critic_learning_rate is None:
+            self.optimizer = torch.optim.Adam(
+                self.policy.parameters(), lr=config.learning_rate, eps=config.adam_eps
+            )
+            return
         self.optimizer = torch.optim.Adam(
-            self.policy.parameters(), lr=self.config.learning_rate, eps=1e-5
+            [
+                dict(params=self._actor_params(), lr=config.learning_rate),
+                dict(
+                    params=list(self.policy.critic.parameters()),
+                    lr=config.critic_learning_rate,
+                ),
+            ],
+            eps=config.adam_eps,
         )
+
+    def in_critic_warmup(self) -> bool:
+        return self.curr_train_itrs < self.config.n_critic_warmup_itrs
 
     def infer(self, obs: dict) -> tuple[np.ndarray, PolicyRuntimeState]:
         with torch.inference_mode():
@@ -130,12 +154,14 @@ class PPOAlgorithm(BaseAlgorithm):
             self.config.buffer_size / self.config.batch_size
         )
 
-    def _learning_rate(self) -> float:
-        """CleanRL's: (1 - (iteration - 1) / num_iterations) * learning_rate."""
+    def _anneal_fraction(self) -> float:
+        """CleanRL's: lr = (1 - (iteration - 1) / num_iterations) * learning_rate."""
         if not self.config.anneal_lr:
-            return self.config.learning_rate
-        frac = 1.0 - self.curr_train_itrs / self.config.train_itrs
-        return frac * self.config.learning_rate
+            return 1.0
+        return 1.0 - self.curr_train_itrs / self.config.train_itrs
+
+    def _learning_rate(self) -> float:
+        return self._anneal_fraction() * self.config.learning_rate
 
     def _loss(self, obs, action, oldlogprob, value, advantage, ret):
         config = self.config
@@ -165,8 +191,12 @@ class PPOAlgorithm(BaseAlgorithm):
     def learn_impl(self) -> tuple[int, dict]:
         config = self.config
         lr = self._learning_rate()
-        for group in self.optimizer.param_groups:
-            group["lr"] = lr
+        frac = self._anneal_fraction()
+        base = [config.learning_rate, config.critic_learning_rate]
+        for group, rate in zip(self.optimizer.param_groups, base):
+            group["lr"] = frac * rate
+        in_warmup = self.in_critic_warmup()
+        actor_params = self._actor_params() if in_warmup else []
 
         dataloader = torch.utils.data.DataLoader(
             self.rollout_buffer,
@@ -204,13 +234,11 @@ class PPOAlgorithm(BaseAlgorithm):
                 )
                 self.optimizer.zero_grad()
                 loss.backward()
-                grad_norms.append(
-                    float(
-                        nn.utils.clip_grad_norm_(
-                            self.policy.parameters(), config.max_grad_norm
-                        )
-                    )
-                )
+                # During a critic warmup the actor's parameters get no
+                # gradient, so the optimizer skips them entirely.
+                for param in actor_params:
+                    param.grad = None
+                grad_norms.append(self._clip_or_measure())
                 self.optimizer.step()
                 progress += 1
                 self.report_learn_progress(progress, progress_total)
@@ -233,9 +261,18 @@ class PPOAlgorithm(BaseAlgorithm):
             train=dict(
                 max_grad_norm=max(grad_norms) if grad_norms else 0.0,
                 train_itrs=float(self.curr_train_itrs),
+                critic_warmup=float(in_warmup),
             ),
             rollout=rollout_summary,
         )
+
+    def _clip_or_measure(self) -> float:
+        """The gradient's norm, clipped to `max_grad_norm` when that is set."""
+        params = [p for p in self.policy.parameters() if p.grad is not None]
+        if self.config.max_grad_norm is not None:
+            return float(nn.utils.clip_grad_norm_(params, self.config.max_grad_norm))
+        norms = torch.stack([p.grad.detach().norm() for p in params])
+        return float(torch.linalg.vector_norm(norms))
 
     def post_learn(self) -> None:
         # After learning and before the reset, as DPPO does for fpo-policy:
