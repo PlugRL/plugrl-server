@@ -1,0 +1,10 @@
+fpopp8m-s0 client rc=0
+Terminated
+fpopp8m-s0 episodes 50 success rate 0.8199999928474426
+fpopp8m-s1 client rc=0
+Terminated
+fpopp8m-s1 episodes 50 success rate 0.6399999856948853
+fpopp8m-s2 client rc=0
+Terminated
+fpopp8m-s2 episodes 50 success rate 0.5400000214576721
+EVAL_E41_DONE
