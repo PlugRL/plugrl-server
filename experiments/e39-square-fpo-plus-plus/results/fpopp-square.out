@@ -1,0 +1,13 @@
+cell:    fpopp-square = fpo-policy x fpo (FPO++ square) x robomimic square
+iters:   100  clients per seed: 3  seeds: 0 1 2
+start:   /home/guangzhao/zuogou/plugrl/e39-reg/../ckpt/e35-bc/400000 sha256 7fe7a706c2c4601d
+server:  /home/guangzhao/zuogou/plugrl/e39-reg/../plugrl-server/.venv/bin/python (src /home/guangzhao/zuogou/plugrl/e39-reg/src)
+client:  /home/guangzhao/zuogou/plugrl/e39-reg/../plugrl-env-client/.venv-robomimic/bin/python
+out:     /home/guangzhao/zuogou/plugrl/e39-reg/experiments/e39-square-fpo-plus-plus/results/fpopp-square
+start 2026-09-27 22:06:23
+seed 0 finished rc=0 at 05:39:13
+seed 1 finished rc=0 at 05:42:59
+seed 2 finished rc=0 at 05:43:08
+end   2026-09-28 05:43:08
+failed seeds: 0
+CELL_DONE fpopp-square
