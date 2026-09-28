@@ -1,0 +1,7 @@
+start 2026-09-27 22:28:50
+code:   456da16 (src /home/guangzhao/zuogou/plugrl/e40-reg/src)
+client: 931ab56
+iters:  40  seeds: 0 1 2  clients per seed: 2  out: /home/guangzhao/zuogou/plugrl/e40-reg/experiments/e40-square-gaussian-ppo/results
+end   2026-09-28 02:31:44
+gauss-square  failed seeds: 0
+E40_DONE
