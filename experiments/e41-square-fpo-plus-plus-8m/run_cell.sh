@@ -25,7 +25,7 @@ SERVER_DIR="$(cd "$HERE/../.." && pwd)"
 CLIENT_DIR="${PLUGRL_ENV_CLIENT:-$SERVER_DIR/../plugrl-env-client}"
 SERVER_PY="${PLUGRL_SERVER_PYTHON:-$SERVER_DIR/../plugrl-server/.venv/bin/python}"
 CLIENT_PY="${PLUGRL_CLIENT_PYTHON:-$CLIENT_DIR/.venv-robomimic/bin/python}"
-E39="${E39:?set E39 to E39's run directory, .../fpopp-square/fpo/fpo-policy}"
+E39="${E39:?set E39 to the run directory of E39, .../fpopp-square/fpo/fpo-policy}"
 KEYS=(robot0_eef_pos robot0_eef_quat robot0_gripper_qpos object)
 mkdir -p "$OUT"
 
