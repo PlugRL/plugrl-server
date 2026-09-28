@@ -1,0 +1,24 @@
+22:29:02|INFO|plugrl_server version: 0.1.0
+22:29:02|INFO|Algorithm: ppo, Config: PPOAlgoConfigDPPOSquare(global_steps=800000, learning_rate=0.0001, anneal_lr=False, buffer_size=20000, batch_size=10000, update_epochs=10, gamma=0.999, gae_lambda=0.95, norm_adv=True, clip_coef=0.01, clip_vloss=False, ent_coef=0.0, vf_coef=0.5, max_grad_norm=None, adam_eps=1e-08, critic_learning_rate=0.001, n_critic_warmup_itrs=1, target_kl=1.0, normalize_rewards=True, reward_clip=10.0, reward_scaling_gamma=0.99, train_itrs=40, save_interval=10)
+22:29:02|INFO|Policy: dppo-gaussian-policy, Config: DPPOGaussianPolicyConfig(algo='ppo', device=device(type='cpu'), env_type='robomimic', env_name='square', state_keys=('robot0_eef_pos', 'robot0_eef_quat', 'robot0_gripper_qpos', 'object'), obs_dim=23, action_dim=7, horizon_steps=4, mlp_dims=(1024, 1024, 1024), fixed_std=0.1, std_min=0.01, std_max=0.2, randn_clip_value=3.0, logprob_min=-5.0, logprob_max=2.0, critic_mlp_dims=(256, 256, 256), checkpoint_path=PosixPath('/home/guangzhao/zuogou/plugrl/e40-reg/../ckpt/dppo-square-gaussian/state_5000.pt'), deterministic=False)
+22:29:02|INFO|Seeded python, numpy and torch with 2. One env client is then reproducible; several are not, because batch composition depends on when their requests arrive.
+22:29:02|INFO|Checkpoint Manager created: 
+<plugrl_server.common.checkpoint_manager.CheckpointManager object at 0x75d3c0cfa150> at /home/guangzhao/zuogou/plugrl/e40-reg/experiments/e40-square-gaussian-ppo/results/gauss-square/ppo/dppo-gaussian-policy/gauss-square-seed2
+22:29:02|INFO|Loaded the model weights of /home/guangzhao/zuogou/plugrl/e40-reg/../ckpt/dppo-square-gaussian/state_5000.pt; the deviation is bounded at 1 by the checkpoint's logvar_max
+22:29:02|INFO|Policy created...
+22:29:02|INFO|Initialized RolloutBuffer buffer_size=20000 action_shape=(20000, 28) value_shape=(20000,)
+22:29:02|INFO|Algorithm created: 
+<plugrl_server.algorithm.ppo.ppo.PPOAlgorithm object at 0x75d3bff14110>
+22:29:02|INFO|Agent Server is listening on 0.0.0.0:9752
+23:29:21|INFO|Checkpoint saved at step 200000 to /home/guangzhao/zuogou/plugrl/e40-reg/experiments/e40-square-gaussian-ppo/results/gauss-square/ppo/dppo-gaussian-policy/gauss-square-seed2/200000
+00:29:14|INFO|Checkpoint saved at step 400000 to /home/guangzhao/zuogou/plugrl/e40-reg/experiments/e40-square-gaussian-ppo/results/gauss-square/ppo/dppo-gaussian-policy/gauss-square-seed2/400000
+01:28:54|INFO|Checkpoint saved at step 600000 to /home/guangzhao/zuogou/plugrl/e40-reg/experiments/e40-square-gaussian-ppo/results/gauss-square/ppo/dppo-gaussian-policy/gauss-square-seed2/600000
+02:30:31|INFO|Checkpoint saved at step 800000 to /home/guangzhao/zuogou/plugrl/e40-reg/experiments/e40-square-gaussian-ppo/results/gauss-square/ppo/dppo-gaussian-policy/gauss-square-seed2/800000
+02:30:31|INFO|Stopping server as the algorithm signaled to stop.
+02:30:31|INFO|Shutdown started: aborting pending infer requests.
+02:30:31|INFO|Shutdown cleanup finished: pending_futures=2, drained_requests=2
+02:30:31|INFO|Shutdown closing 2 websocket connection(s).
+02:30:31|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 40640).
+02:30:31|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 40636).
+02:30:31|INFO|WebSocket server closed.
+02:30:31|INFO|Scheduler task cancelled and cleaned up.
