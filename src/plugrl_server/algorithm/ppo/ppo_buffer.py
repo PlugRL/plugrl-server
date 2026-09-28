@@ -32,8 +32,13 @@ class PPOBuffer(GAEBuffer):
         normalize_rewards: bool = True,
         reward_clip: float = 10.0,
         epsilon: float = 1e-8,
+        reward_scaling_gamma: float | None = None,
     ):
         super().__init__(buffer_size, example_train_state, gamma, gae_lambda)
+        # The running return's discount; GAE's own when unset.
+        self.reward_scaling_gamma = (
+            gamma if reward_scaling_gamma is None else reward_scaling_gamma
+        )
         self.normalize_rewards = normalize_rewards
         self.reward_clip = reward_clip
         self.epsilon = epsilon
@@ -74,7 +79,7 @@ class PPOBuffer(GAEBuffer):
             and not (terminated or truncated)
         )
         self.rets[current_idx] = float(reward) + (
-            self.gamma * self.rets[prev_idx] if continues else 0.0
+            self.reward_scaling_gamma * self.rets[prev_idx] if continues else 0.0
         )
         return node
 
