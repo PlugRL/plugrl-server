@@ -1,0 +1,16 @@
+cell:    fpopp-square-8m = E39's fpopp-square resumed to 167 iterations
+seeds:   0 1 2  clients per seed: 3
+from:    /home/guangzhao/zuogou/plugrl/e41-reg/../e39-reg/experiments/e39-square-fpo-plus-plus/results/fpopp-square/fpo/fpo-policy
+server:  /home/guangzhao/zuogou/plugrl/e41-reg/../plugrl-server/.venv/bin/python (src /home/guangzhao/zuogou/plugrl/e41-reg/src)
+client:  /home/guangzhao/zuogou/plugrl/e41-reg/../plugrl-env-client/.venv-robomimic/bin/python
+out:     /home/guangzhao/zuogou/plugrl/e41-reg/experiments/e41-square-fpo-plus-plus-8m/results/fpopp-square-8m
+start 2026-09-28 11:18:46
+seed 0 resumes /home/guangzhao/zuogou/plugrl/e41-reg/../e39-reg/experiments/e39-square-fpo-plus-plus/results/fpopp-square/fpo/fpo-policy/fpopp-square-seed0/1200003
+seed 1 resumes /home/guangzhao/zuogou/plugrl/e41-reg/../e39-reg/experiments/e39-square-fpo-plus-plus/results/fpopp-square/fpo/fpo-policy/fpopp-square-seed1/1200003
+seed 2 resumes /home/guangzhao/zuogou/plugrl/e41-reg/../e39-reg/experiments/e39-square-fpo-plus-plus/results/fpopp-square/fpo/fpo-policy/fpopp-square-seed2/1200002
+seed 0 finished rc=0 at 16:02:28
+seed 1 finished rc=0 at 16:06:25
+seed 2 finished rc=0 at 16:06:37
+end   2026-09-28 16:06:37
+failed seeds: 0
+CELL_DONE fpopp-square-8m
