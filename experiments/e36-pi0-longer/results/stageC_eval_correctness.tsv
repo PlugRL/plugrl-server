@@ -1,0 +1,5 @@
+cell	policy	client_exit	wall_s	client_episodes	client_steps	server_episodes	server_length_sum	episode_accounting	step_accounting	no_step_state_warnings	reconnects	valid
+e36-dppo-it5	dppo-it5	0	1998	50	23398	50	23398	true	true	0	0	true
+e36-dppo-it10	dppo-it10	0	2024	50	23927	50	23927	true	true	0	0	true
+e36-fpopp-s7-it5	fpopp-s7-it5	0	2126	50	25234	50	25234	true	true	0	0	true
+e36-fpopp-s8-it5	fpopp-s8-it5	0	2148	50	26000	50	26000	true	true	0	0	true

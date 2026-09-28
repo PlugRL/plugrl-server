@@ -1,0 +1,8 @@
+[09-27 13:30:41] cell=dppo iters=10 buffer=4096 batch=8 port=8473 src=5272832 (feat/fpo-chunk-loss-per-sample-ratio, PR #74: main 2bd2789 plus FPO++ chunk loss and per-sample ratio), LF archive
+[09-27 13:30:41] ALLOW_SIBLINGS=1: not checking for other clients or servers
+[09-27 13:33:16] server listening
+[09-28 00:08:53] server exited after 38137s
+[09-28 00:08:55] after teardown: 28 client or server processes on the machine
+[09-28 00:08:55] checkpoints: dppo/pi0-policy/dppo/12290/model.safetensors dppo/pi0-policy/dppo/16390/model.safetensors dppo/pi0-policy/dppo/20490/model.safetensors dppo/pi0-policy/dppo/24580/model.safetensors dppo/pi0-policy/dppo/28680/model.safetensors dppo/pi0-policy/dppo/32770/model.safetensors dppo/pi0-policy/dppo/36870/model.safetensors dppo/pi0-policy/dppo/40970/model.safetensors dppo/pi0-policy/dppo/4100/model.safetensors dppo/pi0-policy/dppo/8200/model.safetensors 
+[09-28 00:08:55] peak MiB on the server cards 4 and 5: 18520, 2802
+[09-28 00:08:55] E36_DPPO_DONE dppo

@@ -1,0 +1,19 @@
+[13:29:41] cell=fpopp-s8 iterations=10 master_device=cuda:1 lr=1e-5 updates=4 clip=0.05 drift=0 warmup=0 srv_gpus=2,3 cli_gpu=0 buffer=4096 batch=8
+[13:29:41] ALLOW_SIBLINGS=1: not checking for other clients or servers
+[13:29:41] arm flags: --algo.n-critic-warmup-itrs 1 --algo.output-mode u --algo.no-discretize-t-for-training --algo.cfm-loss-steps 5 --algo.cfm-loss-dims 7 --algo.cfm-loss-sum-over-steps --algo.ratio-per-sample
+[13:31:53] server listening
+[01:31:59] clients exit 124 after 43206s (server_died=0)
+[01:32:32] teardown clean
+[01:32:32] === learn steps seen ===
+44
+[01:32:32] === out of memory? ===
+0
+[01:32:32] === peak memory, GPU0 and GPU1 ===
+gpu0_peak_mib=20082  gpu1_peak_mib=9070
+[01:32:32] === checkpoints ===
+18:31 8528818570 /home/gotham/tmp/plugrl/e36/fpopp-s8/ck/fpo/pi0-policy/fpopp-s8/16390/model.safetensors
+19:45 8528818570 /home/gotham/tmp/plugrl/e36/fpopp-s8/ck/fpo/pi0-policy/fpopp-s8/20480/model.safetensors
+21:00 8528818570 /home/gotham/tmp/plugrl/e36/fpopp-s8/ck/fpo/pi0-policy/fpopp-s8/24580/model.safetensors
+22:14 8528818570 /home/gotham/tmp/plugrl/e36/fpopp-s8/ck/fpo/pi0-policy/fpopp-s8/28679/model.safetensors
+23:28 8528818570 /home/gotham/tmp/plugrl/e36/fpopp-s8/ck/fpo/pi0-policy/fpopp-s8/32769/model.safetensors
+[01:32:32] E36_TRAIN_DONE fpopp-s8

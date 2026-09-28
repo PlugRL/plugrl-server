@@ -1,0 +1,48 @@
+[09-27 13:28:41] code: 5272832 (feat/fpo-chunk-loss-per-sample-ratio, PR #74: main 2bd2789 plus FPO++ chunk loss and per-sample ratio), LF archive
+[09-27 13:28:41] --- phase 1
+[09-28 00:08:55] END train dppo rc=0
+[09-28 01:31:18] END train fpopp-s7 rc=0
+[09-28 01:32:32] END train fpopp-s8 rc=0
+[09-28 01:32:32] checkpoints fpopp-s7: 4100 8200 12290 16390 20489 24579 28679 32769 36869 
+[09-28 01:32:32] checkpoints fpopp-s8: 4100 8200 12290 16390 20480 24580 28679 32769 36869 
+[09-28 01:32:32] checkpoints dppo: 4100 8200 12290 16390 20490 24580 28680 32770 36870 40970 
+[09-28 01:32:32] --- phase 2
+[09-28 01:32:32] --- movement from the base, iterations 5 and 10
+[09-28 01:32:32] END eval fpopp-s8-it10 not run: no checkpoint
+[09-28 01:32:32] END eval fpopp-s7-it10 not run: no checkpoint
+/home/gotham/tmp/plugrl/e36/fpopp-s7/ck/fpo/pi0-policy/fpopp-s7/20489/model.safetensors
+  mod    moved  74  unchanged   0  relative distance 0.041006
+  attn   moved  72  unchanged   0  relative distance 0.030011
+  mlp    moved  54  unchanged   0  relative distance 0.029143
+  io     moved   8  unchanged   0  relative distance 0.023628
+  expert moved 200  unchanged   1  relative distance 0.028341
+/home/gotham/tmp/plugrl/e36/fpopp-s8/ck/fpo/pi0-policy/fpopp-s8/20480/model.safetensors
+  mod    moved  74  unchanged   0  relative distance 0.040266
+  attn   moved  72  unchanged   0  relative distance 0.027416
+  mlp    moved  54  unchanged   0  relative distance 0.028762
+  io     moved   8  unchanged   0  relative distance 0.027476
+  expert moved 200  unchanged   1  relative distance 0.027503
+/home/gotham/tmp/plugrl/e36/runs/dppo/ck/dppo/pi0-policy/dppo/20490/model.safetensors
+  mod    moved  74  unchanged   0  relative distance 0.004403
+  attn   moved  72  unchanged   0  relative distance 0.000465
+  mlp    moved  54  unchanged   0  relative distance 0.000472
+  io     moved   8  unchanged   0  relative distance 0.004367
+  expert moved 200  unchanged   1  relative distance 0.001622
+/home/gotham/tmp/plugrl/e36/runs/dppo/ck/dppo/pi0-policy/dppo/40970/model.safetensors
+  mod    moved  74  unchanged   0  relative distance 0.006455
+  attn   moved  72  unchanged   0  relative distance 0.000613
+  mlp    moved  54  unchanged   0  relative distance 0.000629
+  io     moved   8  unchanged   0  relative distance 0.006365
+  expert moved 200  unchanged   1  relative distance 0.002366
+[09-28 01:34:56] --- learn-step statistics
+[09-28 02:16:17] END eval dppo-it5 rc=0
+[09-28 02:16:47] END eval dppo-it10 rc=0
+[09-28 02:18:27] END eval fpopp-s7-it5 rc=0
+[09-28 02:18:53] END eval fpopp-s8-it5 rc=0
+[09-28 02:18:53] === rows ===
+policy	task_id	episodes	successes	sr	ci_lo	ci_hi	valid
+dppo-it5	8	50	28	0.5600	0.4231	0.6884	true
+dppo-it10	8	50	20	0.4000	0.2761	0.5382	true
+fpopp-s7-it5	8	50	5	0.1000	0.0435	0.2136	true
+fpopp-s8-it5	8	50	0	0.0000	0.0000	0.0713	true
+[09-28 02:18:53] E36_DONE

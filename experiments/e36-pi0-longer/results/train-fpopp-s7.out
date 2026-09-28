@@ -1,0 +1,26 @@
+[13:28:41] cell=fpopp-s7 iterations=10 master_device=cuda:1 lr=1e-5 updates=4 clip=0.05 drift=0 warmup=0 srv_gpus=0,1 cli_gpu=3 buffer=4096 batch=8
+[13:28:41] ALLOW_SIBLINGS=1: not checking for other clients or servers
+[13:28:41] arm flags: --algo.n-critic-warmup-itrs 1 --algo.output-mode u --algo.no-discretize-t-for-training --algo.cfm-loss-steps 5 --algo.cfm-loss-dims 7 --algo.cfm-loss-sum-over-steps --algo.ratio-per-sample
+[13:30:36] server listening
+[01:30:44] clients exit 124 after 43208s (server_died=0)
+/home/gotham/tmp/plugrl/e36/train.sh: line 80: 38426 Killed                  ( cd "$R/plugrl-server-e32" && exec setsid env PYTHONPATH="$R/plugrl-server-e32/src" OPENPI_DATA_HOME="$R/.cache/openpi" XDG_CACHE_HOME="$R/.cache" TMPDIR="$R/.tmp" HF_HOME="$R/.cache/hf" TORCHINDUCTOR_CACHE_DIR="$R/.cache/inductor" CUDA_VISIBLE_DEVICES=${SRV_GPUS:-0,1} PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True "$SPY" -m plugrl_server.cli pi0-policy default fpo default --policy.name pi05_libero --policy.checkpoint-path "$R/ckpt/pi05_libero" --policy.device cuda:0 --algo.learning-rate ${LR:-1e-5} --algo.batch-size "$BATCH_SIZE" --algo.num-updates-per-batch ${UPDATES:-4} --algo.n-samples-per-action "$N_SAMPLES" --algo.buffer-size "$BUFFER_SIZE" --algo.clipping-epsilon ${CLIP_EPS:-0.05} --algo.global-steps "$GLOBAL_STEPS" --algo.save-interval 1 "${MASTER_FLAG[@]}" "${OPT_FLAGS[@]}" --seed ${SEED:-7} --port "$PORT" --no-show-progress-bar --no-show-metric-table --checkpoint-base-dir "$OUT/ck" --exp-name "$CELL" --overwrite ) > "$OUT/server.log" 2>&1
+[01:31:18] after teardown, clients: 12 alive
+  PID ELAPSED COMMAND
+43113   43164 /home/gotham/tmp/plugrl/venv-libero/bin/python -m plugrl_env_client.cli libero-v1 --server-host 127.0.0.1 
+43212   43160 /home/gotham/tmp/plugrl/venv-libero/bin/python -c from multiprocessing.resource_tracker import main;main(4
+43213   43160 /home/gotham/tmp/plugrl/venv-libero/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main
+43214   43160 /home/gotham/tmp/plugrl/venv-libero/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main
+[01:31:18] TEARDOWN_NOT_CLEAN
+[01:31:18] === learn steps seen ===
+48
+[01:31:18] === out of memory? ===
+0
+[01:31:18] === peak memory, GPU0 and GPU1 ===
+gpu0_peak_mib=20082  gpu1_peak_mib=9070
+[01:31:18] === checkpoints ===
+18:36 8528818570 /home/gotham/tmp/plugrl/e36/fpopp-s7/ck/fpo/pi0-policy/fpopp-s7/16390/model.safetensors
+19:52 8528818570 /home/gotham/tmp/plugrl/e36/fpopp-s7/ck/fpo/pi0-policy/fpopp-s7/20489/model.safetensors
+21:07 8528818570 /home/gotham/tmp/plugrl/e36/fpopp-s7/ck/fpo/pi0-policy/fpopp-s7/24579/model.safetensors
+22:23 8528818570 /home/gotham/tmp/plugrl/e36/fpopp-s7/ck/fpo/pi0-policy/fpopp-s7/28679/model.safetensors
+23:39 8528818570 /home/gotham/tmp/plugrl/e36/fpopp-s7/ck/fpo/pi0-policy/fpopp-s7/32769/model.safetensors
+[01:31:18] E36_TRAIN_DONE fpopp-s7
