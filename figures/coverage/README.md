@@ -1,11 +1,13 @@
 # The coverage figure
 
 The figure on the project page's home page: every combination of the two MLP
-policies and the two algorithms on four tasks, the Gaussian policy with PPO
-as the baseline beneath them, and pi0.5 on LIBERO. This
-directory made its clips, stills and data; the page itself lives in
+policies and the two algorithms on four tasks, with the Gaussian policy and
+PPO as the baseline beneath them. pi0.5 on LIBERO, the `vla` section of
+`cells.json`, is drawn on a page of its own (`docs/vla.md`). This directory
+made the clips, stills and data for both; the pages live in
 [plugrl.github.io](https://github.com/PlugRL/plugrl.github.io)
-(`docs/media/coverage/`, `docs/javascripts/coverage.js`).
+(`docs/media/coverage/`, `docs/javascripts/coverage.js`, whose `data-part`
+picks the grid or pi0.5).
 
 `cells.json` is the source of truth. For each cell it names the experiment,
 the status that experiment established, a short note in English and Chinese,

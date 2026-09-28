@@ -52,7 +52,8 @@ tasks, and the baseline they are measured against: a Gaussian MLP with PPO.
 That row is CleanRL's policy and PPO on the MuJoCo tasks and DPPO's on
 square, each run as its authors run it. [On the project page](https://plugrl.github.io/#what-runs-on-it) each
 cell plays its clip and shows the two commands that trained it, and pi0.5 on
-LIBERO sits below. Moving between cells means changing a few words. On
+LIBERO has [a page of its own](https://plugrl.github.io/vla/). Moving between
+cells means changing a few words. On
 Hopper, the four servers were:
 
 ```bash
