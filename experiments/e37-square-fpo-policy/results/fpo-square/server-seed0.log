@@ -1,0 +1,33 @@
+12:30:46|INFO|plugrl_server version: 0.1.0
+12:30:46|INFO|Algorithm: fpo, Config: FPOAlgoConfig(global_steps=720000, buffer_size=12000, output_mode='u', fpo_playground_trick=True, treat_truncated_as_done=False, discounting=0.995, reward_scaling=10.0, gae_lambda=0.99, batch_size=1500, num_updates_per_batch=10, learning_rate=1e-05, value_loss_coeff=0.25, clipping_epsilon=0.01, normalize_advantage=True, n_critic_warmup_itrs=1, max_policy_drift=0.0, n_samples_per_action=8, discretize_t_for_training=False, average_losses_before_exp=True, cfm_loss_steps=4, cfm_loss_dims=7, cfm_loss_sum_over_steps=True, ratio_per_sample=True, save_interval=10, policy_checkpoint_path=PosixPath('/home/guangzhao/zuogou/plugrl/e37/../ckpt/e35-bc/400000'), restore='except-critic', master_weights_device=None)
+12:30:46|INFO|Policy: fpo-policy, Config: FPOPolicyConfig(algo='fpo', device=device(type='cpu'), obs_dim=23, action_dim=7, flow_steps=10, timestep_embed_dim=8, action_horizon=4, feather_std=0.0, policy_mlp_output_scale=0.25, normalize_observations=True, freeze_obs_stats=True, hidden_dims=(1024, 1024, 1024), value_hidden_dims=(256, 256, 256, 256, 256), state_keys=('robot0_eef_pos', 'robot0_eef_quat', 'robot0_gripper_qpos', 'object'))
+12:30:46|INFO|Seeded python, numpy and torch with 0. One env client is then reproducible; several are not, because batch composition depends on when their requests arrive.
+12:30:46|INFO|Checkpoint Manager created: 
+<plugrl_server.common.checkpoint_manager.CheckpointManager object at 0x7f8f30c015d0> at /home/guangzhao/zuogou/plugrl/e37/experiments/e37-square-fpo-policy/results/fpo-square/fpo/fpo-policy/fpo-square-seed0
+12:30:47|INFO|Policy created...
+12:30:47|INFO|Initialized RolloutBuffer buffer_size=12000 action_shape=(12000, 4, 7) value_shape=(12000, 1)
+12:30:47|INFO|Restoring from /home/guangzhao/zuogou/plugrl/e37/../ckpt/e35-bc/400000 with restore=except-critic
+12:30:47|INFO|Loading model state from /home/guangzhao/zuogou/plugrl/e37/../ckpt/e35-bc/400000...
+12:30:47|INFO|Loading optimizer state from /home/guangzhao/zuogou/plugrl/e37/../ckpt/e35-bc/400000...
+12:30:47|INFO|Loading metadata from /home/guangzhao/zuogou/plugrl/e37/../ckpt/e35-bc/400000...
+12:30:47|WARNING|Metadata file not found. Resuming step may be inaccurate.
+12:30:47|INFO|Checkpoint loaded from /home/guangzhao/zuogou/plugrl/e37/../ckpt/e35-bc/400000.
+12:30:47|INFO|Holding back 12 critic tensors
+12:30:47|INFO|Algorithm created: 
+<plugrl_server.algorithm.fpo.fpo.FPOAlgorithm object at 0x7f8f309e6210>
+12:30:47|INFO|Agent Server is listening on 0.0.0.0:9600
+13:20:29|INFO|Checkpoint saved at step 120000 to /home/guangzhao/zuogou/plugrl/e37/experiments/e37-square-fpo-policy/results/fpo-square/fpo/fpo-policy/fpo-square-seed0/120000
+14:09:57|INFO|Checkpoint saved at step 240000 to /home/guangzhao/zuogou/plugrl/e37/experiments/e37-square-fpo-policy/results/fpo-square/fpo/fpo-policy/fpo-square-seed0/240000
+14:59:40|INFO|Checkpoint saved at step 360000 to /home/guangzhao/zuogou/plugrl/e37/experiments/e37-square-fpo-policy/results/fpo-square/fpo/fpo-policy/fpo-square-seed0/360000
+15:49:13|INFO|Checkpoint saved at step 480000 to /home/guangzhao/zuogou/plugrl/e37/experiments/e37-square-fpo-policy/results/fpo-square/fpo/fpo-policy/fpo-square-seed0/480000
+16:38:42|INFO|Checkpoint saved at step 600000 to /home/guangzhao/zuogou/plugrl/e37/experiments/e37-square-fpo-policy/results/fpo-square/fpo/fpo-policy/fpo-square-seed0/600000
+17:27:01|INFO|Checkpoint saved at step 720000 to /home/guangzhao/zuogou/plugrl/e37/experiments/e37-square-fpo-policy/results/fpo-square/fpo/fpo-policy/fpo-square-seed0/720000
+17:27:01|INFO|Stopping server as the algorithm signaled to stop.
+17:27:01|INFO|Shutdown started: aborting pending infer requests.
+17:27:01|INFO|Shutdown cleanup finished: pending_futures=3, drained_requests=3
+17:27:01|INFO|Shutdown closing 3 websocket connection(s).
+17:27:01|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 44250).
+17:27:01|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 44224).
+17:27:01|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 44238).
+17:27:01|INFO|WebSocket server closed.
+17:27:01|INFO|Scheduler task cancelled and cleaned up.
