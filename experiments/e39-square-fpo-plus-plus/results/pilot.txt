@@ -1,0 +1,23 @@
+E39 pilot, 2026-09-27 21:51-22:03, guangzhao, code c6cb817 (#91's options plus
+E39's scripts), client 931ab56, BC ~/zuogou/plugrl/ckpt/e35-bc/400000 (sha256
+7fe7a706c2c4601d).
+
+  ITERS=3 SEEDS=0 OUT=pilot bash run.sh
+
+Seed 0, three client processes, three iterations of 12,000 chunks. rc 0, no
+traceback. The server's config line showed every FPO++ setting run_cell.sh
+passes.
+
+  iteration                      1        2        3
+  rollout/success            0.450    0.548    0.533
+  rollout/explained_variance -0.062    0.230    0.332
+  losses/value_loss          0.0407   0.0421   0.0365
+  fpo/clipped_ratio_mean     0 (critic only)  0.212  0.216
+  fpo/policy_ratio_mean      1.000    0.998    0.998
+  fpo/actor_grad_norm_max    0 (critic only)  0.436  0.386
+  fpo/critic_grad_norm_max   0.255    0.172    0.068
+  fpo/advantages_raw_std     0.333    0.311    0.291
+  rollout/length             318      311      311
+  collection / learn (s)     144/111  138/107  139/107
+
+About 250 s an iteration: 100 iterations in about 7 hours.

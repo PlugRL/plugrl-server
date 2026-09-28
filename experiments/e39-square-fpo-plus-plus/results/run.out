@@ -1,0 +1,7 @@
+start 2026-09-27 22:06:23
+code:   5c6ccd7 (src /home/guangzhao/zuogou/plugrl/e39-reg/src)
+client: 931ab56
+iters:  100  seeds: 0 1 2  clients per seed: 3  out: /home/guangzhao/zuogou/plugrl/e39-reg/experiments/e39-square-fpo-plus-plus/results
+end   2026-09-28 05:43:08
+fpopp-square  failed seeds: 0
+E39_DONE
