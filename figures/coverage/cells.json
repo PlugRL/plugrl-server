@@ -42,11 +42,13 @@
     },
     {
       "id": "fpo-fpo-square", "row": "fpo-fpo", "column": "square",
-      "status": "runs", "experiments": ["E27", "E35", "E37"],
-      "note": "from a clone at 0.52–0.55, falls to 0.26–0.39: our FPO's defect, being traced", "note_zh": "从成功率 0.52–0.55 的克隆策略起步，掉到 0.26–0.39：是我们 FPO 的缺陷，正在排查",
-      "runs": "e37/experiments/e37-square-fpo-policy/results/fpo-square/fpo/fpo-policy/fpo-square-seed{seed}", "seed": 1,
+      "status": "learns", "experiments": ["E27", "E35", "E37", "E39", "E41"],
+      "note": "from a behaviour-cloned start, success 0.50–0.52 → 0.67–0.79 over FPO++'s 8M steps; two of three seeds past the bar", "note_zh": "从行为克隆策略起步，成功率 0.50–0.52 → 0.67–0.79，跑满 FPO++ 的 8M 步；三个种子里两个过线",
+      "runs": "e41-reg/experiments/e41-square-fpo-plus-plus-8m/results/fpopp-square-8m/fpo/fpo-policy/fpopp-square-8m-seed{seed}",
+      "resumed_from": "e39-reg/experiments/e39-square-fpo-plus-plus/results/fpopp-square/fpo/fpo-policy/fpopp-square-seed{seed}", "seed": 1,
       "server": ["fpo-policy", "default", "eval", "default", "--policy.obs-dim", "23", "--policy.action-dim", "7",
                  "--policy.action-horizon", "4", "--policy.flow-steps", "10", "--policy.hidden-dims", "1024", "1024", "1024",
+                 "--policy.value-hidden-dims", "512", "256",
                  "--policy.state-keys", "robot0_eef_pos", "robot0_eef_quat", "robot0_gripper_qpos", "object"],
       "client": ["robomimic-v1", "--env.name", "square-img", "--env.agentview-image-size", "256", "256"],
       "replan": 4, "native_fps": 20
