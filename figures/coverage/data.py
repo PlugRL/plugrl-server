@@ -3,7 +3,8 @@
     python data.py [--out media/site/coverage.json]
 
 For every cell in cells.json: its status, experiments and note; the return
-per iteration of all three seeds, from their tensorboards; and what pick.py
+per iteration of all three seeds, from their tensorboards (preceded by the
+runs they resumed from, if `resumed_from` names them); and what pick.py
 recorded about the clip, if it has run; and from commands.json, the two
 commands that trained it and the env-client environment it needs. The `vla`
 section of cells.json is copied as it stands, with the same additions. Needs
@@ -51,6 +52,12 @@ def main() -> int:
         # Most cells ran seeds 0-2; a cell that ran others names them.
         seeds = cell.get("seeds", [0, 1, 2])
         curves = [returns(HOME / cell["runs"].format(seed=s)) for s in seeds]
+        # A cell whose runs resumed from earlier ones plots the whole run.
+        if "resumed_from" in cell:
+            curves = [
+                returns(HOME / cell["resumed_from"].format(seed=s)) + curve
+                for s, curve in zip(seeds, curves)
+            ]
         cells.append(
             {
                 "id": cell["id"],
