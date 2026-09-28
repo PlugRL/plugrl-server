@@ -1,5 +1,5 @@
 {
-  "_about": "The two commands behind each cell, as its experiment ran them: one training server, one env client. Output and logging flags are left out, every run is shown with port 8000 and seed 0 (the experiments ran seeds 0-2), and the client's episode count is an upper bound only - the server ends every run. pi0.5's cluster paths and environment variables are placeholders; `source` is the script that ran it.",
+  "_about": "The two commands behind each cell, as its experiment ran them: one training server, one env client. Output and logging flags are left out, every run is shown with port 8000 and seed 0 (the experiments ran seeds 0-2), and the client's episode count is an upper bound only - the server ends every run. Checkpoint paths, and pi0.5's cluster paths and environment variables, are placeholders; `source` is the script that ran it.",
   "envs": {
     "mujoco": {"extra": "mujoco", "packages": "gymnasium 1.x, mujoco 3.x (3.6 and 3.14 here)"},
     "robomimic": {"extra": "robomimic", "packages": "robomimic 0.4, robosuite 1.4.1, mujoco 2.3.7"},
@@ -23,9 +23,9 @@
       "env": "mujoco", "source": "experiments/e24-coverage/run_cell.sh"
     },
     "fpo-fpo-square": {
-      "server": ["fpo-policy default fpo default", "--port 8000 --seed 0 --policy.device cpu", "--policy.obs-dim 23 --policy.action-dim 7", "--policy.state-keys robot0_eef_pos robot0_eef_quat robot0_gripper_qpos object", "--algo.buffer-size 4096 --algo.global-steps 81920"],
-      "client": ["robomimic-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-episodes 100000", "--env.name square-img --env.agentview-image-size 84 84", "--runner.replan-steps 1"],
-      "env": "robomimic", "source": "experiments/e27-robomimic/run_cell.sh"
+      "server": ["fpo-policy default fpo default", "--port 8000 --seed 0 --policy.device cpu", "--policy.obs-dim 23 --policy.action-dim 7 --policy.action-horizon 4 --policy.hidden-dims 1024 1024 1024 --policy.flow-steps 10", "--policy.state-keys robot0_eef_pos robot0_eef_quat robot0_gripper_qpos object --policy.freeze-obs-stats", "--algo.policy-checkpoint-path E35_BC_CHECKPOINT --algo.restore except-critic", "--algo.output-mode u --algo.no-discretize-t-for-training --algo.cfm-loss-steps 4 --algo.cfm-loss-dims 7 --algo.cfm-loss-sum-over-steps", "--algo.ratio-per-sample --algo.n-critic-warmup-itrs 1 --algo.clipping-epsilon 0.01 --algo.learning-rate 1e-5", "--algo.num-updates-per-batch 10 --algo.n-samples-per-action 8 --algo.discounting 0.995 --algo.gae-lambda 0.99", "--algo.buffer-size 12000 --algo.batch-size 1500 --algo.global-steps 720000"],
+      "client": ["robomimic-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-procs 3 --num-episodes 100000", "--env.name square-img --env.agentview-image-size 84 84", "--env.no-terminate-on-success --runner.replan-steps 4"],
+      "env": "robomimic", "source": "experiments/e37-square-fpo-policy/run_cell.sh"
     },
     "fpo-dppo-cheetah": {
       "server": ["fpo-policy default dppo cheetah", "--port 8000 --seed 0 --policy.device cpu", "--policy.obs-dim 17 --policy.action-dim 6", "--policy.action-horizon 4 --policy.flow-steps 20 --policy.hidden-dims 512 512 512", "--algo.sampling-noise-level 1.0 --algo.logprob-noise-level 1.0", "--algo.buffer-size 1024 --algo.batch-size 512 --algo.train-itrs 300"],
@@ -43,9 +43,9 @@
       "env": "mujoco", "source": "experiments/e33-fpo-dppo-structure/run.sh"
     },
     "fpo-dppo-square": {
-      "server": ["fpo-policy default dppo default", "--port 8000 --seed 0 --policy.device cpu", "--policy.obs-dim 23 --policy.action-dim 7", "--policy.state-keys robot0_eef_pos robot0_eef_quat robot0_gripper_qpos object", "--algo.buffer-size 4096 --algo.batch-size 256 --algo.train-itrs 20"],
-      "client": ["robomimic-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-episodes 100000", "--env.name square-img --env.agentview-image-size 84 84", "--runner.replan-steps 1"],
-      "env": "robomimic", "source": "experiments/e27-robomimic/run_cell.sh"
+      "server": ["fpo-policy default dppo square", "--port 8000 --seed 0 --policy.device cpu", "--policy.obs-dim 23 --policy.action-dim 7 --policy.action-horizon 4 --policy.hidden-dims 1024 1024 1024 --policy.flow-steps 20", "--policy.state-keys robot0_eef_pos robot0_eef_quat robot0_gripper_qpos object --policy.freeze-obs-stats", "--algo.policy-checkpoint-path E35_BC_CHECKPOINT --algo.restore except-critic", "--algo.sampling-noise-level 1.0 --algo.logprob-noise-level 1.0", "--algo.batch-size 500 --algo.train-itrs 40"],
+      "client": ["robomimic-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-procs 3 --num-episodes 100000", "--env.name square-img --env.agentview-image-size 84 84", "--env.no-terminate-on-success --runner.replan-steps 4"],
+      "env": "robomimic", "source": "experiments/e37-square-fpo-policy/run_cell.sh"
     },
     "dppo-dppo-cheetah": {
       "server": ["dppo-policy cheetah dppo cheetah", "--port 8000 --seed 0 --policy.device cpu", "--algo.buffer-size 1024 --algo.batch-size 512 --algo.train-itrs 100"],
