@@ -1,0 +1,7 @@
+start 2026-09-28 11:18:46
+code:   3898cce (src /home/guangzhao/zuogou/plugrl/e41-reg/src)
+client: 931ab56
+iters:  to 167  seeds: 0 1 2  clients per seed: 3  out: /home/guangzhao/zuogou/plugrl/e41-reg/experiments/e41-square-fpo-plus-plus-8m/results
+end   2026-09-28 16:06:37
+fpopp-square-8m  failed seeds: 0
+E41_DONE
