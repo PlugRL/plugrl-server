@@ -188,8 +188,8 @@
       {
         "id": "pi0-dppo", "label": "pi0-policy · DPPO", "label_zh": "pi0-policy · DPPO",
         "status": "holds", "experiments": ["E25", "E36"], "score": [20, 50],
-        "note": "ten iterations leave it at 20 of 50, having barely moved it",
-        "note_zh": "十轮后 20/50，几乎没动它",
+        "note": "ten iterations leave it at 20 of 50: on the line for holding, below the untrained 31",
+        "note_zh": "十轮后 20/50：刚好守在线上，低于未训练时的 31",
         "video_key": "base", "native_fps": 20, "whole": true
       }
     ]
