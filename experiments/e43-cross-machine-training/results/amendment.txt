@@ -1,0 +1,32 @@
+seed  arm    iterations  first   last10    gain     span_s
+   0  local         100    -293     1262    +1555      1223
+   0  cross         100    -345     2060    +2404      2476
+   1  local         100    -325      695    +1019      1187
+   1  cross         100    -318     2127    +2445      2475
+   2  local         100    -250      725     +976      1175
+   2  cross         100    -250      946    +1196      2530
+   3  local         100    -321     1967    +2288      1277
+   3  cross         100    -283     2267    +2550      3151
+   4  local         100    -312     2336    +2647      1204
+   4  cross         100    -314     1587    +1901      3189
+   5  local         100    -346      857    +1204      1188
+   5  cross         100    -270     1082    +1352      3151
+
+status rule over six seeds (+200 over iteration 1)
+    local: 6 of 6
+    cross: 6 of 6
+
+extra time, cross minus local, iteration 1 -> 100 (P4 predicted 1,119 s)
+    seed 0: 1253 s
+    seed 1: 1288 s
+    seed 2: 1356 s
+    seed 3: 1875 s
+    seed 4: 1985 s
+    seed 5: 1963 s
+
+iterations 91-100, six seeds per arm
+    local mean 1307  sd 694  range 695-2336
+    cross mean 1678  sd 564  range 946-2267
+    all six cross above all six local: no
+    means further apart (371) than either arm's sd (694): no
+    -> read as seed variation

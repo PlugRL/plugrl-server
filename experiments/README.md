@@ -173,10 +173,12 @@ rather than an achievement.
 
 ## What is missing
 
-- **A true cross-machine number.** E7 got as far as one virtual machine to
-  its host, which separates the network stack from the machine boundary but
-  still shares a CPU and a hypervisor. A physical NIC and a switch will cost
-  more; how much more is unmeasured, and needs a second computer.
+- **A cross-machine number on a fast link.** E7 got as far as one virtual
+  machine to its host. E43 then crossed two physical machines - a wired Linux
+  workstation and a Windows laptop on campus Wi-Fi - and found the cost is a
+  fixed latency (about 3 ms) plus twice the observation's bytes over the
+  link's bandwidth (18 MB/s there), with training unchanged. A wired LAN or a
+  datacenter link is still unmeasured; the model says how it scales.
 - **E3 was never run.** Its protocol is pre-registered, including an explicit
   declaration of the familiarity bias that would have favoured PlugRL and
   three ranked mitigations, but no data exists.

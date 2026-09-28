@@ -1,0 +1,27 @@
+{
+  "exp_name": "e43-cross-seed0",
+  "process_id": 0,
+  "total_processes": null,
+  "completed_episodes": 409,
+  "total_episode_count": 409,
+  "metric_window": 100,
+  "mean_return": 1814.383544921875,
+  "mean_success_rate": 0.0,
+  "timing": {
+    "env_steps": 409601,
+    "infer_calls": 409601,
+    "feedback_calls": 409601,
+    "infer_wait_s": 2034.7191001036845,
+    "infer_obs_pack_s": 37.187602982419776,
+    "env_step_s": 203.39059199477197,
+    "feedback_s": 166.08562310118577,
+    "feedback_obs_pack_s": 42.57605869916733,
+    "feedback_info_pack_s": 6.698729697585804,
+    "collect_time_s": 2441.382918182062,
+    "effective_fps": 167.77417296955738,
+    "infer_wait_frac": 0.8334289082430406,
+    "infer_obs_pack_frac": 0.015232187751240165,
+    "env_step_frac": 0.08330958264679907,
+    "feedback_frac": 0.06802932135892016
+  }
+}
