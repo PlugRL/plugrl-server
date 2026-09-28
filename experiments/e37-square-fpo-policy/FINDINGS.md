@@ -23,8 +23,15 @@ iterations:
 | | 1 | 0.531 | 0.353 | −0.179 |
 | | 2 | 0.550 | 0.392 | −0.158 |
 
-(The starts differ because each algorithm samples the clone its own way:
-DPPO with noise level 1.0 at every flow step, FPO deterministically.)
+(The starts differ because each algorithm samples the clone its own way.
+DPPO adds noise of level 1.0 at every flow step. FPO integrates the flow
+from random initial noise and adds nothing along the way.)
+
+These are training-rollout rates. Evaluated for the coverage figure's clip
+(five episodes, ending on success), the median FPO seed's final checkpoint
+succeeded 4 of 5. Five episodes cannot say much against a training rate of
+0.35, and a fifty-episode evaluation of the clone and of that checkpoint is
+the first check to make before reading the fall as the policy's.
 
 * **P1 holds**: both cells logged every iteration on every seed, with no
   traceback and clients that exited 0. FPO took 5 hours and DPPO 9; both ran
