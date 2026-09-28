@@ -1,16 +1,16 @@
 {
-  "_about": "The coverage figure's cells. `runs` is relative to the machine's PlugRL home and takes {seed}; `seed` is the one whose mean return over its last ten iterations is the median of the three (ties: the lowest seed). `seeds`, when present, are the three the experiment ran; otherwise 0-2. `status` is what the experiments established, not what the video shows.",
+  "_about": "The coverage figure's cells. `runs` is relative to the machine's PlugRL home and takes {seed}; `seed` is the one whose mean return over its last ten iterations is the median of the three (ties: the lowest seed). `seeds`, when present, are the three the experiment ran; otherwise 0-2. `resumed_from`, when present, names the runs `runs` resumed from, in the same form; their returns come first in the curves. A column's `metric`, when present, is the tensorboard scalar its curves plot in place of `rollout/reward`: square's runs do not share a reward (DPPO's counts every step after success, FPO++'s ends the episode on it), so square plots the success rate. `status` is what the experiments established, not what the video shows.",
   "rows": [
     {"id": "fpo-fpo", "label": "fpo-policy · FPO"},
     {"id": "fpo-dppo", "label": "fpo-policy · DPPO"},
     {"id": "dppo-dppo", "label": "dppo-policy · DPPO"},
-    {"id": "gaussian-ppo", "label": "gaussian-policy · PPO"}
+    {"id": "gaussian-ppo", "label": "Gaussian MLP · PPO"}
   ],
   "columns": [
     {"id": "cheetah", "label": "HalfCheetah-v5"},
     {"id": "hopper", "label": "Hopper-v5"},
     {"id": "walker", "label": "Walker2d-v5"},
-    {"id": "square", "label": "robomimic square"}
+    {"id": "square", "label": "robomimic square", "metric": "rollout/success"}
   ],
   "cells": [
     {
@@ -42,11 +42,13 @@
     },
     {
       "id": "fpo-fpo-square", "row": "fpo-fpo", "column": "square",
-      "status": "runs", "experiments": ["E27", "E35", "E37"],
-      "note": "from a clone at 0.52–0.55, falls to 0.26–0.39: our FPO's defect, being traced", "note_zh": "从成功率 0.52–0.55 的克隆策略起步，掉到 0.26–0.39：是我们 FPO 的缺陷，正在排查",
-      "runs": "e37/experiments/e37-square-fpo-policy/results/fpo-square/fpo/fpo-policy/fpo-square-seed{seed}", "seed": 1,
+      "status": "learns", "experiments": ["E27", "E35", "E37", "E39", "E41"],
+      "note": "from a behaviour-cloned start, success 0.50–0.52 → 0.67–0.79 over FPO++'s 8M steps; two of three seeds past the bar", "note_zh": "从行为克隆策略起步，成功率 0.50–0.52 → 0.67–0.79，跑满 FPO++ 的 8M 步；三个种子里两个过线",
+      "runs": "e41-reg/experiments/e41-square-fpo-plus-plus-8m/results/fpopp-square-8m/fpo/fpo-policy/fpopp-square-8m-seed{seed}",
+      "resumed_from": "e39-reg/experiments/e39-square-fpo-plus-plus/results/fpopp-square/fpo/fpo-policy/fpopp-square-seed{seed}", "seed": 1,
       "server": ["fpo-policy", "default", "eval", "default", "--policy.obs-dim", "23", "--policy.action-dim", "7",
                  "--policy.action-horizon", "4", "--policy.flow-steps", "10", "--policy.hidden-dims", "1024", "1024", "1024",
+                 "--policy.value-hidden-dims", "512", "256",
                  "--policy.state-keys", "robot0_eef_pos", "robot0_eef_quat", "robot0_gripper_qpos", "object"],
       "client": ["robomimic-v1", "--env.name", "square-img", "--env.agentview-image-size", "256", "256"],
       "replan": 4, "native_fps": 20
@@ -154,6 +156,15 @@
       "server": ["gaussian-policy", "default", "eval", "default", "--policy.obs-dim", "17", "--policy.action-dim", "6", "--policy.deterministic"],
       "client": ["mujoco-v1", "--env.name", "Walker2d-v5", "--env.render"],
       "replan": 1, "native_fps": 125
+    },
+    {
+      "id": "gaussian-ppo-square", "row": "gaussian-ppo", "column": "square",
+      "status": "learns", "experiments": ["E40"],
+      "note": "DPPO's Gaussian MLP from its released policy, success 0.19–0.21 → 0.54–0.57", "note_zh": "DPPO 的高斯 MLP，从其官方预训练策略起步，成功率 0.19–0.21 → 0.54–0.57",
+      "runs": "e40-reg/experiments/e40-square-gaussian-ppo/results/gauss-square/ppo/dppo-gaussian-policy/gauss-square-seed{seed}", "seed": 0,
+      "server": ["dppo-gaussian-policy", "default", "eval", "default", "--policy.deterministic"],
+      "client": ["robomimic-v1", "--env.name", "square-img", "--env.agentview-image-size", "256", "256"],
+      "replan": 4, "native_fps": 20
     }
   ],
   "vla": {
@@ -169,16 +180,16 @@
       },
       {
         "id": "pi0-fpo", "label": "pi0-policy · FPO", "label_zh": "pi0-policy · FPO",
-        "status": "holds", "experiments": ["E14", "E26", "E32"], "score": [33, 50],
-        "note": "one update with FPO++'s chunk loss leaves it intact; FPO's own took it to 0",
-        "note_zh": "换成 FPO++ 的块损失后一次更新没毁掉它；原版 FPO 会让它归零",
+        "status": "collapses", "experiments": ["E14", "E26", "E32", "E36"], "score": [5, 50],
+        "note": "one update with FPO++'s chunk loss left it at 33; five took it to 5 and 0 on two seeds, FPO's own defaults still in place",
+        "note_zh": "换成 FPO++ 的块损失后一次更新还有 33；五轮后两个种子降到 5 和 0，当时 FPO 自己的默认设置还没换掉",
         "video_key": "base", "native_fps": 20, "whole": true
       },
       {
         "id": "pi0-dppo", "label": "pi0-policy · DPPO", "label_zh": "pi0-policy · DPPO",
-        "status": "holds", "experiments": ["E25"], "score": [30, 50],
-        "note": "two iterations leave it intact, having barely moved it",
-        "note_zh": "两轮后没被毁掉，但几乎没动它",
+        "status": "holds", "experiments": ["E25", "E36"], "score": [20, 50],
+        "note": "ten iterations leave it at 20 of 50: on the line for holding, below the untrained 31",
+        "note_zh": "十轮后 20/50：刚好守在线上，低于未训练时的 31",
         "video_key": "base", "native_fps": 20, "whole": true
       }
     ]

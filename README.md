@@ -45,13 +45,15 @@ on HalfCheetah with no GPU and nothing to download, is at
 ## What runs on it
 
 <a href="https://plugrl.github.io/#what-runs-on-it"><img src="https://plugrl.github.io/media/coverage-grid.jpg" width="100%"
-   alt="Fifteen cells, four policy-algorithm pairs on HalfCheetah, Hopper, Walker2d and robomimic square, each with a frame from its trained policy, a training curve and a status. All four pairs learn the three MuJoCo tasks. On square, both pairs trained with DPPO learn from a pretrained start, fpo-policy with FPO runs end to end but falls from its start, and the Gaussian policy with PPO was not run."></a>
+   alt="Sixteen cells, four policy-algorithm pairs on HalfCheetah, Hopper, Walker2d and robomimic square, each with a frame from its trained policy, a training curve and a status. Every pair learns every task. On square each starts from a pretrained policy, and fpo-policy with FPO passes the bar on two of three seeds."></a>
 
 Every combination of the two MLP policies and the two algorithms on four
-tasks, and the baseline they are measured against: a Gaussian policy with
-PPO, as CleanRL runs it. [On the project page](https://plugrl.github.io/#what-runs-on-it) each
+tasks, and the baseline they are measured against: a Gaussian MLP with PPO.
+That row is CleanRL's policy and PPO on the MuJoCo tasks and DPPO's on
+square, each run as its authors run it. [On the project page](https://plugrl.github.io/#what-runs-on-it) each
 cell plays its clip and shows the two commands that trained it, and pi0.5 on
-LIBERO sits below. Moving between cells means changing a few words. On
+LIBERO has [a page of its own](https://plugrl.github.io/vla/). Moving between
+cells means changing a few words. On
 Hopper, the four servers were:
 
 ```bash
