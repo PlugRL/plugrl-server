@@ -27,11 +27,22 @@ iterations:
 DPPO adds noise of level 1.0 at every flow step. FPO integrates the flow
 from random initial noise and adds nothing along the way.)
 
-These are training-rollout rates. Evaluated for the coverage figure's clip
-(five episodes, ending on success), the median FPO seed's final checkpoint
-succeeded 4 of 5. Five episodes cannot say much against a training rate of
-0.35, and a fifty-episode evaluation of the clone and of that checkpoint is
-the first check to make before reading the fall as the policy's.
+These are training-rollout rates. So, after the run and not registered,
+every final checkpoint and the clone were evaluated for fifty episodes each
+with E35's `eval_bc.sh`. That script integrates the flow's ODE with no noise
+along the way, ends episodes on success, and uses 10 flow steps for FPO's
+checkpoints and 20 for DPPO's:
+
+| | seed 0 | seed 1 | seed 2 |
+| --- | --- | --- | --- |
+| the clone, unchanged | 0.50 | | |
+| `fpo-square`, final | 0.24 | 0.30 | 0.42 |
+| `dppo-square`, final | 0.86 | 0.78 | 0.90 |
+
+The fall under FPO holds under evaluation, and the rise under DPPO is larger
+there than in the training rollouts. The coverage figure's clip of the
+median FPO seed succeeded 4 of 5; five episodes were luck against these
+fifty.
 
 * **P1 holds**: both cells logged every iteration on every seed, with no
   traceback and clients that exited 0. FPO took 5 hours and DPPO 9; both ran
