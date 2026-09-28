@@ -45,7 +45,7 @@ on HalfCheetah with no GPU and nothing to download, is at
 ## What runs on it
 
 <a href="https://plugrl.github.io/#what-runs-on-it"><img src="https://plugrl.github.io/media/coverage-grid.jpg" width="100%"
-   alt="Fifteen cells, four policy-algorithm pairs on HalfCheetah, Hopper, Walker2d and robomimic square, each with a frame from its trained policy, a training curve and a status. All four pairs learn the three MuJoCo tasks. On square, both pairs trained with DPPO learn from a pretrained start, fpo-policy with FPO runs end to end but falls from its start, and the Gaussian policy with PPO was not run."></a>
+   alt="Sixteen cells, four policy-algorithm pairs on HalfCheetah, Hopper, Walker2d and robomimic square, each with a frame from its trained policy, a training curve and a status. Every pair learns every task. On square each starts from a pretrained policy, and fpo-policy with FPO passes the bar on two of three seeds."></a>
 
 Every combination of the two MLP policies and the two algorithms on four
 tasks, and the baseline they are measured against: a Gaussian MLP with PPO.
