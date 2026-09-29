@@ -1,0 +1,19 @@
+22:22:46|INFO|plugrl_server version: 0.1.0
+22:22:46|INFO|Algorithm: ppo, Config: PPOAlgoConfig(global_steps=102400, learning_rate=0.001, anneal_lr=False, buffer_size=4096, batch_size=64, update_epochs=10, gamma=0.9, gae_lambda=0.95, norm_adv=True, clip_coef=0.2, clip_vloss=False, ent_coef=0.0, vf_coef=0.5, max_grad_norm=0.5, adam_eps=1e-05, critic_learning_rate=None, n_critic_warmup_itrs=0, target_kl=None, normalize_rewards=False, reward_clip=10.0, reward_scaling_gamma=None, train_itrs=25, save_interval=50)
+22:22:46|INFO|Policy: gaussian-policy, Config: GaussianPolicyConfig(algo='ppo', device=device(type='cpu'), obs_dim=3, action_dim=1, hidden_dims=(64, 64), state_keys=('obs',), normalize_observations=False, obs_clip=10.0, freeze_obs_stats=False, action_clip=2.0, deterministic=False)
+22:22:46|INFO|Seeded python, numpy and torch with 1. One env client is then reproducible; several are not, because batch composition depends on when their requests arrive.
+22:22:46|INFO|Checkpoint Manager created: 
+<plugrl_server.common.checkpoint_manager.CheckpointManager object at 0x74b6e6a9d150> at /home/guangzhao/zuogou/plugrl/e44-reg/experiments/e44-cpp-pendulum/results/cpp/ppo/gaussian-policy/pendulum-cpp-seed1
+22:22:46|INFO|Policy created...
+22:22:46|INFO|Initialized RolloutBuffer buffer_size=4096 action_shape=(4096, 1) value_shape=(4096,)
+22:22:46|INFO|Algorithm created: 
+<plugrl_server.algorithm.ppo.ppo.PPOAlgorithm object at 0x74b6e6768a50>
+22:22:46|INFO|Agent Server is listening on 0.0.0.0:9881
+22:25:18|INFO|Checkpoint saved at step 102401 to /home/guangzhao/zuogou/plugrl/e44-reg/experiments/e44-cpp-pendulum/results/cpp/ppo/gaussian-policy/pendulum-cpp-seed1/102401
+22:25:18|INFO|Stopping server as the algorithm signaled to stop.
+22:25:18|INFO|Shutdown started: aborting pending infer requests.
+22:25:18|INFO|Shutdown cleanup finished: pending_futures=1, drained_requests=1
+22:25:18|INFO|Shutdown closing 1 websocket connection(s).
+22:25:18|INFO|Shutdown interrupted an in-flight inference request from ('127.0.0.1', 57094).
+22:25:18|INFO|WebSocket server closed.
+22:25:18|INFO|Scheduler task cancelled and cleaned up.

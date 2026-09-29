@@ -1,0 +1,8 @@
+connected to ws://127.0.0.1:9882, seed 2
+episode 100  return -1154.29
+episode 200  return -1124.13
+episode 300  return -520.435
+episode 400  return -129.053
+episode 500  return -127.466
+server stopped the run after 102401 steps, 512 episodes
+mean return, first 10 episodes: -1310.81  last 10: -161.123

@@ -1,0 +1,43 @@
+P1  both arms run end to end
+    cpp    seed 1  HOLDS  (25 iterations, client rc 0)
+    cpp    seed 2  HOLDS  (25 iterations, client rc 0)
+    cpp    seed 3  HOLDS  (25 iterations, client rc 0)
+    python seed 1  HOLDS  (25 iterations, client rc 0)
+    python seed 2  HOLDS  (25 iterations, client rc 0)
+    python seed 3  HOLDS  (25 iterations, client rc 0)
+
+V1  the arms are what they say
+    cpp    seed 1  client yes  settings yes
+    cpp    seed 2  client yes  settings yes
+    cpp    seed 3  client yes  settings yes
+    python seed 1  client yes  settings yes
+    python seed 2  client yes  settings yes
+    python seed 3  client yes  settings yes
+    six configurations identical: yes
+    PASS
+
+status  learns: iterations 16-25 at least +500 over iterations 1-2, on 2 of 3
+    cpp    seed 1    -1223 ->   -251  (+972)  it10 -935
+    cpp    seed 2    -1172 ->   -233  (+939)  it10 -1031
+    cpp    seed 3    -1227 ->   -275  (+953)  it10 -1105
+    python seed 1    -1191 ->   -206  (+984)  it10 -816
+    python seed 2    -1188 ->   -264  (+924)  it10 -1022
+    python seed 3    -1259 ->   -264  (+996)  it10 -1002
+
+P2  the C++ arm learns
+    3 of 3  HOLDS
+
+P3  the control learns
+    3 of 3  HOLDS
+
+P4  every C++ seed within the control's range, widened by 150
+    control range -264 to -206, widened -414 to -56
+    cpp -251, -233, -275
+    HOLDS
+
+reported: the C++ client's own count against the server's
+    seed 1  102401 steps, 512 episodes; last ten episodes -194.608
+    seed 2  102401 steps, 512 episodes; last ten episodes -161.123
+    seed 3  102401 steps, 512 episodes; last ten episodes -209.996
+
+wrote /home/guangzhao/zuogou/plugrl/e44-reg/experiments/e44-cpp-pendulum/summary.tsv
