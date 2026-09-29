@@ -12,8 +12,12 @@ from .state import PolicyRuntimeState
 @register_policy_config("dummy-policy")
 @dataclasses.dataclass
 class DummyPolicyConfig(BaseTorchPolicyConfig):
-    discrete: bool = True
-    action_dim: int = 4
+    # Continuous and 7-dimensional, as plugrl-env-client's dummy-v1 expects,
+    # so the connectivity check in the quickstarts runs as written. The
+    # discrete default answered dummy-v1's first request with the wrong
+    # action shape.
+    discrete: bool = False
+    action_dim: int = 7
     action_horizon: int = 4
 
 

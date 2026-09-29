@@ -248,9 +248,14 @@ To test the agent-server connection with dummy algorithm and policy:
 # Terminal 1: Start the server
 python -m plugrl_server.cli dummy-policy default dummy default
 
-# Terminal 2: Start the environment client (from plugrl-env-client)
-# The server will listen on localhost:8000 by default
+# Terminal 2: from plugrl-env-client, three short episodes against it.
+# The server listens on 0.0.0.0:8000; a client connects to 127.0.0.1.
+plugrl-run-env-client dummy-v1 --server-host 127.0.0.1 --num-episodes 3
 ```
+
+The dummy policy's default action, continuous and 7-dimensional, is what
+`dummy-v1` expects, so the pair needs no flags. The client exits 0 after its
+three episodes.
 
 **Expected output from server:**
 ```
