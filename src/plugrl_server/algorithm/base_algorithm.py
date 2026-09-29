@@ -103,6 +103,21 @@ class BaseAlgorithm(abc.ABC):
     def record_episode_metrics(self, episode_info: dict) -> None:
         self._episode_metric_window.record(episode_info)
 
+    def discard_feedback(
+        self, *, info: dict, next_terminated: bool, next_truncated: bool
+    ) -> None:
+        """Take note of a frame that will not be trained on.
+
+        The server calls this instead of `feedback` for a frame the buffer
+        cannot use: one whose action an earlier policy chose, or one that
+        arrives while the algorithm is waiting to learn. The frame is neither
+        stored nor counted in `global_step`. If it ended an episode, the
+        episode is still recorded, since the environment really finished it.
+        """
+        if (next_terminated or next_truncated) and "episode" in info:
+            if bool(info["episode"].get("mask", True)):
+                self.record_episode_metrics(info["episode"])
+
     def get_rollout_metrics(self, prefix: str = "rollout") -> MetricDict:
         summary = self._episode_metric_window.summary()
         return dict(
