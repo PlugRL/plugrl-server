@@ -32,14 +32,21 @@ for trial in range(trials):
     env.unwrapped.state = np.array([th0, thdot0])
     py = []
     for u in torques:
-        obs, reward, terminated, truncated, _ = env.step(np.array([u], dtype=np.float32))
-        py.append((obs.astype(np.float64), float(reward), bool(terminated or truncated)))
+        obs, reward, terminated, truncated, _ = env.step(
+            np.array([u], dtype=np.float32)
+        )
+        py.append(
+            (obs.astype(np.float64), float(reward), bool(terminated or truncated))
+        )
 
     # %.9g round-trips a float32 exactly; repr round-trips a double.
     stdin = "\n".join(f"{float(u):.9g}" for u in torques) + "\n"
     out = subprocess.run(
         [binary, "--check", repr(th0), repr(thdot0)],
-        input=stdin, capture_output=True, text=True, check=True,
+        input=stdin,
+        capture_output=True,
+        text=True,
+        check=True,
     ).stdout.split("\n")
     cpp = []
     for line in out:
@@ -53,8 +60,10 @@ for trial in range(trials):
         worst_obs = max(worst_obs, float(np.abs(po - co).max()))
         worst_reward = max(worst_reward, abs(pr - cr))
         same_limit &= pt == ct
-    print(f"trial {trial:2d}  start ({th0:+.3f}, {thdot0:+.3f})  "
-          f"final obs gym {py[-1][0].round(4)} cpp {cpp[-1][0].round(4)}")
+    print(
+        f"trial {trial:2d}  start ({th0:+.3f}, {thdot0:+.3f})  "
+        f"final obs gym {py[-1][0].round(4)} cpp {cpp[-1][0].round(4)}"
+    )
 
 print(f"\n{trials} trials x 200 steps")
 print(f"largest observation difference: {worst_obs:.3e}")
