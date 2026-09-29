@@ -1,0 +1,13 @@
+fpopp-s0 client rc=0
+Terminated
+fpopp-s0 episodes 50 success rate 0.800000011920929
+fpopp-s1 client rc=0
+Terminated
+fpopp-s1 episodes 50 success rate 0.6399999856948853
+fpopp-s2 client rc=0
+Terminated
+fpopp-s2 episodes 50 success rate 0.6399999856948853
+clone client rc=0
+Terminated
+clone episodes 50 success rate 0.5
+EVAL_E39_DONE

@@ -1,0 +1,9 @@
+client:  C:/Users/75128/.claude/jobs/1fea619d/tmp/e43/client/.venv/Scripts/python.exe
+server:  100.75.226.89 ports 9790+seed
+out:     D:/75128/Desktop/plugrl-work/plugrl-server/.claude/worktrees/fix-pi0-image-mask-batching/experiments/e43-cross-machine-training/results/cross-clients-b
+start 2026-09-28 18:24:59
+seed 3 client rc=0 at 19:17:59
+seed 5 client rc=0 at 19:18:08
+seed 4 client rc=0 at 19:18:41
+end   2026-09-28 19:18:41
+CLIENTS_DONE

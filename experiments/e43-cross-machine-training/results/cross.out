@@ -1,0 +1,14 @@
+arm:     cross  ports 9790+seed
+server:  /home/guangzhao/zuogou/plugrl/e43-reg/../plugrl-server/.venv/bin/python (src /home/guangzhao/zuogou/plugrl/e43-reg/src)
+out:     /home/guangzhao/zuogou/plugrl/e43-reg/experiments/e43-cross-machine-training/results/cross
+steps:   409600  seeds: 0 1 2
+start 2026-09-28 17:37:46
+READY seed 0 port 9790 at 17:37:49
+READY seed 1 port 9791 at 17:37:54
+READY seed 2 port 9792 at 17:37:59
+seed 0 server rc=0 at 18:20:28
+seed 1 server rc=0 at 18:20:28
+seed 2 server rc=0 at 18:21:24
+end   2026-09-28 18:21:24
+failed seeds: 0
+ARM_DONE cross

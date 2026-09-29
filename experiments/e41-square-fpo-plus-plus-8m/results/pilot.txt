@@ -1,0 +1,23 @@
+E41 pilot, 2026-09-28 11:10-11:18, guangzhao, code 1127d39, client 931ab56.
+
+  ITERS=102 SEEDS=0 OUT=pilot bash run.sh
+
+(The first attempt, at af3fc82, never started: an apostrophe inside
+${E39:?...} in run_cell.sh broke the script's parsing. Fixed in 1127d39.)
+
+Seed 0 resumed from E39's
+.../fpopp-square-seed0/1200003 with --algo.restore all; rc 0, no traceback.
+The server log shows "Restoring from ... with restore=all" and E39's
+settings, with global_steps=1,224,000.
+
+  logged iteration               101       102
+  rollout/success                0.818     0.770
+  rollout/explained_variance     0.693     0.688
+  fpo/clipped_ratio_mean         0.248     0.260
+  fpo/critic_warmup              0         0
+  progress/global_step           1,212,000 1,224,000
+
+The iteration count, the critic (explained variance at E39's end-of-run
+level from the first resumed iteration) and the step count carried over. No
+critic warmup ran again. About 4 minutes an iteration: 67 iterations in
+about 4.5 hours.

@@ -13,45 +13,43 @@ from the feedback those clients send back.
 *The **unmodified** pi0.5, driven through this server on `libero_spatial` task
 0 - one episode of the three that ran, all three successful. These are the
 frames the env client sends as observations, at the policy's native 224x224,
-not an outside camera. The fine-tuned policy is the one that scores zero,
-below.*
+not an outside camera.*
 
-**A full-size pi0.5 has run end to end through it on LIBERO** - inference,
-feedback and FPO training - with the server's record of episodes and steps
-reconciling exactly with the clients'. As a control, the unmodified checkpoint
-scored 99 of 100 on `libero_spatial` and 185 of 200 on `libero_10`, against
-openpi's published 98.8 and 92.4.
-
-**The reinforcement learning result is negative.** One FPO iteration took the
-hardest task from 26 of 50 to 0 of 50, and the run is incomplete at one
-iteration of ten: a second learn step does not fit beside the optimizer state
-the first one allocates on a 24 GB card. The predictions were registered before
-the run, and one of them is falsified.
+The env clients can run somewhere else: in another process, on another
+machine, on a machine with no GPU, or in a program that is not Python. What
+has been measured:
 
 | | Question | Answer |
 |---|---|---|
-| [E1](experiments/e1-dependency-conflict/) | Do a training stack and an environment stack really conflict? | **No** - the assumption this project was built on is disproved |
-| [E6](experiments/e6-first-learning-curve/) | Does anything here actually learn? | **Yes** - FPO on HalfCheetah-v5, three seeds |
-| [E7](experiments/e7-cross-machine/) | What does the boundary cost once packets leave the machine? | **+0.52 ms** on a 184 KiB observation |
-| [E10](experiments/e10-vla-forward-cost/) | Is that cheap beside a VLA forward pass? | **Yes** - 1.3-3.6% of a step |
-| [E11](experiments/e11-vla-rl-libero/) | Can a real VLA be trained through this boundary, and does it help? | **Ran end to end; did not help** |
+| [coverage](#what-runs-on-it) | Which policies and algorithms learn through the split? | **Every one tried** - sixteen combinations on four tasks, all learning, below |
+| [E44](experiments/e44-cpp-pendulum/) | Does an env client have to be this codebase, or Python? | **No** - a C++ program with no third-party libraries trains a policy on its own Pendulum as well as the Python env client does ([E2](experiments/e2-cross-language/) first spoke the protocol from C++) |
+| [E12](experiments/e12-cuda-free-rollout/) | Does a rollout machine need CUDA, or a GPU? | **No** - LIBERO's env client goes from 7.8G to 3.4G with no nvidia wheels, and renders on the CPU at 1.91x the wall clock ([E13](experiments/e13-gpu-free-rendering/)) |
+| [E43](experiments/e43-cross-machine-training/) | Does training still work with the env clients on another physical machine? | **Yes** - the quickstart pair learns with its env clients on a Windows laptop over campus Wi-Fi |
+| [E43](experiments/e43-cross-machine-training/) | What does crossing cost? | About **3 ms plus twice the observation's bytes over the link** per exchange: 21 ms for 184 KiB at 18 MB/s |
+| [E10](experiments/e10-vla-forward-cost/) | Is that cheap beside a VLA forward pass? | **On a fast link.** Over that Wi-Fi a 184 KiB observation is 21% of pi0.5's 100 ms forward, not E10's 1.3-3.6% |
+| [E11](experiments/e11-vla-rl-libero/) | Does a full-size VLA go through it? | **Yes** - pi0.5 on LIBERO scores what openpi publishes, and the server's episode and step counts match the clients' exactly |
 
-[`experiments/`](experiments/) holds twenty-eight of these, twenty-seven of
-them run. Each carries its data and a `FINDINGS.md` stating what the result
-does **not** support. The documentation, including a quickstart that trains FPO
+Fine-tuning pi0.5 with reinforcement learning through it has not made the
+policy better yet; that record is on
+[its own page](https://plugrl.github.io/vla/).
+[`experiments/`](experiments/) holds forty-two experiments, forty-one of them
+run. Each carries its data and a `FINDINGS.md` stating what the result does
+**not** support. The documentation, including a quickstart that trains FPO
 on HalfCheetah with no GPU and nothing to download, is at
 [plugrl.github.io](https://plugrl.github.io).
 
 ## What runs on it
 
 <a href="https://plugrl.github.io/#what-runs-on-it"><img src="https://plugrl.github.io/media/coverage-grid.jpg" width="100%"
-   alt="Fifteen cells, four policy-algorithm pairs on HalfCheetah, Hopper, Walker2d and robomimic square, each with a frame from its trained policy, a training curve and a status. All four pairs learn the three MuJoCo tasks. On square, dppo-policy with DPPO learns, the two fpo-policy pairs run end to end, and the Gaussian policy with PPO was not run."></a>
+   alt="Sixteen cells, four policy-algorithm pairs on HalfCheetah, Hopper, Walker2d and robomimic square, each with a frame from its trained policy, a training curve and a status. Every pair learns every task. On square each starts from a pretrained policy, and fpo-policy with FPO passes the bar on two of three seeds."></a>
 
 Every combination of the two MLP policies and the two algorithms on four
-tasks, and the baseline they are measured against: a Gaussian policy with
-PPO, as CleanRL runs it. [On the project page](https://plugrl.github.io/#what-runs-on-it) each
+tasks, and the baseline they are measured against: a Gaussian MLP with PPO.
+That row is CleanRL's policy and PPO on the MuJoCo tasks and DPPO's on
+square, each run as its authors run it. [On the project page](https://plugrl.github.io/#what-runs-on-it) each
 cell plays its clip and shows the two commands that trained it, and pi0.5 on
-LIBERO sits below. Moving between cells means changing a few words. On
+LIBERO has [a page of its own](https://plugrl.github.io/vla/). Moving between
+cells means changing a few words. On
 Hopper, the four servers were:
 
 ```bash

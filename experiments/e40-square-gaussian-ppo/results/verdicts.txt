@@ -1,0 +1,34 @@
+P1  the cell runs end to end
+    seed 0  HOLDS  (40 iterations)
+    seed 1  HOLDS  (40 iterations)
+    seed 2  HOLDS  (40 iterations)
+
+V1  every server loaded the released checkpoint's model weights, ran DPPO's square config
+    seed 0  model yes  dppo-square yes
+    seed 1  model yes  dppo-square yes
+    seed 2  model yes  dppo-square yes
+    PASS
+
+status  learns: success, mean of the last ten minus iterations 1-2, at least +0.2 on 2 of 3
+    seed 0  0.185 -> 0.547  (+0.362)
+    seed 1  0.195 -> 0.537  (+0.342)
+    seed 2  0.212 -> 0.565  (+0.352)
+    3 of 3  -> learns
+
+P2  DPPO's Gaussian MLP learns square under DPPO's own Gaussian PPO
+    HOLDS
+
+reported: success by window of ten iterations
+    seed 0  0.273  0.422  0.454  0.547
+    seed 1  0.256  0.394  0.504  0.537
+    seed 2  0.310  0.402  0.506  0.565
+
+reported: update diagnostics, mean over iterations 3-12 and the last ten
+    seed 0  kl        5.49e-03 -> 5.51e-03
+    seed 0  clipfrac  4.73e-01 -> 4.55e-01
+    seed 1  kl        5.37e-03 -> 2.65e-03
+    seed 1  clipfrac  4.58e-01 -> 4.41e-01
+    seed 2  kl        6.25e-03 -> 2.14e-03
+    seed 2  clipfrac  4.54e-01 -> 4.45e-01
+
+wrote /home/guangzhao/zuogou/plugrl/e40-reg/experiments/e40-square-gaussian-ppo/summary.tsv

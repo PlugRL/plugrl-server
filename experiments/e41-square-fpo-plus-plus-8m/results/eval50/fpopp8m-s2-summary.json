@@ -1,0 +1,27 @@
+{
+  "exp_name": "e41eval-fpopp8m-s2-9922",
+  "process_id": 0,
+  "total_processes": null,
+  "completed_episodes": 50,
+  "total_episode_count": 50,
+  "metric_window": 100,
+  "mean_return": 0.5400000214576721,
+  "mean_success_rate": 0.5400000214576721,
+  "timing": {
+    "env_steps": 14456,
+    "infer_calls": 3623,
+    "feedback_calls": 3623,
+    "infer_wait_s": 16.055397980147973,
+    "infer_obs_pack_s": 0.15257894713431597,
+    "env_step_s": 88.05673197470605,
+    "feedback_s": 0.6287984824739397,
+    "feedback_obs_pack_s": 0.20180869312025607,
+    "feedback_info_pack_s": 0.010526219615712762,
+    "collect_time_s": 104.89350738446228,
+    "effective_fps": 137.81596554889674,
+    "infer_wait_frac": 0.153063791844625,
+    "infer_obs_pack_frac": 0.001454608115782362,
+    "env_step_frac": 0.8394869632107446,
+    "feedback_frac": 0.005994636828848023
+  }
+}

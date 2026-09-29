@@ -1,0 +1,13 @@
+cell:    gauss-square = dppo-gaussian-policy x ppo/dppo-square x robomimic square
+iters:   40  clients per seed: 2  seeds: 0 1 2
+ckpt:    /home/guangzhao/zuogou/plugrl/e40-reg/../ckpt/dppo-square-gaussian/state_5000.pt sha256 bf787a879dcaffe3
+server:  /home/guangzhao/zuogou/plugrl/e40-reg/../plugrl-server/.venv/bin/python (src /home/guangzhao/zuogou/plugrl/e40-reg/src)
+client:  /home/guangzhao/zuogou/plugrl/e40-reg/../plugrl-env-client/.venv-robomimic/bin/python
+out:     /home/guangzhao/zuogou/plugrl/e40-reg/experiments/e40-square-gaussian-ppo/results/gauss-square
+start 2026-09-27 22:28:50
+seed 2 finished rc=0 at 02:30:32
+seed 0 finished rc=0 at 02:30:58
+seed 1 finished rc=0 at 02:31:44
+end   2026-09-28 02:31:44
+failed seeds: 0
+CELL_DONE gauss-square

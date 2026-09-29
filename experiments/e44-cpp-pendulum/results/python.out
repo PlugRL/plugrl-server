@@ -1,0 +1,15 @@
+arm:     python  ports 9890+seed
+server:  /home/guangzhao/zuogou/plugrl/e44-reg/../plugrl-server/.venv/bin/python (src /home/guangzhao/zuogou/plugrl/e44-reg/src)
+client:  /home/guangzhao/zuogou/plugrl/e44-client/.venv/bin/python
+ppo:     --policy.no-normalize-observations --algo.buffer-size 4096 --algo.batch-size 64 --algo.update-epochs 10 --algo.gamma 0.9 --algo.gae-lambda 0.95 --algo.learning-rate 1e-3 --algo.no-anneal-lr --algo.clip-coef 0.2 --algo.no-clip-vloss --algo.ent-coef 0.0 --algo.no-normalize-rewards
+out:     /home/guangzhao/zuogou/plugrl/e44-reg/experiments/e44-cpp-pendulum/results/python   iterations: 25  seeds: 1 2 3
+start 2026-09-28 22:22:44
+seed 1 client rc=0 at 22:26:09
+seed 1 server rc=0 at 22:26:09
+seed 2 client rc=0 at 22:26:15
+seed 2 server rc=0 at 22:26:15
+seed 3 client rc=0 at 22:26:20
+seed 3 server rc=0 at 22:26:20
+end   2026-09-28 22:26:20
+failed seeds: 0
+ARM_DONE python
