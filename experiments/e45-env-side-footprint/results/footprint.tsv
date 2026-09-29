@@ -1,0 +1,7 @@
+name	install_rc	packages	bytes	nvidia_packages	torch	entry_import	seconds
+plugrl-minimal	0	2	2600313	0	none	ok	0.3
+plugrl-env-client	0	31	221732436	0	none	ok	2.0
+dm-env-rpc	0	12	80999726	0	none	ok	0.6
+openpi-client	0	9	89567493	0	none	FAIL	8.4
+rllib-rllink	0	64	6104632956	15	2.14.0+cu130	ok	37.1
+lerobot-hilserl	0	144	6141831859	15	2.11.0+cu130	ok	28.7

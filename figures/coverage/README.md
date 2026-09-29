@@ -35,7 +35,8 @@ step after success, FPO++'s end the episode on it.
 - **pi0.5** is recorded once per policy on the same scene: LIBERO-10 task 8,
   initial state 0, the first state the released policy solves in E26's
   fifty-episode evaluation. The page's numbers are those evaluations' (E25,
-  E26), not the clip's.
+  E26, E42), not the clip's. Where the experiment ran two seeds (E42), the
+  clip and the number are the lower-scoring seed's.
 
 The status of a cell is what the experiment found over three seeds. A clip
 is one episode and can look better or worse than that.

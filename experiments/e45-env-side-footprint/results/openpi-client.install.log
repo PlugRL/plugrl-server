@@ -1,0 +1,21 @@
+Using Python 3.11.16 environment at: /home/guangzhao/zuogou/plugrl/e45-work/venv-openpi-client
+   Updating https://github.com/Physical-Intelligence/openpi.git (215abfb217dbac7d5f1273282331b9b1866c0479)
+    Updated https://github.com/Physical-Intelligence/openpi.git (215abfb217dbac7d5f1273282331b9b1866c0479)
+Resolved 9 packages in 8.02s
+   Building openpi-client @ git+https://github.com/Physical-Intelligence/openpi.git@215abfb217dbac7d5f1273282331b9b1866c0479#subdirectory=packages/openpi-client
+Downloading pillow (6.6MiB)
+Downloading numpy (17.4MiB)
+ Downloaded pillow
+      Built openpi-client @ git+https://github.com/Physical-Intelligence/openpi.git@215abfb217dbac7d5f1273282331b9b1866c0479#subdirectory=packages/openpi-client
+ Downloaded numpy
+Prepared 9 packages in 303ms
+Installed 9 packages in 8ms
+ + absl-py==2.5.0
+ + attrs==26.1.0
+ + dm-tree==0.1.10
+ + msgpack==1.2.3
+ + numpy==1.26.4
+ + openpi-client==0.1.0 (from git+https://github.com/Physical-Intelligence/openpi.git@215abfb217dbac7d5f1273282331b9b1866c0479#subdirectory=packages/openpi-client)
+ + pillow==12.3.0
+ + websockets==17.1
+ + wrapt==2.5.0

@@ -23,6 +23,7 @@ has been measured:
 |---|---|---|
 | [coverage](#what-runs-on-it) | Which policies and algorithms learn through the split? | **Every one tried** - sixteen combinations on four tasks, all learning, below |
 | [E44](experiments/e44-cpp-pendulum/) | Does an env client have to be this codebase, or Python? | **No** - a C++ program with no third-party libraries trains a policy on its own Pendulum as well as the Python env client does ([E2](experiments/e2-cross-language/) first spoke the protocol from C++) |
+| [E45](experiments/e45-env-side-footprint/) | And the other systems that train through their channel? | **Torch on the env side** - RLlib's external-env client and LeRobot's HIL-SERL actor install 6.1 GB each, 27x plugrl-env-client. dm_env_rpc and openpi-client are thin too, but do not train |
 | [E12](experiments/e12-cuda-free-rollout/) | Does a rollout machine need CUDA, or a GPU? | **No** - LIBERO's env client goes from 7.8G to 3.4G with no nvidia wheels, and renders on the CPU at 1.91x the wall clock ([E13](experiments/e13-gpu-free-rendering/)) |
 | [E43](experiments/e43-cross-machine-training/) | Does training still work with the env clients on another physical machine? | **Yes** - the quickstart pair learns with its env clients on a Windows laptop over campus Wi-Fi |
 | [E43](experiments/e43-cross-machine-training/) | What does crossing cost? | About **3 ms plus twice the observation's bytes over the link** per exchange: 21 ms for 184 KiB at 18 MB/s |
@@ -32,7 +33,7 @@ has been measured:
 Fine-tuning pi0.5 with reinforcement learning through it has not made the
 policy better yet; that record is on
 [its own page](https://plugrl.github.io/vla/).
-[`experiments/`](experiments/) holds forty-two experiments, forty-one of them
+[`experiments/`](experiments/) holds forty-three experiments, forty-two of them
 run. Each carries its data and a `FINDINGS.md` stating what the result does
 **not** support. The documentation, including a quickstart that trains FPO
 on HalfCheetah with no GPU and nothing to download, is at

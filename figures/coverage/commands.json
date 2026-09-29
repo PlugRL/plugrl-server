@@ -93,9 +93,9 @@
       "env": "libero", "source": "experiments/e26-frozen-mlp/eval.sh"
     },
     "pi0-fpo": {
-      "server": ["pi0-policy default fpo default", "--port 8000 --seed 7 --policy.device cuda:0", "--policy.name pi05_libero --policy.checkpoint-path PI05_LIBERO_CHECKPOINT", "--algo.learning-rate 1e-5 --algo.clipping-epsilon 0.05", "--algo.num-updates-per-batch 4 --algo.n-samples-per-action 4", "--algo.buffer-size 4096 --algo.batch-size 8 --algo.global-steps 40960", "--algo.master-weights-device cuda:1", "--algo.n-critic-warmup-itrs 1", "--algo.output-mode u --algo.no-discretize-t-for-training", "--algo.cfm-loss-steps 5 --algo.cfm-loss-dims 7 --algo.cfm-loss-sum-over-steps", "--algo.ratio-per-sample"],
-      "client": ["libero-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-procs 10 --num-episodes 100000", "--env.task-suite-name libero_10 --env.task-id 8", "--env.randomize-initial-state --runner.replan-steps 5 --runner.seed 7"],
-      "env": "libero", "source": "experiments/e36-pi0-longer/train.sh"
+      "server": ["pi0-policy default fpo default", "--port 8000 --seed 8 --policy.device cuda:0", "--policy.name pi05_libero --policy.checkpoint-path PI05_LIBERO_CHECKPOINT", "--algo.learning-rate 1e-5 --algo.clipping-epsilon 0.01", "--algo.num-updates-per-batch 4 --algo.n-samples-per-action 4", "--algo.buffer-size 4096 --algo.batch-size 8 --algo.global-steps 40960", "--algo.master-weights-device cuda:1", "--algo.n-critic-warmup-itrs 1", "--algo.output-mode u --algo.no-discretize-t-for-training", "--algo.cfm-loss-steps 5 --algo.cfm-loss-dims 7 --algo.cfm-loss-sum-over-steps --algo.cfm-loss-huber-delta 1.0", "--algo.ratio-per-sample", "--algo.critic-learning-rate 1e-4 --algo.adam-eps 1e-5 --algo.weight-decay 1e-6 --algo.actor-adam-beta2 0.99", "--algo.max-grad-norm 25.0 --algo.no-fpo-playground-trick --algo.reward-scaling 1.0", "--algo.treat-truncated-as-done --algo.gae-lambda 0.99 --algo.value-loss-coeff 0.5"],
+      "client": ["libero-v1 --server-host 127.0.0.1 --server-port 8000", "--num-envs 1 --num-procs 10 --num-episodes 100000", "--env.task-suite-name libero_10 --env.task-id 8", "--env.randomize-initial-state --runner.replan-steps 5 --runner.seed 8"],
+      "env": "libero", "source": "experiments/e42-pi0-fpo-plus-plus/train.sh"
     },
     "pi0-dppo": {
       "server": ["pi0-policy default dppo libero", "--port 8000 --seed 7 --policy.device cuda:0", "--policy.name pi05_libero --policy.checkpoint-path PI05_LIBERO_CHECKPOINT", "--algo.buffer-size 4096 --algo.batch-size 8 --algo.train-itrs 10"],

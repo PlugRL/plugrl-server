@@ -1,0 +1,37 @@
+P4  every install works and its entry module imports
+    plugrl-minimal     install rc 0  import ok
+    plugrl-env-client  install rc 0  import ok
+    dm-env-rpc         install rc 0  import ok
+    openpi-client      install rc 0  import FAIL
+    rllib-rllink       install rc 0  import ok
+    lerobot-hilserl    install rc 0  import ok
+    FALSIFIED
+
+P1  torch only where the environment side runs the policy
+    plugrl-env-client  torch none       as predicted
+    plugrl-minimal     torch none       as predicted
+    dm-env-rpc         torch none       as predicted
+    openpi-client      torch none       as predicted
+    rllib-rllink       torch 2.14.0+cu130 nvidia 15  as predicted
+    lerobot-hilserl    torch 2.11.0+cu130 nvidia 15  as predicted
+    HOLDS
+
+P2  plugrl-env-client at least 10x smaller than each torch-bearing side
+    rllib-rllink          6104.6 MB / 221.7 MB = 27.5x
+    lerobot-hilserl       6141.8 MB / 221.7 MB = 27.7x
+    HOLDS
+
+P3  dm-env-rpc and openpi-client within 3x of plugrl-env-client
+    dm-env-rpc              81.0 MB / 221.7 MB = 0.37x
+    openpi-client           89.6 MB / 221.7 MB = 0.40x
+    HOLDS
+
+reported: every system
+    system             packages        MB nvidia  seconds
+    plugrl-minimal            2       2.6      0      0.3
+    plugrl-env-client        31     221.7      0      2.0
+    dm-env-rpc               12      81.0      0      0.6
+    openpi-client             9      89.6      0      8.4
+    rllib-rllink             64    6104.6     15     37.1
+    lerobot-hilserl         144    6141.8     15     28.7
+    plugrl-cpp                0       0.1      0        -   (E44's binary)
