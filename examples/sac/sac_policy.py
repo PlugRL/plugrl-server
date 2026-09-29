@@ -1,3 +1,5 @@
+import dataclasses
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -16,6 +18,7 @@ SACRuntimeState: TypeAlias = dict[str, np.ndarray]
 
 
 @register_policy_config("sac_policy")
+@dataclasses.dataclass
 class SACPolicyConfig(BaseTorchPolicyConfig):
     state_dim: int = 11
     action_dim: int = 3

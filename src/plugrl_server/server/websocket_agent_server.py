@@ -466,7 +466,18 @@ class WebSocketAgentServer:
         the next buffer, with the old policy's log-probability and value.
         Which one a frame got depended on timing. Now every such frame is
         discarded; see tests/test_learn_boundary_frames.py.
+
+        That rule is for on-policy algorithms. One that learns from a replay
+        buffer (`on_policy = False`) can use a frame whatever policy chose
+        it, and may want to learn after every frame it stores. Under the rule
+        it kept one frame per round, so it is given every frame with a step
+        state instead. A frame with none, after a reconnect, has no previous
+        observation, and nobody can train on it.
         """
+        if sampled_by is None:
+            return False
+        if not self._algorithm.on_policy:
+            return True
         return sampled_by == self._policy_version and not self._training.should_learn()
 
     def _runtime_metrics(self) -> dict:

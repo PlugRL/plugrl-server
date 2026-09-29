@@ -56,6 +56,11 @@ class EpisodeMetricWindow:
 
 class BaseAlgorithm(abc.ABC):
     break_action_chunk: bool = False
+    # Whether each learn step may use only frames the current policy
+    # collected. The server discards the rest for an on-policy algorithm (see
+    # WebSocketAgentServer._trains_on). An off-policy one, learning from a
+    # replay buffer, sets this to False and is given every frame.
+    on_policy: bool = True
 
     def __init__(self, config: BaseAlgoConfig, policy: BasePolicy):
         self.config = config
