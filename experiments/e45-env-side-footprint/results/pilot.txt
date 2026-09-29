@@ -1,0 +1,23 @@
+E45 harness pilot, 2026-09-29, guangzhao, before PROTOCOL.md
+
+Only plugrl-minimal was run, to test measure.sh; no other system was installed.
+
+First run:   plugrl-minimal  rc 0  packages 3  2,600,313 bytes  nvidia 0  torch none  import ok  0.3 s
+  The package count included uv's "Using Python 3.11.16 environment at ..."
+  line, which `uv pip list` prints to stderr and measure.sh had merged in.
+  Fixed: stderr to /dev/null, and count only the rows under the dashed line.
+Second run:  plugrl-minimal  rc 0  packages 2  2,600,313 bytes  nvidia 0  torch none  import ok  0.3 s
+  (msgpack 1.2.3, websockets 17.1)
+
+Facts checked in the sources before writing PROTOCOL.md (item 1):
+  ray-2.58.0 rllib/examples/envs/classes/utils/dummy_external_client.py
+    imports gymnasium, numpy, ray.rllib, and torch via try_import_torch;
+    runs rl_module.forward_exploration locally; builds the module from
+    pickle.loads(msg_body["config"]).
+  ray-2.58.0 rllib/env/external/rllink.py
+    8-byte length header + msgpack body; PROTOCOL_VERSION 0.0.1.
+  lerobot v0.6.1 src/lerobot/transport/utils.py
+    state_to_bytes / bytes_to_state_dict / transitions_to_bytes use
+    torch.save / torch.load; python_object_to_bytes uses pickle.
+  lerobot v0.6.1 src/lerobot/rl/actor.py
+    imports torch, torch.nn, lerobot.policies.make_policy.

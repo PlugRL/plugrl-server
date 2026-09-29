@@ -1,0 +1,6 @@
+Using Python 3.11.16 environment at: /home/guangzhao/zuogou/plugrl/e45-work/venv-plugrl-minimal
+Resolved 2 packages in 159ms
+Prepared 2 packages in 60ms
+Installed 2 packages in 7ms
+ + msgpack==1.2.3
+ + websockets==17.1

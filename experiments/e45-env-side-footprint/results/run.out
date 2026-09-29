@@ -1,0 +1,10 @@
+uv: uv 0.12.6 (x86_64-unknown-linux-gnu)  host: guangzhao-Dell-Pro-Max-Tower-T2-FCT2250  Linux 6.8.0-134-generic x86_64
+start 2026-09-29 11:54:21
+plugrl-minimal	0	2	2600313	0	none	ok	0.3
+plugrl-env-client	0	31	221732436	0	none	ok	2.0
+dm-env-rpc	0	12	80999726	0	none	ok	0.6
+openpi-client	0	9	89567493	0	none	FAIL	8.4
+rllib-rllink	0	64	6104632956	15	2.14.0+cu130	ok	37.1
+lerobot-hilserl	0	144	6141831859	15	2.11.0+cu130	ok	28.7
+end   2026-09-29 11:55:52
+RUN_DONE
