@@ -55,6 +55,42 @@ class ServerStoppingError(RuntimeError):
     pass
 
 
+def _split_feedback(feedback_msg) -> tuple[list, list]:
+    """A feedback message's observations and info, one entry per environment.
+
+    Its observations, rewards, `terminated`, `truncated` and a non-empty
+    `info` must each describe the same environments as `env_indices`. A
+    message that does not is the client's error. It used to reach an `assert`
+    in the connection handler, and like any exception there it was treated as
+    fatal, so one malformed client shut the whole server down: an `info` of
+    `{"task": "pick"}` for two environments was enough (SPEC.md 5.4). Now it
+    raises ProtocolValidationError, and only that connection is closed.
+    """
+    data = feedback_msg.data
+    try:
+        obs_list = unbatch_aggregate(data.obs, aggregate_method="concat")
+        info_list = unbatch_aggregate(data.info, aggregate_method="stack")
+        counts = dict(
+            obs=len(obs_list),
+            rewards=len(data.rewards),
+            terminated=len(data.terminated),
+            truncated=len(data.truncated),
+        )
+        m = len(feedback_msg.env_indices)
+    except (TypeError, ValueError, IndexError, AttributeError) as exc:
+        raise ProtocolValidationError(
+            f"feedback cannot be split per environment: {exc}"
+        ) from exc
+    if info_list:
+        counts["info"] = len(info_list)
+    wrong = {key: n for key, n in counts.items() if n != m}
+    if wrong:
+        raise ProtocolValidationError(
+            f"feedback for {m} environments carries {wrong} entries instead"
+        )
+    return obs_list, info_list
+
+
 class WebSocketAgentServer:
     def __init__(
         self,
@@ -308,21 +344,15 @@ class WebSocketAgentServer:
                 feedback_payload = msgpack_numpy.unpackb(packed_feedback_msg)
                 try:
                     feedback_msg = parse_feedback_request(feedback_payload)
+                    next_obs_list, info_list = _split_feedback(feedback_msg)
                 except (KeyError, ProtocolValidationError) as exc:
                     await self._close_for_protocol_error(websocket, exc)
                     break
 
                 fb_env_ids = feedback_msg.env_indices
-                next_obs_batch = feedback_msg.data.obs
                 reward_list = feedback_msg.data.rewards
                 next_terminated_list = feedback_msg.data.terminated
                 next_truncated_list = feedback_msg.data.truncated
-                info_batch = feedback_msg.data.info
-                next_obs_list = unbatch_aggregate(
-                    next_obs_batch, aggregate_method="concat"
-                )
-                info_list = unbatch_aggregate(info_batch, aggregate_method="stack")
-                assert len(info_list) == len(next_obs_list) or len(info_list) == 0
                 feedback_started_at = time.perf_counter()
                 # process each env's feedback individually
                 async with self._model_lock:
