@@ -33,7 +33,7 @@ has been measured:
 Fine-tuning pi0.5 with reinforcement learning through it has not made the
 policy better yet; that record is on
 [its own page](https://plugrl.github.io/vla/).
-[`experiments/`](experiments/) holds forty-three experiments, forty-two of them
+[`experiments/`](experiments/) holds forty-four experiments, forty-three of them
 run. Each carries its data and a `FINDINGS.md` stating what the result does
 **not** support. The documentation, including a quickstart that trains FPO
 on HalfCheetah with no GPU and nothing to download, is at
