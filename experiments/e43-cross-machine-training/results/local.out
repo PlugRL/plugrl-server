@@ -1,0 +1,18 @@
+arm:     local  ports 9780+seed
+server:  /home/guangzhao/zuogou/plugrl/e43-reg/../plugrl-server/.venv/bin/python (src /home/guangzhao/zuogou/plugrl/e43-reg/src)
+client:  /home/guangzhao/zuogou/plugrl/e43-reg/../plugrl-env-client/.venv/bin/python
+out:     /home/guangzhao/zuogou/plugrl/e43-reg/experiments/e43-cross-machine-training/results/local
+steps:   409600  seeds: 0 1 2
+start 2026-09-28 17:37:46
+READY seed 0 port 9780 at 17:37:49
+READY seed 1 port 9781 at 17:37:54
+READY seed 2 port 9782 at 17:37:59
+seed 2 client rc=0 at 17:57:46
+seed 2 server rc=0 at 17:57:46
+seed 1 client rc=0 at 17:57:53
+seed 1 server rc=0 at 17:57:54
+seed 0 client rc=0 at 17:58:24
+seed 0 server rc=0 at 17:58:25
+end   2026-09-28 17:58:25
+failed seeds: 0
+ARM_DONE local
