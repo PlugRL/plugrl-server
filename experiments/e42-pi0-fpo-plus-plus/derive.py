@@ -38,8 +38,16 @@ derive(
             1,
         ),
         ("OUT=$R/e36/$CELL", "OUT=$R/e42/$CELL", 1),
-        ('  cd "$R/plugrl-server-e32" && exec setsid env \\', '  cd "$R/plugrl-server-e42" && exec setsid env \\', 1),
-        ('    PYTHONPATH="$R/plugrl-server-e32/src" \\', '    PYTHONPATH="$R/plugrl-server-e42/src" \\', 1),
+        (
+            '  cd "$R/plugrl-server-e32" && exec setsid env \\',
+            '  cd "$R/plugrl-server-e42" && exec setsid env \\',
+            1,
+        ),
+        (
+            '    PYTHONPATH="$R/plugrl-server-e32/src" \\',
+            '    PYTHONPATH="$R/plugrl-server-e42/src" \\',
+            1,
+        ),
         ("    timeout 43200 ", "    timeout 108000 ", 1),
         ('log "E36_TRAIN_DONE $CELL"', 'log "E42_TRAIN_DONE $CELL"', 1),
     ],
@@ -59,7 +67,15 @@ derive(
         ),
         ("E=$R/e36\n", "E=$R/e42\n", 1),
         ("RES=${E36_RES:-$E/results}", "RES=${E42_RES:-$E/results}", 1),
-        ('PYTHONPATH="$R/plugrl-server-e32/src"', 'PYTHONPATH="$R/plugrl-server-e42/src"', 2),
-        ('  cd "$R/plugrl-server-e32" && exec setsid env \\', '  cd "$R/plugrl-server-e42" && exec setsid env \\', 1),
+        (
+            'PYTHONPATH="$R/plugrl-server-e32/src"',
+            'PYTHONPATH="$R/plugrl-server-e42/src"',
+            2,
+        ),
+        (
+            '  cd "$R/plugrl-server-e32" && exec setsid env \\',
+            '  cd "$R/plugrl-server-e42" && exec setsid env \\',
+            1,
+        ),
     ],
 )
