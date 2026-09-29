@@ -104,6 +104,12 @@ class WebSocketAgentServer:
             stop_requested=self._lifecycle.stop_event.is_set,
         )
 
+        # The number of learn steps so far. Each action is tagged with it when
+        # inferred, and its feedback is trained on only if no learn step has
+        # happened since; see _trains_on.
+        self._policy_version = 0
+        self._discarded_frames = 0
+
         self._total_connections = 0
         self._infer_wait_start: float | None = None
         self._collect_progress_started = False
@@ -230,6 +236,7 @@ class WebSocketAgentServer:
             connection_counted = True
             prev_node_map: dict = {}
             step_state_map: dict = {}
+            sampled_by_map: dict = {}
             terminated_map: dict = {}
             truncated_map: dict = {}
             last_obs_map: dict = {}
@@ -257,9 +264,12 @@ class WebSocketAgentServer:
                 try:
                     # response now may include env_ids and obs_list for per-env mapping
                     # response is expected to be a tuple:
-                    # (action_arr, step_state_arr, resp_env_ids, resp_obs_list)
+                    # (action_arr, step_state_arr, resp_env_ids, resp_obs_list,
+                    #  policy_version)
                     response = await response_future
-                    action_arr, step_state_arr, resp_env_ids, resp_obs = response
+                    action_arr, step_state_arr, resp_env_ids, resp_obs, sampled_by = (
+                        response
+                    )
                     assert np.array_equal(
                         np.asarray(resp_env_ids), np.asarray(env_ids)
                     ), "Response env_ids do not match request env_ids"
@@ -284,6 +294,7 @@ class WebSocketAgentServer:
                 resp_obs_list = unbatch_aggregate(resp_obs, aggregate_method="concat")
                 for i, eid in enumerate(resp_env_ids):
                     step_state_map[eid] = step_state_arr[i]
+                    sampled_by_map[eid] = sampled_by
                     last_obs_map[eid] = resp_obs_list[i]
 
                 action_response = ActionMessage(
@@ -329,16 +340,26 @@ class WebSocketAgentServer:
                             # Every env that reaches feedback got an action
                             # first, on this connection, which is what fills
                             # this map - so a miss means the connection was
-                            # replaced and the state went with it. The
-                            # transition below is then built from an empty
-                            # observation and no step state. That used to
-                            # happen without a word; it is at least loud now.
+                            # replaced and the state went with it. There is
+                            # then no previous observation to build the
+                            # transition from, and it is discarded below.
+                            # That used to happen without a word; it is at
+                            # least loud now.
                             logger.warning(
                                 f"Feedback for env {eid} arrived with no step "
                                 "state. The connection was almost certainly "
                                 "re-established mid-run, and this transition "
                                 "carries no previous observation."
                             )
+                        if not self._trains_on(sampled_by_map.get(eid)):
+                            self._algorithm.discard_feedback(
+                                info=inf, next_terminated=n_term, next_truncated=n_trunc
+                            )
+                            self._discarded_frames += 1
+                            prev_node_map[eid] = (-1, "")
+                            terminated_map[eid] = bool(n_term)
+                            truncated_map[eid] = bool(n_trunc)
+                            continue
                         runtime_state = (
                             step_state.runtime_state if step_state is not None else None
                         )
@@ -433,9 +454,27 @@ class WebSocketAgentServer:
                 )
                 return None
 
+    def _trains_on(self, sampled_by: int | None) -> bool:
+        """Whether a frame goes to the algorithm, to be stored and trained on.
+
+        Only if the policy that chose its action is the one now collecting,
+        and the algorithm is still collecting. The server infers for all its
+        clients in one batch, so the round in which a buffer fills usually
+        leaves actions in flight. Their feedback used to go wherever the race
+        for the model lock sent it. Feedback that won was refused by the full
+        buffer but still counted in `global_step`. Feedback that lost went into
+        the next buffer, with the old policy's log-probability and value.
+        Which one a frame got depended on timing. Now every such frame is
+        discarded; see tests/test_learn_boundary_frames.py.
+        """
+        return sampled_by == self._policy_version and not self._training.should_learn()
+
     def _runtime_metrics(self) -> dict:
         return dict(
-            server=dict(total_connections=self._total_connections),
+            server=dict(
+                total_connections=self._total_connections,
+                discarded_frames=self._discarded_frames,
+            ),
             **self._runtime_metric_tracker.as_metrics(),
         )
 
@@ -456,6 +495,10 @@ class WebSocketAgentServer:
             self._start_collect_progress()
 
     def should_infer(self) -> bool:
+        # A full buffer learns first. Inferring now would have the old policy
+        # serve a whole further round, and none of it could be trained on.
+        if self._training.should_learn():
+            return False
         current_qsize = self._inference.queue.qsize()
         current_env_count = self._inference.queued_env_count()
         now = time.monotonic()
@@ -503,6 +546,7 @@ class WebSocketAgentServer:
                     runtime_state,
                     include_train_state=True,
                 )
+                policy_version = self._policy_version
             logger.debug(f"Inference done for batch size {len(batch)}")
             start = 0
             for req in batch:
@@ -518,6 +562,7 @@ class WebSocketAgentServer:
                         ],
                         req["env_ids"],
                         req["obs"],
+                        policy_version,
                     ),
                 )
                 start = end
@@ -540,6 +585,7 @@ class WebSocketAgentServer:
                     await self._training.process_learn()
                 finally:
                     self._learning = False
+                    self._policy_version += 1
 
         async with self._model_lock:
             stop_requested = self._training.should_stop()
