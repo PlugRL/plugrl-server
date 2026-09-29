@@ -132,3 +132,22 @@ class TestShippedPoliciesFollowTheConvention:
             "action_dim": 5,
             "action_horizon": 3,
         }
+
+    def test_the_default_dummy_policy_fits_dummy_v1(self):
+        """The quickstarts pair `dummy-policy default` with dummy-v1 as is.
+
+        dummy-v1 declares a Box(7,) float32 action. The old default, discrete
+        with four actions, answered its first request with integer actions,
+        and the env client stopped on `Expected action shape tail (7,), got ()`.
+        """
+        import numpy as np
+
+        from plugrl_server.policy.dummy_policy import DummyPolicy, DummyPolicyConfig
+
+        policy = DummyPolicy(DummyPolicyConfig(device="cpu"))
+        action, _ = policy.get_action_and_runtime_state(
+            {"states": {"obs": np.zeros((2, 3), np.float32)}}
+        )
+
+        assert action.dtype == np.float32
+        assert action.shape[0] == 2 and action.shape[-1] == 7
