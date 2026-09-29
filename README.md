@@ -24,14 +24,15 @@ has been measured:
 | [coverage](#what-runs-on-it) | Which policies and algorithms learn through the split? | **Every one tried** - sixteen combinations on four tasks, all learning, below |
 | [E2](experiments/e2-cross-language/) | Does an env client have to be this codebase, or Python? | **No** - a C++ client with no third-party libraries drove this server |
 | [E12](experiments/e12-cuda-free-rollout/) | Does a rollout machine need CUDA, or a GPU? | **No** - LIBERO's env client goes from 7.8G to 3.4G with no nvidia wheels, and renders on the CPU at 1.91x the wall clock ([E13](experiments/e13-gpu-free-rendering/)) |
-| [E7](experiments/e7-cross-machine/) | What does the boundary cost once packets leave the machine? | **+0.52 ms** on a 184 KiB observation, measured from a VM to its host |
-| [E10](experiments/e10-vla-forward-cost/) | Is that cheap beside a VLA forward pass? | **Yes** - 1.3-3.6% of a step |
+| [E43](experiments/e43-cross-machine-training/) | Does training still work with the env clients on another physical machine? | **Yes** - the quickstart pair learns with its env clients on a Windows laptop over campus Wi-Fi |
+| [E43](experiments/e43-cross-machine-training/) | What does crossing cost? | About **3 ms plus twice the observation's bytes over the link** per exchange: 21 ms for 184 KiB at 18 MB/s |
+| [E10](experiments/e10-vla-forward-cost/) | Is that cheap beside a VLA forward pass? | **On a fast link.** Over that Wi-Fi a 184 KiB observation is 21% of pi0.5's 100 ms forward, not E10's 1.3-3.6% |
 | [E11](experiments/e11-vla-rl-libero/) | Does a full-size VLA go through it? | **Yes** - pi0.5 on LIBERO scores what openpi publishes, and the server's episode and step counts match the clients' exactly |
 
 Fine-tuning pi0.5 with reinforcement learning through it has not made the
 policy better yet; that record is on
 [its own page](https://plugrl.github.io/vla/).
-[`experiments/`](experiments/) holds forty experiments, thirty-nine of them
+[`experiments/`](experiments/) holds forty-one experiments, forty of them
 run. Each carries its data and a `FINDINGS.md` stating what the result does
 **not** support. The documentation, including a quickstart that trains FPO
 on HalfCheetah with no GPU and nothing to download, is at

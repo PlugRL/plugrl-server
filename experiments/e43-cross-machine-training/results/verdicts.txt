@@ -1,0 +1,79 @@
+P1  both arms run end to end
+    local seed 0  HOLDS  (100 iterations, 5 checkpoints, client rc 0)
+    local seed 1  HOLDS  (100 iterations, 5 checkpoints, client rc 0)
+    local seed 2  HOLDS  (100 iterations, 5 checkpoints, client rc 0)
+    cross seed 0  HOLDS  (100 iterations, 5 checkpoints, client rc 0)
+    cross seed 1  HOLDS  (100 iterations, 5 checkpoints, client rc 0)
+    cross seed 2  HOLDS  (100 iterations, 5 checkpoints, client rc 0)
+
+V1  the arms are what they say
+    local seed 0  client log names 127.0.0.1: yes
+    local seed 1  client log names 127.0.0.1: yes
+    local seed 2  client log names 127.0.0.1: yes
+    cross seed 0  client log names 100.75.226.89: yes
+    cross seed 1  client log names 100.75.226.89: yes
+    cross seed 2  client log names 100.75.226.89: yes
+    six server configurations identical: yes
+    PASS
+
+status  learns: iterations 91-100 at least +200 over iteration 1, on 2 of 3
+    local seed 0    -292.9 ->   1262.0  (+1554.9)  it50 462.3
+    local seed 1    -324.9 ->    694.5  (+1019.5)  it50 824.1
+    local seed 2    -250.5 ->    725.3  (+975.8)  it50 721.6
+    cross seed 0    -344.9 ->   2059.6  (+2404.5)  it50 1229.8
+    cross seed 1    -318.4 ->   2126.7  (+2445.1)  it50 1120.5
+    cross seed 2    -249.8 ->    946.4  (+1196.2)  it50 628.5
+
+P2  the cross arm learns
+    3 of 3  HOLDS
+
+P3  the local arm learns
+    3 of 3  HOLDS
+
+P4  the cross arm's extra time, iteration 1 -> 100, against 1119 s (±25%)
+    seed 0  local 1223 s  cross 2476 s  extra 1253 s  in
+    seed 1  local 1187 s  cross 2475 s  extra 1288 s  in
+    seed 2  local 1175 s  cross 2530 s  extra 1356 s  in
+    3 of 3  HOLDS
+
+V2  ladder runs complete
+    every rung and payload has 5 valid runs: yes
+
+P5  lo and ts agree within 0.25 ms
+      0 KiB  lo 0.099  ts 0.107  |d| 0.008
+     48 KiB  lo 0.161  ts 0.172  |d| 0.012
+    184 KiB  lo 0.293  ts 0.306  |d| 0.013
+    588 KiB  lo 0.947  ts 0.700  |d| 0.248
+    HOLDS
+
+P6  phys = phys(states) + 2 x bytes / B, B = median throughput 18.0 MB/s (20.5, 18.0, 19.6, 15.9, 14.4)
+     48 KiB  predicted   8.28 ms  measured   8.01 ms  in
+    184 KiB  predicted  23.72 ms  measured  21.38 ms  in
+    588 KiB  predicted  69.72 ms  measured  65.80 ms  in
+    HOLDS
+
+reported: ladder medians, pack / rtt / unpack ms
+    lo     0 KiB  0.002 / 0.099 / 0.003
+    lo    48 KiB  0.006 / 0.161 / 0.004
+    lo   184 KiB  0.026 / 0.293 / 0.004
+    lo   588 KiB  0.131 / 0.947 / 0.007
+    ts     0 KiB  0.002 / 0.107 / 0.002
+    ts    48 KiB  0.006 / 0.172 / 0.004
+    ts   184 KiB  0.026 / 0.306 / 0.005
+    ts   588 KiB  0.130 / 0.700 / 0.007
+    phys   0 KiB  0.008 / 2.815 / 0.026
+    phys  48 KiB  0.056 / 8.006 / 0.049
+    phys 184 KiB  0.266 / 21.377 / 0.052
+    phys 588 KiB  1.675 / 65.798 / 0.060
+
+reported: env client timing per call (infer wait / env step / feedback send, ms)
+    local seed 0  2.779 / 0.096 / 0.071
+    local seed 1  2.692 / 0.097 / 0.072
+    local seed 2  2.664 / 0.095 / 0.071
+    cross seed 0  4.968 / 0.497 / 0.405
+    cross seed 1  4.959 / 0.497 / 0.404
+    cross seed 2  5.078 / 0.496 / 0.409
+
+reported: E10's ratio with phys at 184 KiB: 21.4 ms against pi0.5's 100 ms forward = 21%
+
+wrote /home/guangzhao/zuogou/plugrl/e43-reg/experiments/e43-cross-machine-training/summary.tsv

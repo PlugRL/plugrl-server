@@ -1,0 +1,27 @@
+{
+  "exp_name": "e43-local-seed2",
+  "process_id": 0,
+  "total_processes": null,
+  "completed_episodes": 409,
+  "total_episode_count": 409,
+  "metric_window": 100,
+  "mean_return": 577.3640747070312,
+  "mean_success_rate": 0.0,
+  "timing": {
+    "env_steps": 409601,
+    "infer_calls": 409601,
+    "feedback_calls": 409601,
+    "infer_wait_s": 1091.0561992097646,
+    "infer_obs_pack_s": 6.102110865525901,
+    "env_step_s": 38.89879705617204,
+    "feedback_s": 28.9821773073636,
+    "feedback_obs_pack_s": 7.684091416187584,
+    "feedback_info_pack_s": 1.2983896555379033,
+    "collect_time_s": 1165.0392844388261,
+    "effective_fps": 351.5769858329677,
+    "infer_wait_frac": 0.9364973471562398,
+    "infer_obs_pack_frac": 0.0052376867862143845,
+    "env_step_frac": 0.033388399494965304,
+    "feedback_frac": 0.02487656656258049
+  }
+}
