@@ -1,0 +1,5 @@
+cell	policy	client_exit	wall_s	client_episodes	client_steps	server_episodes	server_length_sum	episode_accounting	step_accounting	no_step_state_warnings	reconnects	valid
+e42-fpopp-s7-it10	fpopp-s7-it10	0	1790	50	21282	50	21282	true	true	0	0	true
+e42-fpopp-s7-it5	fpopp-s7-it5	0	1830	50	22019	50	22019	true	true	0	0	true
+e42-fpopp-s8-it5	fpopp-s8-it5	0	1879	50	22665	50	22665	true	true	0	0	true
+e42-fpopp-s8-it10	fpopp-s8-it10	0	1920	50	22964	50	22964	true	true	0	0	true

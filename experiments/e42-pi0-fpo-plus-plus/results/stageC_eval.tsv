@@ -1,0 +1,5 @@
+policy	task_id	episodes	successes	sr	ci_lo	ci_hi	valid
+fpopp-s7-it10	8	50	40	0.8000	0.6696	0.8876	true
+fpopp-s7-it5	8	50	39	0.7800	0.6476	0.8725	true
+fpopp-s8-it5	8	50	31	0.6200	0.4815	0.7414	true
+fpopp-s8-it10	8	50	27	0.5400	0.4040	0.6703	true

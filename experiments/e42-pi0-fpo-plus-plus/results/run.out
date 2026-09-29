@@ -1,0 +1,44 @@
+[09-28 18:34:42] code: 11ae8be (exp/e42-pi0-fpo-plus-plus: #91 on main efdab35, FPO++ optimizer, clipping, advantage and Huber options, plus E42 scripts), archive with CR stripped (LF)
+[09-28 18:34:42] --- phase 1
+[09-29 03:26:58] END train fpopp-s7 rc=0
+[09-29 03:42:57] END train fpopp-s8 rc=0
+[09-29 03:42:57] checkpoints fpopp-s7: 4100 8200 12290 16390 20480 24580 28680 32770 36870 40960 
+[09-29 03:42:57] checkpoints fpopp-s8: 4100 8200 12290 16390 20480 24580 28680 32770 36870 40960 
+[09-29 03:42:57] --- phase 2
+[09-29 03:42:57] --- movement from the base, iterations 5 and 10
+/home/gotham/tmp/plugrl/e42/fpopp-s7/ck/fpo/pi0-policy/fpopp-s7/20480/model.safetensors
+  mod    moved  74  unchanged   0  relative distance 0.006115
+  attn   moved  72  unchanged   0  relative distance 0.009477
+  mlp    moved  54  unchanged   0  relative distance 0.006951
+  io     moved   8  unchanged   0  relative distance 0.014916
+  expert moved 200  unchanged   1  relative distance 0.006749
+/home/gotham/tmp/plugrl/e42/fpopp-s7/ck/fpo/pi0-policy/fpopp-s7/40960/model.safetensors
+  mod    moved  74  unchanged   0  relative distance 0.009961
+  attn   moved  72  unchanged   0  relative distance 0.014501
+  mlp    moved  54  unchanged   0  relative distance 0.010817
+  io     moved   8  unchanged   0  relative distance 0.021493
+  expert moved 200  unchanged   1  relative distance 0.010490
+/home/gotham/tmp/plugrl/e42/fpopp-s8/ck/fpo/pi0-policy/fpopp-s8/20480/model.safetensors
+  mod    moved  74  unchanged   0  relative distance 0.006073
+  attn   moved  72  unchanged   0  relative distance 0.009410
+  mlp    moved  54  unchanged   0  relative distance 0.006864
+  io     moved   8  unchanged   0  relative distance 0.015661
+  expert moved 200  unchanged   1  relative distance 0.006682
+/home/gotham/tmp/plugrl/e42/fpopp-s8/ck/fpo/pi0-policy/fpopp-s8/40960/model.safetensors
+  mod    moved  74  unchanged   0  relative distance 0.009548
+  attn   moved  72  unchanged   0  relative distance 0.014345
+  mlp    moved  54  unchanged   0  relative distance 0.010517
+  io     moved   8  unchanged   0  relative distance 0.021965
+  expert moved 200  unchanged   1  relative distance 0.010248
+[09-29 03:44:59] --- learn-step statistics
+[09-29 04:21:34] END eval fpopp-s7-it10 rc=0
+[09-29 04:22:12] END eval fpopp-s7-it5 rc=0
+[09-29 04:23:03] END eval fpopp-s8-it5 rc=0
+[09-29 04:23:43] END eval fpopp-s8-it10 rc=0
+[09-29 04:23:43] === rows ===
+policy	task_id	episodes	successes	sr	ci_lo	ci_hi	valid
+fpopp-s7-it10	8	50	40	0.8000	0.6696	0.8876	true
+fpopp-s7-it5	8	50	39	0.7800	0.6476	0.8725	true
+fpopp-s8-it5	8	50	31	0.6200	0.4815	0.7414	true
+fpopp-s8-it10	8	50	27	0.5400	0.4040	0.6703	true
+[09-29 04:23:43] E42_DONE
