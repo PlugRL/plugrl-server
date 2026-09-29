@@ -11,7 +11,6 @@ wall clock from iteration 1 to 100.
 
 import json
 import pathlib
-import statistics
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
@@ -27,11 +26,19 @@ def export(results: pathlib.Path) -> None:
     for arm in ("local", "cross"):
         data[arm] = {"returns": [], "span_s": []}
         for seed, suffix in LAYOUT:
-            run = results / f"{arm}{suffix}" / "fpo" / "fpo-policy" / f"halfcheetah-{arm}-seed{seed}"
+            run = (
+                results
+                / f"{arm}{suffix}"
+                / "fpo"
+                / "fpo-policy"
+                / f"halfcheetah-{arm}-seed{seed}"
+            )
             if not run.exists():
                 continue
-            acc = EventAccumulator(str(sorted((run / "tensorboard").glob("events.*"))[-1]),
-                                   size_guidance={"scalars": 0})
+            acc = EventAccumulator(
+                str(sorted((run / "tensorboard").glob("events.*"))[-1]),
+                size_guidance={"scalars": 0},
+            )
             acc.Reload()
             r = acc.Scalars("rollout/reward")
             data[arm]["returns"].append([round(e.value, 1) for e in r])
@@ -65,12 +72,20 @@ def plot(out: pathlib.Path) -> None:
         for r in runs:
             ax.plot(x, r[:n], color=colour, linewidth=0.8, alpha=0.7)
         spans = [s / 60 for s in data[arm]["span_s"]]
-        ax.plot([], [], color=colour, linewidth=6, alpha=0.5,
-                label=f"{label} ({min(spans):.0f}-{max(spans):.0f} min)")
+        ax.plot(
+            [],
+            [],
+            color=colour,
+            linewidth=6,
+            alpha=0.5,
+            label=f"{label} ({min(spans):.0f}-{max(spans):.0f} min)",
+        )
     ax.set_xlabel("iteration (4,096 steps each)")
     ax.set_ylabel("episode return")
     seeds = len(data["local"]["returns"])
-    ax.set_title(f"fpo-policy · FPO · HalfCheetah-v5, {seeds} seeds per arm", fontsize=10)
+    ax.set_title(
+        f"fpo-policy · FPO · HalfCheetah-v5, {seeds} seeds per arm", fontsize=10
+    )
     for side in ("top", "right"):
         ax.spines[side].set_visible(False)
     ax.grid(axis="y", color="#e3e6f0", linewidth=0.6)
@@ -82,6 +97,10 @@ def plot(out: pathlib.Path) -> None:
 
 if __name__ == "__main__":
     if sys.argv[1] == "export":
-        export(pathlib.Path(sys.argv[2]).resolve() if len(sys.argv) > 2 else HERE / "results")
+        export(
+            pathlib.Path(sys.argv[2]).resolve()
+            if len(sys.argv) > 2
+            else HERE / "results"
+        )
     else:
         plot(pathlib.Path(sys.argv[2]))

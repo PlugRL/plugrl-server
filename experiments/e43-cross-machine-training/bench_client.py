@@ -41,7 +41,12 @@ def encode_array(values, typestr: str, shape: tuple[int, ...]) -> dict:
         if (sys.byteorder == "little") != (order in "<|"):
             buf.byteswap()
         raw = buf.tobytes()
-    return {b"__ndarray__": True, b"data": raw, b"dtype": typestr, b"shape": list(shape)}
+    return {
+        b"__ndarray__": True,
+        b"data": raw,
+        b"dtype": typestr,
+        b"shape": list(shape),
+    }
 
 
 def decode_array(obj: dict) -> list:
@@ -83,7 +88,10 @@ def run(host: str, port: int, steps: int, img: int, cameras: int) -> int:
     ) as ws:
         meta = msgpack.unpackb(ws.recv(), raw=False, strict_map_key=False)
         if meta.get("message_type") != METADATA:
-            print(f"expected {METADATA}, got {meta.get('message_type')!r}", file=sys.stderr)
+            print(
+                f"expected {METADATA}, got {meta.get('message_type')!r}",
+                file=sys.stderr,
+            )
             return 1
         start = time.perf_counter()
         for step in range(steps):
@@ -106,7 +114,10 @@ def run(host: str, port: int, steps: int, img: int, cameras: int) -> int:
                 return 1
             action_msg = msgpack.unpackb(reply, raw=False, strict_map_key=False)
             if action_msg.get("message_type") != ACTION:
-                print(f"expected {ACTION}, got {action_msg.get('message_type')!r}", file=sys.stderr)
+                print(
+                    f"expected {ACTION}, got {action_msg.get('message_type')!r}",
+                    file=sys.stderr,
+                )
                 return 1
             decode_array(action_msg["data"]["action"])
             t3 = time.perf_counter()
