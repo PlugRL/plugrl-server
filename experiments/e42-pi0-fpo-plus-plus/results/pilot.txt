@@ -1,0 +1,30 @@
+E42 pilot, 2026-09-28 18:18-18:33 (cluster time), qz103 cards 0,1 (server)
+and 3 (clients), code 11ae8be deployed as $R/plugrl-server-e42 with CRs
+stripped.
+
+  ITERS=2 RUNS=s7 BUFFER_SIZE=256 bash e42/run.sh
+
+The first attempt did not start. The archive had carried Windows line endings
+into run.sh, and bash stopped at `set -o pipefail\r`. Every text file of the
+deployment was then stripped of CRs, and no file with a CR remains.
+
+Seed 7, a buffer of 256 chunks (the registered run: 4,096), two iterations:
+the first critic-only, the second an actor update. rc 0, no traceback, no
+out-of-memory. Checkpoints at 260 and 520. The config line shows
+critic_learning_rate=0.0001, adam_eps=1e-05, weight_decay=1e-06,
+actor_adam_beta2=0.99, max_grad_norm=25.0, cfm_loss_huber_delta=1.0,
+fpo_playground_trick=False, reward_scaling=1.0, treat_truncated_as_done=True,
+gae_lambda=0.99, value_loss_coeff=0.5, clipping_epsilon=0.01.
+
+  iteration                    1 (critic only)   2
+  fpo/policy_ratio_mean        1.000             0.992
+  fpo/clipped_ratio_mean       0                 0.327
+  fpo/initial_cfm_loss_mean    0.078             0.120
+  fpo/actor_grad_norm_max      0                 3.85
+  fpo/critic_grad_norm_max     6.09              5.91
+  learn / collection (s)       159 / 118         157 / 70
+
+Peak memory: 18,398 MiB on the server's card, 9,069 MiB on the master-weight
+card. With 256 chunks across ten clients no episode finished, so success
+and explained variance mean nothing here. The pilot checks the machinery,
+not learning.
