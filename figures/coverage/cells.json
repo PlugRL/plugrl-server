@@ -168,7 +168,7 @@
     }
   ],
   "vla": {
-    "_about": "pi0.5 on LIBERO-10 task 8, recorded on qz103 by coverage/eval_record.sh (E26's eval.sh with the recorder on). One episode each, all on initial state 0: the first state the untrained policy solves in E26's evaluation. `score` is the fifty-episode evaluation's, not the clip's.",
+    "_about": "pi0.5 on LIBERO-10 task 8, recorded on qz103 by coverage/eval_record.sh (E26's eval.sh with the recorder on). One episode each, all on initial state 0: the first state the untrained policy solves in E26's evaluation. `score` is the fifty-episode evaluation's, not the clip's. Where the experiment ran two seeds (E42), the clip and the score are the lower-scoring seed's.",
     "task": "LIBERO-10 task 8: put both moka pots on the stove",
     "task_zh": "LIBERO-10 第 8 题：把两个摩卡壶都放到炉子上",
     "cells": [
@@ -180,9 +180,9 @@
       },
       {
         "id": "pi0-fpo", "label": "pi0-policy · FPO", "label_zh": "pi0-policy · FPO",
-        "status": "collapses", "experiments": ["E14", "E26", "E32", "E36"], "score": [5, 50],
-        "note": "one update with FPO++'s chunk loss left it at 33; five took it to 5 and 0 on two seeds, FPO's own defaults still in place",
-        "note_zh": "换成 FPO++ 的块损失后一次更新还有 33；五轮后两个种子降到 5 和 0，当时 FPO 自己的默认设置还没换掉",
+        "status": "holds", "experiments": ["E14", "E26", "E32", "E36", "E42"], "score": [27, 50],
+        "note": "with FPO++'s fine-tuning in full, ten iterations leave it at 40 and 27 of 50 on two seeds; the clip is the lower's. With FPO's own defaults it had fallen to 5 and 0 within five",
+        "note_zh": "换上 FPO++ 的完整微调设置，十轮后两个种子分别是 40/50 和 27/50，视频取较低的那个；此前用 FPO 自己的默认设置，五轮内就掉到了 5 和 0",
         "video_key": "base", "native_fps": 20, "whole": true
       },
       {
