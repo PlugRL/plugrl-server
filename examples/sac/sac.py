@@ -48,6 +48,9 @@ class SACAlgoConfig(BaseAlgoConfig):
 
 @register_algo(UID)
 class SACAlgorithm(BaseAlgorithm):
+    # SAC learns from a replay buffer, so a frame an older policy collected
+    # is as usable as a fresh one; the server gives it every frame.
+    on_policy = False
     config: SACAlgoConfig
     policy: SACPolicy
     replay_buffer: ReplayBuffer
@@ -65,10 +68,14 @@ class SACAlgorithm(BaseAlgorithm):
         example_runtime_state = cast(
             SACRuntimeState, self.policy.fake_runtime_state(batch_size=1)
         )
+        # ReplayBuffer takes the state batched and the action as one sample
+        # (tests/test_buffer_schema_migration.py). Passing the batched action
+        # stored every action as (1, action_dim), and the first update died
+        # concatenating (batch, state_dim) with (batch, 1, action_dim).
         self.replay_buffer = ReplayBuffer(
             buffer_size=config.buffer_size,
             example_state=example_runtime_state["obs"],
-            example_action=example_runtime_state["action"],
+            example_action=example_runtime_state["action"][0],
         )
         self.save_interval = config.save_interval
         self.global_step = 0
