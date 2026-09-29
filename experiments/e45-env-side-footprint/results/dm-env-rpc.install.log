@@ -1,0 +1,20 @@
+Using Python 3.11.16 environment at: /home/guangzhao/zuogou/plugrl/e45-work/venv-dm-env-rpc
+Resolved 12 packages in 279ms
+Downloading grpcio (6.9MiB)
+Downloading numpy (16.1MiB)
+ Downloaded grpcio
+ Downloaded numpy
+Prepared 12 packages in 282ms
+Installed 12 packages in 16ms
+ + absl-py==2.5.0
+ + attrs==26.1.0
+ + dm-env==1.6
+ + dm-env-rpc==1.1.7
+ + dm-tree==0.1.10
+ + googleapis-common-protos==1.75.4
+ + grpcio==1.84.0
+ + immutabledict==4.3.1
+ + numpy==2.4.6
+ + protobuf==7.36.2
+ + typing-extensions==4.16.0
+ + wrapt==2.5.0
