@@ -805,7 +805,23 @@ int train(const std::string& host, int port, uint64_t seed) {
     fb.str("rewards");    pack_ndarray(fb, pack_f4({static_cast<float>(r)}), "<f4", {1});
     fb.str("terminated"); pack_ndarray(fb, std::string(1, '\0'), "|b1", {1});
     fb.str("truncated");  pack_ndarray(fb, std::string(1, truncated ? '\1' : '\0'), "|b1", {1});
-    fb.str("info");       fb.map(0);
+    fb.str("info");
+    if (truncated) {
+      // The episode's return and length, as plugrl-env-client's
+      // VectorEpisodeStatsWrapper reports them in info["episode"] - the
+      // server's episode metrics read nothing else. SPEC.md does not
+      // document this; E44's pilot found it (a spec-only client reported no
+      // episodes at all). Pendulum defines no success, so s is false.
+      fb.map(1);
+      fb.str("episode");
+      fb.map(4);
+      fb.str("r");    pack_ndarray(fb, pack_f4({static_cast<float>(episode_return)}), "<f4", {1});
+      fb.str("l");    pack_ndarray(fb, pack_i8({static_cast<int64_t>(env.t)}), "<i8", {1});
+      fb.str("s");    pack_ndarray(fb, std::string(1, '\0'), "|b1", {1});
+      fb.str("mask"); pack_ndarray(fb, std::string(1, '\1'), "|b1", {1});
+    } else {
+      fb.map(0);
+    }
     ws->send_binary(fb.data());
     ++step_id;
 
