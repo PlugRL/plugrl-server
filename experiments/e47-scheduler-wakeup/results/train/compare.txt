@@ -1,0 +1,17 @@
+main: 10 iterations, last checkpoint 40960 sha256 6cbdcd2137134eda, infer wait 2.552 ms per call, collect 111.9 s
+fix: 10 iterations, last checkpoint 40960 sha256 6cbdcd2137134eda, infer wait 1.312 ms per call, collect 59.7 s
+
+iteration              main               fix
+        1       -292.856842       -292.856842
+        2       -278.121399       -278.121399
+        3       -252.892853       -252.892853
+        4       -282.243530       -282.243530
+        5       -294.751831       -294.751831
+        6       -272.382751       -272.382751
+        7       -188.503036       -188.503036
+        8       -180.403397       -180.403397
+        9       -226.938812       -226.938812
+       10       -187.073608       -187.073608
+
+main == fix returns: True
+main == fix model:   True

@@ -1,0 +1,27 @@
+{
+  "exp_name": "e47-fix",
+  "process_id": 0,
+  "total_processes": null,
+  "completed_episodes": 40,
+  "total_episode_count": 40,
+  "metric_window": 100,
+  "mean_return": -245.61679077148438,
+  "mean_success_rate": 0.0,
+  "timing": {
+    "env_steps": 40960,
+    "infer_calls": 40960,
+    "feedback_calls": 40960,
+    "infer_wait_s": 53.73764655087143,
+    "infer_obs_pack_s": 0.48032630421221256,
+    "env_step_s": 3.067716157529503,
+    "feedback_s": 2.460122755728662,
+    "feedback_obs_pack_s": 0.6173369088210166,
+    "feedback_info_pack_s": 0.10457675345242023,
+    "collect_time_s": 59.74581176834181,
+    "effective_fps": 685.5710682920864,
+    "infer_wait_frac": 0.8994378846040888,
+    "infer_obs_pack_frac": 0.008039497497743072,
+    "env_step_frac": 0.05134612898765615,
+    "feedback_frac": 0.04117648891051197
+  }
+}
