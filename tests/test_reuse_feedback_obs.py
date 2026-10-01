@@ -197,10 +197,10 @@ def _train(*clients) -> tuple[WebSocketAgentServer, PPOAlgorithm, list[str]]:
 def test_a_client_that_reuses_observations_trains_the_same_weights():
     full, reused = dict(reused=0, sent=0), dict(reused=0, sent=0)
 
-    _, algo_full, reasons_full = _train(
+    server_full, algo_full, reasons_full = _train(
         lambda port: _client(port, reuse=False, counts=full)
     )
-    _, algo_reused, reasons_reused = _train(
+    server_reused, algo_reused, reasons_reused = _train(
         lambda port: _client(port, reuse=True, counts=reused)
     )
 
@@ -208,6 +208,11 @@ def test_a_client_that_reuses_observations_trains_the_same_weights():
     assert reused["features"] == [REUSE_FEEDBACK_OBS]
     # It did reuse, and it did send the rows after each reset.
     assert reused["reused"] > reused["sent"] > ENVS
+    # The server's count is what an operator sees. The client's last infer
+    # may meet the stop instead of being read, so it can be one infer short.
+    counted = server_reused._runtime_metrics()["server"]["reused_observations"]
+    assert reused["reused"] - ENVS <= counted <= reused["reused"]
+    assert server_full._runtime_metrics()["server"]["reused_observations"] == 0
     assert algo_full.curr_train_itrs == algo_reused.curr_train_itrs == 2
     weights_full = algo_full.policy.state_dict()
     weights_reused = algo_reused.policy.state_dict()

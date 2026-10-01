@@ -148,6 +148,9 @@ class WebSocketAgentServer:
         # happened since; see _trains_on.
         self._policy_version = 0
         self._discarded_frames = 0
+        # Infer rows a client left out because this server held them (SPEC.md
+        # section 10.1): how much of the feature is in use.
+        self._reused_observations = 0
 
         self._total_connections = 0
         self._infer_wait_start: float | None = None
@@ -295,6 +298,8 @@ class WebSocketAgentServer:
                 except (KeyError, ProtocolValidationError, ReuseError) as exc:
                     await self._close_for_protocol_error(websocket, exc)
                     break
+                if infer_msg.reuse is not None:
+                    self._reused_observations += int(np.sum(infer_msg.reuse))
 
                 env_ids = infer_msg.env_indices
 
@@ -532,6 +537,7 @@ class WebSocketAgentServer:
             server=dict(
                 total_connections=self._total_connections,
                 discarded_frames=self._discarded_frames,
+                reused_observations=self._reused_observations,
             ),
             **self._runtime_metric_tracker.as_metrics(),
         )
