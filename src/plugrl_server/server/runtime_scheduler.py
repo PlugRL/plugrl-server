@@ -49,8 +49,11 @@ class RuntimeScheduler:
                 continue
             if should_infer():
                 continue  # work arrived while this iteration ran
+            # asyncio.timeout rather than wait_for, which on 3.11 starts a
+            # task per call: about 0.1 ms here, on every infer.
             try:
-                await asyncio.wait_for(self._wake.wait(), timeout=self._idle_timeout)
+                async with asyncio.timeout(self._idle_timeout):
+                    await self._wake.wait()
             except TimeoutError:
                 pass
             # Nothing runs between the wait returning and this clear, so a
