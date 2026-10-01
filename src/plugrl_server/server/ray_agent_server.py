@@ -196,6 +196,13 @@ class RayAgentServer:
                 infer_payload = msgpack_numpy.unpackb(packed_infer_msg)
                 try:
                     infer_msg = parse_infer_request(infer_payload)
+                    if infer_msg.reuse is not None:
+                        # This server lists no features, so the rows `reuse`
+                        # marks would be missing from the batch it infers on.
+                        raise ProtocolValidationError(
+                            "infer carries reuse, but this server does not offer "
+                            "reuse-feedback-obs"
+                        )
                 except (KeyError, ProtocolValidationError) as exc:
                     await self._close_for_protocol_error(websocket, exc)
                     break

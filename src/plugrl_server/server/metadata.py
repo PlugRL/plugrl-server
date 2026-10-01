@@ -69,18 +69,26 @@ def describe_policy(policy: Any) -> dict[str, Any]:
 
 
 def build_server_metadata(
-    algorithm: Any = None, extra: dict[str, Any] | None = None
+    algorithm: Any = None,
+    extra: dict[str, Any] | None = None,
+    features: tuple[str, ...] = (),
 ) -> dict[str, Any]:
     """Assemble the `metadata` payload. Callers may override any key.
 
     `extra` wins over everything derived here, so an operator who knows
     better than the introspection - or who wants to publish a run id - can
     say so without this function needing to know about it.
+
+    `features` are the optional features of SPEC.md section 10 that the
+    server implements. Only the server that handles the connections knows
+    which those are, so it passes them; none means the key is left out.
     """
     metadata: dict[str, Any] = {
         "protocol_version": PROTOCOL_VERSION,
         "server": "plugrl-server",
     }
+    if features:
+        metadata["features"] = list(features)
 
     try:
         from plugrl_server import __version__
