@@ -1,0 +1,43 @@
+E46 Part B, registered run: bash train_check.sh 40960 train, on guangzhao
+
+start 2026-10-01 18:29:32
+READY v1a port 9970 at 18:29:35
+READY v1b port 9971 at 18:29:40
+READY v2 port 9972 at 18:29:45
+v2 client rc=0 at 18:30:54
+v2 server rc=0 at 18:30:55
+v1a client rc=0 at 18:31:16
+v1a server rc=0 at 18:31:16
+v1b client rc=0 at 18:31:22
+v1b server rc=0 at 18:31:22
+end   2026-10-01 18:31:22
+TRAIN_CHECK_DONE
+Tracebacks in the six logs (grep -ci traceback): 0 0 0 0 0 0
+
+compare_train.py train (also in train/compare.txt):
+v1a: 10 iterations, reused_observations (40960, 0.0), resync closes 0, last checkpoint 40960 sha256 6cbdcd2137134eda
+v1b: 10 iterations, reused_observations (40960, 0.0), resync closes 0, last checkpoint 40960 sha256 6cbdcd2137134eda
+v2: 10 iterations, reused_observations (40960, 40920.0), resync closes 0, last checkpoint 40960 sha256 6cbdcd2137134eda
+
+iteration               v1a               v1b                v2
+        1       -292.856842       -292.856842       -292.856842
+        2       -278.121399       -278.121399       -278.121399
+        3       -252.892853       -252.892853       -252.892853
+        4       -282.243530       -282.243530       -282.243530
+        5       -294.751831       -294.751831       -294.751831
+        6       -272.382751       -272.382751       -272.382751
+        7       -188.503036       -188.503036       -188.503036
+        8       -180.403397       -180.403397       -180.403397
+        9       -226.938812       -226.938812       -226.938812
+       10       -187.073608       -187.073608       -187.073608
+
+v1a == v1b returns: True
+v1a == v2  returns: True
+v1a == v1b model:   True
+v1a == v2  model:   True
+
+Env client timing (train/<arm>/client-summary.json), per run:
+  v1a  infer_wait 89.677 s over 40,960 calls (2.19 ms)   collect 96.8 s
+  v1b  infer_wait 90.515 s (2.21 ms)                      collect 97.5 s
+  v2   infer_wait 58.607 s (1.43 ms)                      collect 65.2 s
+  (see explore.txt for why v2's is shorter: not reuse)

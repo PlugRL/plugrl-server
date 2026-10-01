@@ -1,0 +1,20 @@
+v1a: 10 iterations, reused_observations (40960, 0.0), resync closes 0, last checkpoint 40960 sha256 6cbdcd2137134eda
+v1b: 10 iterations, reused_observations (40960, 0.0), resync closes 0, last checkpoint 40960 sha256 6cbdcd2137134eda
+v2: 10 iterations, reused_observations (40960, 40920.0), resync closes 0, last checkpoint 40960 sha256 6cbdcd2137134eda
+
+iteration               v1a               v1b                v2
+        1       -292.856842       -292.856842       -292.856842
+        2       -278.121399       -278.121399       -278.121399
+        3       -252.892853       -252.892853       -252.892853
+        4       -282.243530       -282.243530       -282.243530
+        5       -294.751831       -294.751831       -294.751831
+        6       -272.382751       -272.382751       -272.382751
+        7       -188.503036       -188.503036       -188.503036
+        8       -180.403397       -180.403397       -180.403397
+        9       -226.938812       -226.938812       -226.938812
+       10       -187.073608       -187.073608       -187.073608
+
+v1a == v1b returns: True
+v1a == v2  returns: True
+v1a == v1b model:   True
+v1a == v2  model:   True

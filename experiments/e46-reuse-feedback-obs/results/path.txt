@@ -1,0 +1,9 @@
+path before 2026-10-01 18:15:24
+100.75.226.89  guangzhao-dell-pro-max-tower-t2-fct2250.taild05e61.ts.net  ttaosci@      linux    idle, tx 324198036 rx 6047452  
+pong from guangzhao-dell-pro-max-tower-t2-fct2250 (100.75.226.89) via 128.84.216.41:41641 in 3ms
+path after throughput 2026-10-01 18:15:48
+100.75.226.89  guangzhao-dell-pro-max-tower-t2-fct2250.taild05e61.ts.net  ttaosci@      linux    active; direct 128.84.216.41:41641, tx 681448800 rx 11791784  
+pong from guangzhao-dell-pro-max-tower-t2-fct2250 (100.75.226.89) via 128.84.216.41:41641 in 2ms
+path after ladder 2026-10-01 18:30:06
+100.75.226.89  guangzhao-dell-pro-max-tower-t2-fct2250.taild05e61.ts.net  ttaosci@      linux    active; direct 128.84.216.41:41641, tx 14138440772 rx 234291788  
+pong from guangzhao-dell-pro-max-tower-t2-fct2250 (100.75.226.89) via 128.84.216.41:41641 in 3ms

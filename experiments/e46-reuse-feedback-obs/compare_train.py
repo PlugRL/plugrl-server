@@ -59,7 +59,10 @@ def main() -> int:
         )
     print("\niteration  " + "  ".join(f"{arm:>16}" for arm in ARMS))
     for i in range(max(len(r) for r in rewards.values())):
-        row = [rewards[arm][i][1] if i < len(rewards[arm]) else float("nan") for arm in ARMS]
+        row = [
+            rewards[arm][i][1] if i < len(rewards[arm]) else float("nan")
+            for arm in ARMS
+        ]
         print(f"{i + 1:>9}  " + "  ".join(f"{v:>16.6f}" for v in row))
     same_returns = lambda a, b: [v for _, v in rewards[a]] == [v for _, v in rewards[b]]  # noqa: E731
     print(f"\nv1a == v1b returns: {same_returns('v1a', 'v1b')}")
