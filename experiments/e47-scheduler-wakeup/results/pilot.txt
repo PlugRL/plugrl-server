@@ -1,0 +1,24 @@
+E47 pilot, 2026-10-01 19:00-19:20 EDT, on guangzhao, before PROTOCOL.md
+
+Code
+  main    plugrl-server main 835f691 (src/plugrl_server via git archive) -> ~/zuogou/plugrl/e47/main-src
+  fix     branch fix/scheduler-wakeup 61bc1c7, then runtime_scheduler.py from f2eb959 -> fix-src
+  sleep0  main-src with SCHEDULER_SLEEP_INTERVAL = 0.0, nothing else (built after this pilot)
+  venvs   guangzhao's E43 venvs (torch 2.7.1+cpu); env client ~/zuogou/plugrl/plugrl-env-client 931ab56
+  The first pilot attempt hung: e47.sh used a relative output directory after
+  cd-ing into it, so no server started and the wait for "is listening" never
+  ended. Fixed (absolute paths, a 120 s limit on that wait) before these numbers.
+
+Round trip, rtt_client.py, one env, 1,000 exchanges, ms per infer
+  fix with asyncio.wait_for (61bc1c7):   main 2.313   fix 1.047
+  fix with asyncio.timeout (f2eb959):    main 2.317 2.069   fix 0.976 0.998
+  E46's exploration, a server with the sleep at 0: 0.902-0.908 (v1 client)
+
+Idle, a server with no client, 10 s after 3 s of start-up (wait_for version)
+  main  0.570 CPU s in 10.004 s = 0.057 of a core
+  fix   0.050 CPU s in 10.005 s = 0.005 of a core
+
+Training, E43's cell, 8,192 steps (2 iterations), seed 0, one arm at a time (wait_for version)
+  main: last checkpoint 8192 sha256 8bf9cb2f92fa0e52, env client infer wait 2.358 ms per call, collect 20.7 s
+  fix:  last checkpoint 8192 sha256 8bf9cb2f92fa0e52, env client infer wait 1.193 ms per call, collect 11.0 s
+  returns, both: -292.856842 -278.121399 (E46's pilot: the same, and the same sha256)
