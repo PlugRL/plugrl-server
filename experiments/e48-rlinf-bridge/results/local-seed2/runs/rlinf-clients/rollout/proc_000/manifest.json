@@ -1,0 +1,19 @@
+{
+  "exp_name": "rlinf-clients",
+  "process_id": 0,
+  "total_processes": 16,
+  "num_envs": 1,
+  "args": {
+    "episode_freq": 0,
+    "thread0_only": true,
+    "record_video": false,
+    "video_fps": 30.0,
+    "record_full_rollout": false,
+    "record_obs_stats": true,
+    "record_episode_metrics": true,
+    "metric_window": 100
+  },
+  "metric_window": 100,
+  "effective_episode_freq": 0,
+  "full_rollout_video": false
+}

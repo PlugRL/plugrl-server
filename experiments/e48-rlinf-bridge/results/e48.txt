@@ -1,0 +1,51 @@
+start 2026-10-01 23:26:24
+== local seed 0 23:26:24
+rlinf rc=0 at 23:32:05
+clients stopped
+end   2026-10-01 23:32:11
+RUN_DONE
+== local seed 1 23:32:59
+rlinf rc=0 at 23:38:38
+clients stopped
+end   2026-10-01 23:38:43
+RUN_DONE
+== local seed 2 23:39:31
+rlinf rc=0 at 23:45:10
+clients stopped
+end   2026-10-01 23:45:15
+RUN_DONE
+== cross seed 0 23:46:03
+before:
+pong from guangzhao-dell-pro-max-tower-t2-fct2250 (100.75.226.89) via 128.84.216.41:41641 in 46ms
+clients pid 48244 started 23:46:09
+clients exit 1 00:53:17
+seed 0 clients remote max_epochs config
+rlinf rc=0 at 00:26:24
+end   2026-10-02 00:26:24
+RUN_DONE
+after:
+pong from guangzhao-dell-pro-max-tower-t2-fct2250 (100.75.226.89) via 128.84.216.41:41641 in 59ms
+== cross seed 1 00:53:18
+before:
+pong from guangzhao-dell-pro-max-tower-t2-fct2250 (100.75.226.89) via 128.84.216.41:41641 in 44ms
+clients pid 13504 started 00:53:24
+clients exit 1 01:43:54
+seed 1 clients remote max_epochs config
+rlinf rc=0 at 01:42:49
+end   2026-10-02 01:42:49
+RUN_DONE
+after:
+pong from guangzhao-dell-pro-max-tower-t2-fct2250 (100.75.226.89) via 128.84.216.41:41641 in 48ms
+== cross seed 2 01:43:55
+before:
+pong from guangzhao-dell-pro-max-tower-t2-fct2250 (100.75.226.89) via 128.84.216.41:41641 in 50ms
+clients pid 47892 started 01:44:02
+clients exit 1 02:40:11
+seed 2 clients remote max_epochs config
+rlinf rc=0 at 02:39:04
+end   2026-10-02 02:39:04
+RUN_DONE
+after:
+pong from guangzhao-dell-pro-max-tower-t2-fct2250 (100.75.226.89) via 128.84.216.41:41641 in 42ms
+end   2026-10-02 02:40:12
+E48_DONE

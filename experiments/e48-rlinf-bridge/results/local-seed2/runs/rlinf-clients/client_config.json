@@ -1,0 +1,35 @@
+{
+  "uid": "MuJoCo-v1",
+  "env": {
+    "max_episode_steps": null,
+    "name": "HalfCheetah-v5",
+    "render": false
+  },
+  "num_envs": 1,
+  "num_procs": 16,
+  "num_episodes": 1000000,
+  "runner": {
+    "uid": "MuJoCo-v1",
+    "pass_proc_id": false,
+    "use_env_lock": false,
+    "start_method": "spawn",
+    "replan_steps": 1,
+    "max_episode_steps": null,
+    "seed": 2
+  },
+  "recorder": {
+    "episode_freq": 0,
+    "thread0_only": true,
+    "record_video": false,
+    "video_fps": 30.0,
+    "record_full_rollout": false,
+    "record_obs_stats": true,
+    "record_episode_metrics": true,
+    "metric_window": 100
+  },
+  "exp_name": "rlinf-clients",
+  "server_host": "127.0.0.1",
+  "server_port": 8800,
+  "reconnect_on_server_stop": false,
+  "reuse_feedback_obs": true
+}

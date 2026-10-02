@@ -1,0 +1,6 @@
+start 2026-10-01 23:25:38
+seed 0 clients local max_epochs config
+rlinf rc=0 at 23:32:05
+clients stopped
+end   2026-10-01 23:32:11
+RUN_DONE

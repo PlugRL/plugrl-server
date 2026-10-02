@@ -1,0 +1,17 @@
+local seed 0: V1 True (16 slot lines from ['127.0.0.1']), V2 True (100 epochs), return -284 -> last five 449 (25 batches): learns
+   env/return -284 -200 -134 -113 -122 -93 -50 38 30 48 101 158 161 234 243 280 226 350 396 368 384 411 493 434 524
+local seed 1: V1 True (16 slot lines from ['127.0.0.1']), V2 True (100 epochs), return -290 -> last five 485 (25 batches): learns
+   env/return -290 -173 -128 -120 -103 -68 -83 26 28 118 92 216 199 209 222 254 269 310 397 414 512 431 435 554 493
+local seed 2: V1 True (16 slot lines from ['127.0.0.1']), V2 True (100 epochs), return -268 -> last five 481 (25 batches): learns
+   env/return -268 -179 -119 -86 -86 -38 -23 43 80 133 216 209 313 345 324 335 313 395 386 435 456 504 389 498 556
+local: learns on 3 of 3 seeds; median s per epoch 3.71, 3.69, 3.69
+cross seed 0: V1 True (16 slot lines from ['100.65.224.34']), V2 True (100 epochs), return -274 -> last five 450 (25 batches): learns
+   env/return -274 -191 -157 -149 -163 -81 -57 -23 64 95 107 123 162 232 257 246 268 355 390 449 413 394 408 481 555
+cross seed 1: V1 True (16 slot lines from ['100.65.224.34']), V2 True (100 epochs), return -274 -> last five 463 (25 batches): learns
+   env/return -274 -214 -195 -168 -146 -117 -102 -36 -41 9 30 114 156 139 220 310 339 324 339 430 338 483 446 571 477
+cross seed 2: V1 True (16 slot lines from ['100.65.224.34']), V2 True (100 epochs), return -244 -> last five 496 (25 batches): learns
+   env/return -244 -202 -158 -141 -72 -90 -33 69 65 112 126 145 251 199 311 316 244 395 416 460 482 420 495 540 542
+cross: learns on 3 of 3 seeds; median s per epoch 23.68, 24.62, 22.42
+
+P1 (local learns on >= 2 of 3): holds
+P2 (cross learns on >= 2 of 3): holds
