@@ -15,7 +15,10 @@ import pathlib
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
-ENVS = {"pendulum": (102_400, 6_400), "halfcheetah": (409_600, 25_600)}  # steps, vector steps
+ENVS = {
+    "pendulum": (102_400, 6_400),
+    "halfcheetah": (409_600, 25_600),
+}  # steps, vector steps
 SEEDS = (0, 1, 2)
 
 
@@ -39,7 +42,9 @@ def main() -> int:
             a, b = (root / f"{env}-{arm}-seed{seed}" for arm in ("inprocess", "bridge"))
             ra, rb = (json.loads((r / "result.json").read_text()) for r in (a, b))
             complete = ra["steps"] == rb["steps"] == steps and rb.get("client_rc") == 0
-            log = (root / f"{env}-bridge-seed{seed}.log").read_text(encoding="utf-8", errors="replace")
+            log = (root / f"{env}-bridge-seed{seed}.log").read_text(
+                encoding="utf-8", errors="replace"
+            )
             slots = log.count("plugrl-bridges: slots 0-15 <-")
             same_weights = ra["weights_sha256"] == rb["weights_sha256"]
             ma, mb = monitor(a), monitor(b)
@@ -66,7 +71,14 @@ def main() -> int:
                 f"slots lines {slots}"
             )
     print("\n".join(rows) + "\n")
-    for name, ok in (("V1", v1), ("V2", v2), ("P1", p1), ("P2", p2), ("P3", p3), ("P4", p4)):
+    for name, ok in (
+        ("V1", v1),
+        ("V2", v2),
+        ("P1", p1),
+        ("P2", p2),
+        ("P3", p3),
+        ("P4", p4),
+    ):
         print(f"{name}: {'holds' if ok else 'FAILS'}")
     return 0
 
