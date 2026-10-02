@@ -7,6 +7,7 @@ import websockets.frames
 import uuid
 
 from plugrl_protocol import msgpack_numpy
+from plugrl_protocol.reuse import REUSE_FEEDBACK_OBS, ObservationCache, ReuseError
 from plugrl_protocol.websocket_protocol import (
     SERVER_RESYNC_REASON,
     SERVER_STOP_REASON,
@@ -117,7 +118,9 @@ class WebSocketAgentServer:
         # SPEC.md section 5.1: the client reads this before it can send
         # anything, so it is the only place it can learn the action shape
         # without being told out of band. Anything the caller passes wins.
-        self._metadata = build_server_metadata(algorithm, extra=metadata)
+        self._metadata = build_server_metadata(
+            algorithm, extra=metadata, features=(REUSE_FEEDBACK_OBS,)
+        )
 
         self._inference = InferenceCoordinator(
             stopping_error_factory=ServerStoppingError,
@@ -145,6 +148,9 @@ class WebSocketAgentServer:
         # happened since; see _trains_on.
         self._policy_version = 0
         self._discarded_frames = 0
+        # Infer rows a client left out because this server held them (SPEC.md
+        # section 10.1): how much of the feature is in use.
+        self._reused_observations = 0
 
         self._total_connections = 0
         self._infer_wait_start: float | None = None
@@ -276,16 +282,26 @@ class WebSocketAgentServer:
             terminated_map: dict = {}
             truncated_map: dict = {}
             last_obs_map: dict = {}
+            # What each env's last feedback here lets its next infer reuse.
+            observations = ObservationCache()
             while True:
                 packed_infer_msg = await websocket.recv()
                 infer_payload = msgpack_numpy.unpackb(packed_infer_msg)
                 try:
                     infer_msg = parse_infer_request(infer_payload)
-                except (KeyError, ProtocolValidationError) as exc:
+                    # SPEC.md section 10.1: a row marked in `reuse` sent no
+                    # observation, and is its env's last feedback `obs`. The
+                    # policy and the algorithm see the full batch either way.
+                    obs = observations.complete(
+                        infer_msg.env_indices, infer_msg.data, infer_msg.reuse
+                    )
+                except (KeyError, ProtocolValidationError, ReuseError) as exc:
                     await self._close_for_protocol_error(websocket, exc)
                     break
+                if infer_msg.reuse is not None:
+                    self._reused_observations += int(np.sum(infer_msg.reuse))
 
-                obs, env_ids = infer_msg.data, infer_msg.env_indices
+                env_ids = infer_msg.env_indices
 
                 req_id = f"{session_id}-{uuid.uuid4()}"
                 response_future = await self._inference.register_request(req_id)
@@ -348,6 +364,12 @@ class WebSocketAgentServer:
                 except (KeyError, ProtocolValidationError) as exc:
                     await self._close_for_protocol_error(websocket, exc)
                     break
+                observations.on_feedback(
+                    feedback_msg.env_indices,
+                    feedback_msg.data.obs,
+                    feedback_msg.data.terminated,
+                    feedback_msg.data.truncated,
+                )
 
                 fb_env_ids = feedback_msg.env_indices
                 reward_list = feedback_msg.data.rewards
@@ -515,6 +537,7 @@ class WebSocketAgentServer:
             server=dict(
                 total_connections=self._total_connections,
                 discarded_frames=self._discarded_frames,
+                reused_observations=self._reused_observations,
             ),
             **self._runtime_metric_tracker.as_metrics(),
         )

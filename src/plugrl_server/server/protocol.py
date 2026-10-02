@@ -35,6 +35,8 @@ class InferRequestMessage:
     data: Any
     env_indices: Any
     step_ids: Any
+    # SPEC.md section 10.1: which rows send no observation. None without it.
+    reuse: Any = None
 
 
 @dataclass(frozen=True)
@@ -59,6 +61,7 @@ def parse_infer_request(payload: dict[str, Any]) -> InferRequestMessage:
         data=payload["data"],
         env_indices=payload["env_indices"],
         step_ids=payload["step_ids"],
+        reuse=payload.get("reuse"),
     )
 
 

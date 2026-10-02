@@ -100,6 +100,18 @@ class TestItCannotTakeDownARun:
         assert describe_policy(None) == {}
 
 
+class TestFeatures:
+    """SPEC.md section 10: the optional features this server implements."""
+
+    def test_none_listed_means_no_key(self):
+        assert "features" not in build_server_metadata()
+
+    def test_listed_features_are_sent_as_a_list(self):
+        metadata = build_server_metadata(features=("reuse-feedback-obs",))
+
+        assert metadata["features"] == ["reuse-feedback-obs"]
+
+
 class TestCallerWins:
     def test_extra_keys_are_added(self):
         metadata = build_server_metadata(_Algorithm(_Policy(7, 4)), extra={"run": "a1"})
