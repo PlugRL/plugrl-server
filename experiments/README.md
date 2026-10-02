@@ -3,12 +3,12 @@
 PlugRL's claim is that training should not care where its environments run:
 in another process, on another machine, on a machine with no GPU, or in a
 program that is not Python, and whatever trainer is on the other side. These
-fifty experiments test that claim, measure what it costs, and record the
-defects found on the way. Forty-nine have run. E3 has a protocol and no data.
+fifty-two experiments test that claim, measure what it costs, and record the
+defects found on the way. Fifty-one have run. E3 has a protocol and no data.
 
 Each directory has a `FINDINGS.md`: what was asked, what came back, and what
 the result does **not** support. The logs behind it are under `results*/`.
-Forty-three of the experiments that ran have a `PROTOCOL.md` with their
+Forty-five of the experiments that ran have a `PROTOCOL.md` with their
 predictions. Most were written before the data existed; the exceptions
 (E15 was written with its runs in flight) say so. Anything changed after a
 protocol is dated in an `AMENDMENT.md`, not folded into it.
@@ -50,6 +50,8 @@ Stable-Baselines3's `VecEnv`.
 | [`e49-multi-trainer`](e49-multi-trainer/) | And other trainers, through the interface each already has? | **Yes.** RLinf, Stable-Baselines3 and CleanRL each learn, three seeds per cell, a C++ client with no third-party library included. RLinf learns Pendulum late, past E44's budget |
 | [`e50-boundary-transparency`](e50-boundary-transparency/) | Does the boundary change what is learned? | **No.** On one machine, SB3 ends on byte-identical weights whether its environments run in its own process or behind the bridge. The bridge adds 0.37-0.58 ms per vector step |
 | [`e51-episode-accounting`](e51-episode-accounting/) | Do the episode counters these trainers rely on count right? | **Not all.** Gymnasium 1.3's vector `RecordEpisodeStatistics` drops each episode's first reward under SAME_STEP autoreset. CleanRL's logging logs nothing under gymnasium 1.x's default. SB3, the bridge and the env client count right |
+| [`e52-latency-sweep`](e52-latency-sweep/) | Does latency change what is learned? | **No, only the time.** With 0 to 25 ms added each way between client and bridge, every run ends on the in-process weights. Each step costs two one-way delays plus up to 3.1 ms, a little over the predicted band at 25 ms |
+| [`e53-image-observations`](e53-image-observations/) | And with camera frames and a CNN? | **Still the same weights.** SB3's CnnPolicy on Atari frames ends byte-identical in process and through the bridge; 16 frames a step cost 2.6-3.0 ms |
 
 ## What trains through it
 
