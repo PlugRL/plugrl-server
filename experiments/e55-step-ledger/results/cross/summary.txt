@@ -1,0 +1,33 @@
+env         fault                dose   cells   raises     rule   strict  weights   record   bridge
+pendulum    none                 1.0        0      0/1      0/1        -      0/1      0/1      0/1
+pendulum    obs:zero             one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    obs:stale            one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    obs:swap             one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    obs:f16              one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:zero          one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:stale         one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:swap          one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:f16           one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:clip          one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    reward:zero          one        1      0/1      0/1        -      1/1      1/1      0/1
+pendulum    reward:stale         one        1      0/1      0/1        -      1/1      1/1      0/1
+pendulum    reward:swap          one        1      0/1      0/1        -      1/1      1/1      0/1
+pendulum    reward:f16           one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:zero       one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:stale      one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:swap       one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:f16        one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    terminated:spurious  one        1      0/1      0/1        -      1/1      1/1      0/1
+pendulum    truncated:drop       one        1      0/1      0/1        -      1/1      1/1      0/1
+pendulum    truncated:as-term    one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    step:fill            one        1      0/1      0/1        -      1/1      1/1      0/1
+pendulum    log:drop-first       one        1      0/1      0/1        -      0/1      1/1      1/1
+pendulum    log:short            one        1      0/1      0/1        -      0/1      1/1      1/1
+
+share of runs caught, by dose (runs with a changed cell; either = weights or record)
+  pendulum    client one    n= 21  raises 0.0  rule 0.0  strict   weights 1.0  record 0.286  bridge 0.0  either 1.0
+  pendulum    log    one    n=  2  raises 0.0  rule 0.0  strict   weights 0.0  record 1.0  bridge 1.0  either 1.0
+  pendulum    all    one    n= 23  raises 0.0  rule 0.0  strict   weights 0.913  record 0.348  bridge 0.087  either 1.0
+
+pendulum none at seed 0: d7a19cc0, E50's ec5b8226: DIFFERENT
+incomplete without an error: [('pendulum', 'action:clip', 'one', 0), ('pendulum', 'action:f16', 'one', 0), ('pendulum', 'action:stale', 'one', 0), ('pendulum', 'action:swap', 'one', 0), ('pendulum', 'action:zero', 'one', 0), ('pendulum', 'final-obs:f16', 'one', 0), ('pendulum', 'final-obs:stale', 'one', 0), ('pendulum', 'final-obs:swap', 'one', 0), ('pendulum', 'final-obs:zero', 'one', 0), ('pendulum', 'log:drop-first', 'one', 0), ('pendulum', 'log:short', 'one', 0), ('pendulum', 'none', '1.0', 0), ('pendulum', 'obs:f16', 'one', 0), ('pendulum', 'obs:stale', 'one', 0), ('pendulum', 'obs:swap', 'one', 0), ('pendulum', 'obs:zero', 'one', 0), ('pendulum', 'reward:f16', 'one', 0), ('pendulum', 'reward:stale', 'one', 0), ('pendulum', 'reward:swap', 'one', 0), ('pendulum', 'reward:zero', 'one', 0), ('pendulum', 'step:fill', 'one', 0), ('pendulum', 'terminated:spurious', 'one', 0), ('pendulum', 'truncated:as-term', 'one', 0), ('pendulum', 'truncated:drop', 'one', 0)]

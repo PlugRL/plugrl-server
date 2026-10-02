@@ -1,0 +1,89 @@
+env         fault                dose   cells   raises     rule   strict  weights   record   bridge
+pendulum    none                 1.0    0/0/0      0/3      0/3        -      0/3      0/3      0/3
+pendulum    delay-1ms            1.0    0/0/0      0/3      0/3        -      0/3      0/3      0/3
+pendulum    wire-float64         1.0    0/0/0      0/3      0/3        -      0/3      0/3      0/3
+pendulum    obs:zero             0.01   1068/1068/1068      0/3      0/3        -      3/3      0/3      0/3
+pendulum    obs:zero             1.0    102416/102416/102416      0/3      3/3        -      3/3      0/3      0/3
+pendulum    obs:zero             one    1/1/1      0/3      0/3        -      3/3      0/3      0/3
+pendulum    obs:stale            0.01   1068/1068/1068      0/3      0/3        -      3/3      0/3      0/3
+pendulum    obs:stale            1.0    102400/102400/102400      0/3      0/3        -      3/3      0/3      0/3
+pendulum    obs:stale            one    1/1/1      0/3      0/3        -      3/3      0/3      0/3
+pendulum    obs:swap             0.01   1068/1068/1068      0/3      0/3        -      3/3      0/3      0/3
+pendulum    obs:swap             1.0    102416/102416/102416      0/3      3/3        -      3/3      0/3      0/3
+pendulum    obs:swap             one    1/1/1      0/3      0/3        -      3/3      0/3      0/3
+pendulum    obs:f16              0.01   1068/1068/1068      0/3      0/3        -      3/3      0/3      0/3
+pendulum    obs:f16              1.0    102416/102416/102416      0/3      0/3        -      3/3      0/3      0/3
+pendulum    obs:f16              one    1/1/1      0/3      0/3        -      3/3      0/3      0/3
+pendulum    action:zero          0.01   1068/1068/1068      0/3      0/3        -      3/3      0/3      0/3
+pendulum    action:zero          1.0    102400/102400/102400      0/3      3/3        -      3/3      0/3      0/3
+pendulum    action:zero          one    1/1/1      0/3      0/3        -      3/3      0/3      0/3
+pendulum    action:stale         0.01   817/769/802      0/3      0/3        -      3/3      0/3      0/3
+pendulum    action:stale         1.0    77023/74754/78333      0/3      0/3        -      3/3      0/3      0/3
+pendulum    action:stale         one    1/1/1      0/3      0/3        -      3/3      0/3      0/3
+pendulum    action:swap          0.01   976/979/987      0/3      0/3        -      3/3      0/3      0/3
+pendulum    action:swap          1.0    85056/84269/82169      0/3      3/3        -      3/3      0/3      0/3
+pendulum    action:swap          one    1/1/1      0/3      0/3        -      3/3      0/3      0/3
+pendulum    action:f16           0.01   746/707/751      0/3      0/3        -      3/3      0/3      0/3
+pendulum    action:f16           1.0    70086/69306/70621      0/3      0/3        -      3/3      0/3      0/3
+pendulum    action:f16           one    1/1/1      0/3      0/3        -      3/3      0/3      0/3
+pendulum    action:clip          0.01   564/518/529      0/3      0/3        -      3/3      0/3      0/3
+pendulum    action:clip          1.0    63653/63417/58306      0/3      0/3        -      3/3      0/3      0/3
+pendulum    action:clip          one    1/1/1      0/3      0/3        -      3/3      0/3      0/3
+pendulum    reward:zero          0.01   1068/1068/1068      0/3      0/3        -      3/3      3/3      0/3
+pendulum    reward:zero          1.0    102400/102400/102400      0/3      3/3        -      3/3      3/3      0/3
+pendulum    reward:zero          one    1/1/1      0/3      0/3        -      3/3      1/3      0/3
+pendulum    reward:stale         0.01   1068/1068/1068      0/3      0/3        -      3/3      3/3      0/3
+pendulum    reward:stale         1.0    102400/102400/102400      0/3      0/3        -      3/3      3/3      0/3
+pendulum    reward:stale         one    1/1/1      0/3      0/3        -      3/3      1/3      0/3
+pendulum    reward:swap          0.01   1068/1068/1068      0/3      0/3        -      3/3      3/3      0/3
+pendulum    reward:swap          1.0    102400/102400/102400      0/3      3/3        -      3/3      3/3      0/3
+pendulum    reward:swap          one    1/1/1      0/3      0/3        -      3/3      2/3      0/3
+pendulum    reward:f16           0.01   1068/1068/1068      0/3      0/3        -      3/3      0/3      0/3
+pendulum    reward:f16           1.0    102385/102393/102378      0/3      0/3        -      3/3      0/3      0/3
+pendulum    reward:f16           one    1/1/1      0/3      0/3        -      3/3      0/3      0/3
+pendulum    final-obs:zero       0.01   9/9/9      0/3      0/3        -      3/3      0/3      0/3
+pendulum    final-obs:zero       1.0    512/512/512      0/3      0/3        -      3/3      0/3      0/3
+pendulum    final-obs:zero       one    1/1/1      0/3      0/3        -      3/3      0/3      0/3
+pendulum    final-obs:stale      0.01   9/9/9      0/3      0/3        -      3/3      0/3      0/3
+pendulum    final-obs:stale      1.0    512/512/512      0/3      0/3        -      3/3      0/3      0/3
+pendulum    final-obs:stale      one    1/1/1      0/3      0/3        -      3/3      0/3      0/3
+pendulum    final-obs:swap       0.01   9/9/9      0/3      0/3        -      3/3      0/3      0/3
+pendulum    final-obs:swap       1.0    512/512/512      0/3      0/3        -      3/3      0/3      0/3
+pendulum    final-obs:swap       one    1/1/1      0/3      0/3        -      3/3      0/3      0/3
+pendulum    final-obs:f16        0.01   9/9/9      0/3      0/3        -      3/3      0/3      0/3
+pendulum    final-obs:f16        1.0    512/512/512      0/3      0/3        -      3/3      0/3      0/3
+pendulum    final-obs:f16        one    1/1/1      0/3      0/3        -      3/3      0/3      0/3
+pendulum    terminated:spurious  0.01   1068/1068/1068      0/3      3/3        -      3/3      3/3      0/3
+pendulum    terminated:spurious  1.0    102400/102400/102400      0/3      3/3        -      3/3      3/3      0/3
+pendulum    terminated:spurious  one    1/1/1      0/3      0/3        -      3/3      3/3      0/3
+pendulum    truncated:drop       0.01   9/9/9      0/3      0/3        -      3/3      3/3      0/3
+pendulum    truncated:drop       1.0    512/512/512      0/3      3/3        -      3/3      3/3      0/3
+pendulum    truncated:drop       one    1/1/1      0/3      0/3        -      3/3      3/3      0/3
+pendulum    truncated:as-term    0.01   9/9/9      0/3      0/3        -      3/3      0/3      0/3
+pendulum    truncated:as-term    1.0    512/512/512      0/3      0/3        -      3/3      0/3      0/3
+pendulum    truncated:as-term    one    1/1/1      0/3      0/3        -      3/3      0/3      0/3
+pendulum    step:fill            0.01   1068/1068/1068      0/3      0/3        -      3/3      3/3      0/3
+pendulum    step:fill            1.0    102400/102400/102400      0/3      3/3        -      3/3      0/3      0/3
+pendulum    step:fill            one    1/1/1      0/3      0/3        -      3/3      3/3      0/3
+pendulum    log:drop-first       0.01   2/2/2      0/3      0/3        -      0/3      3/3      3/3
+pendulum    log:drop-first       1.0    512/512/512      0/3      0/3        -      0/3      3/3      3/3
+pendulum    log:drop-first       one    1/1/1      0/3      0/3        -      0/3      3/3      3/3
+pendulum    log:short            0.01   2/2/2      0/3      0/3        -      0/3      3/3      3/3
+pendulum    log:short            1.0    512/512/512      0/3      0/3        -      0/3      3/3      3/3
+pendulum    log:short            one    1/1/1      0/3      0/3        -      0/3      3/3      3/3
+
+share of runs caught, by dose (runs with a changed cell; either = weights or record)
+  pendulum    client one    n= 63  raises 0.0  rule 0.0  strict   weights 1.0  record 0.206  bridge 0.0  either 1.0
+  pendulum    client 0.01   n= 63  raises 0.0  rule 0.048  strict   weights 1.0  record 0.286  bridge 0.0  either 1.0
+  pendulum    client 1.0    n= 63  raises 0.0  rule 0.429  strict   weights 1.0  record 0.238  bridge 0.0  either 1.0
+  pendulum    log    one    n=  6  raises 0.0  rule 0.0  strict   weights 0.0  record 1.0  bridge 1.0  either 1.0
+  pendulum    log    0.01   n=  6  raises 0.0  rule 0.0  strict   weights 0.0  record 1.0  bridge 1.0  either 1.0
+  pendulum    log    1.0    n=  6  raises 0.0  rule 0.0  strict   weights 0.0  record 1.0  bridge 1.0  either 1.0
+  pendulum    all    one    n= 69  raises 0.0  rule 0.0  strict   weights 0.913  record 0.275  bridge 0.087  either 1.0
+  pendulum    all    0.01   n= 69  raises 0.0  rule 0.043  strict   weights 0.913  record 0.348  bridge 0.087  either 1.0
+  pendulum    all    1.0    n= 69  raises 0.0  rule 0.391  strict   weights 0.913  record 0.304  bridge 0.087  either 1.0
+
+pendulum none at seed 0: ec5b8226, E50's ec5b8226: same
+pendulum none at seed 1: 062e92e3, E50's 062e92e3: same
+pendulum none at seed 2: 3a8d968f, E50's 3a8d968f: same
+incomplete without an error: none

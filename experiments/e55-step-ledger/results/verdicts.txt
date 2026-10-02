@@ -1,0 +1,7 @@
+V1: holds - 216 of 216 same-machine and 24 of 24 cross-machine runs complete
+V2: holds - none: {'0': 'ec5b8226', '1': '062e92e3', '2': '3a8d968f'}
+P1: holds - caught and right in 189 of 189 client-fault runs
+P2: holds - no difference in 30 of 30 control and log-fault runs
+P3: holds - caught and right in 21 of 21 cross-machine client-fault runs (21 faults); none differs: ['0']
+P4: holds - across machines none ended on ['d7a19cc0'], guangzhao's on ec5b8226
+P5: holds - ledger or record caught 207 of 207 same-machine and 23 of 23 cross-machine runs with a changed value
