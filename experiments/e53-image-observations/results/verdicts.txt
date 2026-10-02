@@ -1,0 +1,8 @@
+seed 0: weights same (82f80c02616b / 82f80c02616b), 183 episodes same, episode log agrees; 67.4 s vs 75.0 s (+11%, 2.99 ms per vector step)
+seed 1: weights same (60acba42dad3 / 60acba42dad3), 176 episodes same, episode log agrees; 69.6 s vs 76.2 s (+10%, 2.60 ms per vector step)
+seed 2: weights same (6bf04095eb14 / 6bf04095eb14), 183 episodes same, episode log agrees; 68.1 s vs 75.8 s (+11%, 2.98 ms per vector step)
+
+V1: holds
+P1: holds
+P2: holds
+P3: holds

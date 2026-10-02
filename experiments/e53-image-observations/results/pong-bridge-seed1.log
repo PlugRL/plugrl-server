@@ -1,0 +1,4 @@
+A.L.E: Arcade Learning Environment (version 0.12.1+8a8fafb)
+[Powered by Stella]
+plugrl-bridges: slots 0-15 <- ('127.0.0.1', 49294)
+{"env": "ALE/Pong-v5", "arm": "bridge", "seed": 1, "weights_sha256": "60acba42dad30f0cc497681237ee46bbc236d2374ad6502a6c65381ad2e0ddec", "learn_s": 76.244, "steps": 40960, "steps_per_s": 537.2, "observation_space": "Box(0, 255, (84, 84, 4), uint8)", "torch": "2.14.1+cpu", "client_rc": 0}
