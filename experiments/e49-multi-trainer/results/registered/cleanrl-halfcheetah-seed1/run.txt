@@ -1,0 +1,6 @@
+start 2026-10-02 03:33:06
+trainer cleanrl env halfcheetah seed 1 steps 409600 port 8810
+trainer rc=0 at 03:34:23
+clients stopped
+end   2026-10-02 03:34:28
+RUN_DONE

@@ -1,0 +1,6 @@
+start 2026-10-02 03:28:20
+trainer sb3 env halfcheetah seed 1 steps 409600 port 8810
+trainer rc=0 at 03:29:57
+clients stopped
+end   2026-10-02 03:30:02
+RUN_DONE

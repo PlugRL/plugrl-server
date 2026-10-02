@@ -1,0 +1,6 @@
+start 2026-10-02 03:25:10
+trainer sb3 env pendulum seed 0 steps 102400 port 8810
+trainer rc=0 at 03:25:34
+clients stopped
+end   2026-10-02 03:25:39
+RUN_DONE
