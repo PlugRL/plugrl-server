@@ -89,7 +89,9 @@ def cleanrl_logging(mode):
         if "final_info" in infos:
             for info in infos["final_info"]:
                 if info and "episode" in info:
-                    logged.append((float(info["episode"]["r"]), int(info["episode"]["l"])))
+                    logged.append(
+                        (float(info["episode"]["r"]), int(info["episode"]["l"]))
+                    )
     return logged
 
 
@@ -106,7 +108,11 @@ def sb3_vec_monitor():
     got = []
     for _ in range(EPISODES * LENGTH):
         *_, infos = env.step(actions(N))
-        got += [(float(i["episode"]["r"]), int(i["episode"]["l"])) for i in infos if "episode" in i]
+        got += [
+            (float(i["episode"]["r"]), int(i["episode"]["l"]))
+            for i in infos
+            if "episode" in i
+        ]
     return got
 
 
@@ -121,7 +127,11 @@ def sb3_monitor():
     got = []
     for _ in range(EPISODES * LENGTH):
         *_, infos = env.step(actions(N))
-        got += [(float(i["episode"]["r"]), int(i["episode"]["l"])) for i in infos if "episode" in i]
+        got += [
+            (float(i["episode"]["r"]), int(i["episode"]["l"]))
+            for i in infos
+            if "episode" in i
+        ]
     return got
 
 
@@ -129,7 +139,10 @@ def sb3_monitor():
 
 
 def _client(port: int):
-    env = dict(os.environ, PYTHONPATH=os.pathsep.join([str(HERE), os.environ.get("PYTHONPATH", "")]))
+    env = dict(
+        os.environ,
+        PYTHONPATH=os.pathsep.join([str(HERE), os.environ.get("PYTHONPATH", "")]),
+    )
     client = HERE.parent / "e50-boundary-transparency" / "gym_client.py"
     return subprocess.Popen(
         [sys.executable, str(client), "--port", str(port), "--num-envs", str(N),
@@ -159,7 +172,11 @@ def bridges_sb3(port: int):
     got = []
     for _ in range(EPISODES * LENGTH):
         *_, infos = env.step(actions(N))
-        got += [(float(i["episode"]["r"]), int(i["episode"]["l"])) for i in infos if "episode" in i]
+        got += [
+            (float(i["episode"]["r"]), int(i["episode"]["l"]))
+            for i in infos
+            if "episode" in i
+        ]
     env.close()
     client.wait(timeout=30)
     return {"VecMonitor": got, "episode log": _episode_log(log)}
@@ -273,14 +290,21 @@ def run(name: str, fn, expected):
             match = (
                 not isinstance(value, str)
                 and len(value) == len(expected)
-                and all(abs(r - er) < 1e-4 and n == en for (r, n), (er, en) in zip(value, expected))
+                and all(
+                    abs(r - er) < 1e-4 and n == en
+                    for (r, n), (er, en) in zip(value, expected)
+                )
             )
         ok = ok and match is not False
         label = f"{name} {part}".strip()
         print(f"{label}: {value}")
     if detail:
         print(f"      {detail}")
-    verdict = "reported" if expected is None else ("as predicted" if ok else "NOT as predicted")
+    verdict = (
+        "reported"
+        if expected is None
+        else ("as predicted" if ok else "NOT as predicted")
+    )
     print(f"   -> {verdict}\n")
     return ok
 
@@ -290,7 +314,10 @@ def main() -> int:
     p.add_argument("--port", type=int, default=8830)
     p.add_argument(
         "--env-client-src",
-        default=os.environ.get("PLUGRL_ENV_CLIENT_SRC", "D:/75128/Desktop/plugrl-work/plugrl-env-client/src"),
+        default=os.environ.get(
+            "PLUGRL_ENV_CLIENT_SRC",
+            "D:/75128/Desktop/plugrl-work/plugrl-env-client/src",
+        ),
     )
     a = p.parse_args()
     src = pathlib.Path(a.env_client_src)
@@ -302,14 +329,24 @@ def main() -> int:
         "P3": run("C per-env wrapper, NEXT_STEP", lambda: per_env_wrapper(NEXT), RIGHT)
         & run("D per-env wrapper, SAME_STEP", lambda: per_env_wrapper(SAME), RIGHT),
         "P4": run("E CleanRL logging, NEXT_STEP", lambda: cleanrl_logging(NEXT), [])
-        & run("F CleanRL logging, SAME_STEP", lambda: cleanrl_logging(SAME), "raised TypeError"),
+        & run(
+            "F CleanRL logging, SAME_STEP",
+            lambda: cleanrl_logging(SAME),
+            "raised TypeError",
+        ),
         "P5": run("G SB3 VecMonitor", sb3_vec_monitor, RIGHT)
         & run("H SB3 Monitor", sb3_monitor, RIGHT)
         & run("I plugrl-bridges sb3", lambda: bridges_sb3(a.port), RIGHT)
         & run("J plugrl-bridges gym", lambda: bridges_gym(a.port + 1), RIGHT)
-        & run("K env-client wrapper, its runner", lambda: env_client_runner(src), RIGHT),
+        & run(
+            "K env-client wrapper, its runner", lambda: env_client_runner(src), RIGHT
+        ),
     }
-    run("reported: env-client wrapper, SyncVectorEnv, no resets", lambda: env_client_no_resets(src), None)
+    run(
+        "reported: env-client wrapper, SyncVectorEnv, no resets",
+        lambda: env_client_no_resets(src),
+        None,
+    )
     for name, ok in verdicts.items():
         print(f"{name}: {'holds' if ok else 'FAILS'}")
     return 0
