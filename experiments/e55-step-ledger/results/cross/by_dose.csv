@@ -1,0 +1,4 @@
+env,kind,dose,runs,raises,rule,strict,weights,record,bridge,either
+pendulum,client,one,21,0.0,0.0,,1.0,0.286,0.0,1.0
+pendulum,log,one,2,0.0,0.0,,0.0,1.0,1.0,1.0
+pendulum,all,one,23,0.0,0.0,,0.913,0.348,0.087,1.0
