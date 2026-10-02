@@ -46,6 +46,32 @@ jobs:
       - name: Test
         run: uv run pytest -q
 
+      # plugrl-protocol's server checker against this server, from the
+      # client's side of the wire: every server clause of SPEC.md section 8.2,
+      # and reuse-feedback-obs (10.1), which this server offers. The tests
+      # above check the server's parts; this checks what a client sees.
+      - name: Start a server for the conformance checker
+        run: |
+          mkdir -p /tmp/conformance
+          uv run plugrl-run-server dummy-policy default dummy default \
+            --host 127.0.0.1 --port 8000 --policy.device cpu \
+            --checkpoint-base-dir /tmp/conformance/ck \
+            --no-show-progress-bar --no-show-metric-table \
+            > /tmp/conformance/server.log 2>&1 &
+          for i in $(seq 180); do
+            grep -q "is listening on" /tmp/conformance/server.log && exit 0
+            sleep 1
+          done
+          cat /tmp/conformance/server.log
+          exit 1
+
+      - name: Grade it against SPEC.md
+        run: uv run plugrl-conformance-server --port 8000 --until-stop
+
+      - name: The server's log
+        if: always()
+        run: cat /tmp/conformance/server.log || true
+
   harness:
     # The sweep harness has no dependencies beyond the standard library, so it
     # tests on its own rather than waiting for a torch install.

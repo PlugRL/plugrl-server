@@ -2,13 +2,13 @@
 
 PlugRL's claim is that training should not care where its environments run:
 in another process, on another machine, on a machine with no GPU, or in a
-program that is not Python. These forty-five experiments test that claim,
-measure what it costs, and record the defects found on the way. Forty-four
+program that is not Python. These forty-six experiments test that claim,
+measure what it costs, and record the defects found on the way. Forty-five
 have run. E3 has a protocol and no data.
 
 Each directory has a `FINDINGS.md`: what was asked, what came back, and what
 the result does **not** support. The logs behind it are under `results*/`.
-Thirty-eight of the experiments that ran have a `PROTOCOL.md` with their
+Thirty-nine of the experiments that ran have a `PROTOCOL.md` with their
 predictions. Most were written before the data existed; the exceptions
 (E15 was written with its runs in flight) say so. Anything changed after a
 protocol is dated in an `AMENDMENT.md`, not folded into it.
