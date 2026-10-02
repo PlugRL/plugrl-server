@@ -1,0 +1,118 @@
+fault,dose,seed,cells,injected,found,right
+action:clip,0.001,9,62,110/3,110/3 rewards,1
+action:clip,0.01,9,570,5/7,5/7 rewards,1
+action:clip,0.1,9,5586,0/2,0/2 rewards,1
+action:clip,1.0,9,65640,0/2,0/2 rewards,1
+action:clip,one,9,0,,identical,1
+action:f16,0.001,9,78,184/1,184/1 nexts,1
+action:f16,0.01,9,709,50/10,50/10 nexts,1
+action:f16,0.1,9,6964,0/2,0/2 rewards,1
+action:f16,1.0,9,64943,0/0,0/2 rewards,0
+action:f16,one,9,1,3199/0,3199/0 rewards,1
+action:stale,0.001,9,88,184/1,184/1 rewards,1
+action:stale,0.01,9,784,50/10,50/10 rewards,1
+action:stale,0.1,9,7428,0/2,0/2 rewards,1
+action:stale,1.0,9,75433,0/0,0/0 rewards,1
+action:stale,one,9,1,3199/0,3199/0 rewards,1
+action:swap,0.001,9,99,110/3,110/3 nexts,1
+action:swap,0.01,9,969,5/7,5/7 rewards,1
+action:swap,0.1,9,9468,0/2,0/2 rewards,1
+action:swap,1.0,9,87162,0/0,0/0 rewards,1
+action:swap,one,9,1,3199/0,3199/0 rewards,1
+action:zero,0.001,9,110,110/3,110/3 rewards,1
+action:zero,0.01,9,1068,5/7,5/7 rewards,1
+action:zero,0.1,9,10296,0/2,0/2 rewards,1
+action:zero,1.0,9,102400,0/0,0/0 rewards,1
+action:zero,one,9,1,3199/0,3199/0 rewards,1
+delay-1ms,1.0,9,0,,identical,1
+final-obs:f16,0.001,9,1,4599/8,4599/8 finals,1
+final-obs:f16,0.01,9,9,199/12,199/12 finals,1
+final-obs:f16,0.1,9,55,199/12,199/12 finals,1
+final-obs:f16,1.0,9,512,199/0,199/0 finals,1
+final-obs:f16,one,9,1,3199/0,3199/0 finals,1
+final-obs:stale,0.001,9,1,4599/8,4599/8 finals,1
+final-obs:stale,0.01,9,9,199/12,199/12 finals,1
+final-obs:stale,0.1,9,55,199/12,199/12 finals,1
+final-obs:stale,1.0,9,512,199/0,199/0 finals,1
+final-obs:stale,one,9,1,3199/0,3199/0 finals,1
+final-obs:swap,0.001,9,1,4599/8,4599/8 finals,1
+final-obs:swap,0.01,9,9,199/12,199/12 finals,1
+final-obs:swap,0.1,9,55,199/12,199/12 finals,1
+final-obs:swap,1.0,9,512,199/0,199/0 finals,1
+final-obs:swap,one,9,1,3199/0,3199/0 finals,1
+final-obs:zero,0.001,9,1,4599/8,4599/8 finals,1
+final-obs:zero,0.01,9,9,199/12,199/12 finals,1
+final-obs:zero,0.1,9,55,199/12,199/12 finals,1
+final-obs:zero,1.0,9,512,199/0,199/0 finals,1
+final-obs:zero,one,9,1,3199/0,3199/0 finals,1
+log:drop-first,0.001,9,0,,identical,1
+log:drop-first,0.01,9,2,,identical,1
+log:drop-first,0.1,9,55,,identical,1
+log:drop-first,1.0,9,512,,identical,1
+log:drop-first,one,9,1,,identical,1
+log:short,0.001,9,0,,identical,1
+log:short,0.01,9,2,,identical,1
+log:short,0.1,9,55,,identical,1
+log:short,1.0,9,512,,identical,1
+log:short,one,9,1,,identical,1
+obs:f16,0.001,9,110,110/3,109/3 nexts,1
+obs:f16,0.01,9,1068,5/7,4/7 nexts,1
+obs:f16,0.1,9,10297,0/2,-1/2 nexts,1
+obs:f16,1.0,9,102416,0/0,-1/0 nexts,1
+obs:f16,one,9,1,3199/0,3198/0 nexts,1
+obs:stale,0.001,9,110,110/3,109/3 nexts,1
+obs:stale,0.01,9,1068,5/7,4/7 nexts,1
+obs:stale,0.1,9,10295,1/7,0/7 nexts,1
+obs:stale,1.0,9,102400,1/0,0/0 nexts,1
+obs:stale,one,9,1,3199/0,3198/0 nexts,1
+obs:swap,0.001,9,110,110/3,109/3 nexts,1
+obs:swap,0.01,9,1068,5/7,4/7 nexts,1
+obs:swap,0.1,9,10297,0/2,-1/2 nexts,1
+obs:swap,1.0,9,102416,0/0,-1/0 nexts,1
+obs:swap,one,9,1,3199/0,3198/0 nexts,1
+obs:zero,0.001,9,110,110/3,109/3 nexts,1
+obs:zero,0.01,9,1068,5/7,4/7 nexts,1
+obs:zero,0.1,9,10297,0/2,-1/2 nexts,1
+obs:zero,1.0,9,102416,0/0,-1/0 nexts,1
+obs:zero,one,9,1,3199/0,3198/0 nexts,1
+reward:f16,0.001,9,110,110/3,110/3 rewards,1
+reward:f16,0.01,9,1068,5/7,5/7 rewards,1
+reward:f16,0.1,9,10295,0/2,0/2 rewards,1
+reward:f16,1.0,9,102388,0/0,0/0 rewards,1
+reward:f16,one,9,1,3199/0,3199/0 rewards,1
+reward:stale,0.001,9,110,110/3,110/3 rewards,1
+reward:stale,0.01,9,1068,5/7,5/7 rewards,1
+reward:stale,0.1,9,10296,0/2,0/2 rewards,1
+reward:stale,1.0,9,102400,0/0,0/0 rewards,1
+reward:stale,one,9,1,3199/0,3199/0 rewards,1
+reward:swap,0.001,9,110,110/3,110/3 rewards,1
+reward:swap,0.01,9,1068,5/7,5/7 rewards,1
+reward:swap,0.1,9,10296,0/2,0/2 rewards,1
+reward:swap,1.0,9,102400,0/0,0/0 rewards,1
+reward:swap,one,9,1,3199/0,3199/0 rewards,1
+reward:zero,0.001,9,110,110/3,110/3 rewards,1
+reward:zero,0.01,9,1068,5/7,5/7 rewards,1
+reward:zero,0.1,9,10296,0/2,0/2 rewards,1
+reward:zero,1.0,9,102400,0/0,0/0 rewards,1
+reward:zero,one,9,1,3199/0,3199/0 rewards,1
+step:fill,0.001,9,110,110/3,110/3 rewards,1
+step:fill,0.01,9,1068,5/7,5/7 rewards,1
+step:fill,0.1,9,10296,0/2,0/2 rewards,1
+step:fill,1.0,9,102400,0/0,0/0 rewards,1
+step:fill,one,9,1,3199/0,3199/0 rewards,1
+terminated:spurious,0.001,9,110,110/3,110/3 ends,1
+terminated:spurious,0.01,9,1068,5/7,5/7 ends,1
+terminated:spurious,0.1,9,10296,0/2,0/2 ends,1
+terminated:spurious,1.0,9,102400,0/0,0/0 ends,1
+terminated:spurious,one,9,1,3199/0,3199/0 truncs,0
+truncated:as-term,0.001,9,1,4599/8,4599/8 truncs,1
+truncated:as-term,0.01,9,9,199/12,199/12 truncs,1
+truncated:as-term,0.1,9,55,199/12,199/12 truncs,1
+truncated:as-term,1.0,9,512,199/0,199/0 truncs,1
+truncated:as-term,one,9,1,3199/0,3199/0 truncs,1
+truncated:drop,0.001,9,1,4599/8,4599/8 ends,1
+truncated:drop,0.01,9,9,199/12,199/12 ends,1
+truncated:drop,0.1,9,55,199/12,199/12 ends,1
+truncated:drop,1.0,9,512,199/0,199/0 ends,1
+truncated:drop,one,9,1,3199/0,3199/0 ends,1
+wire-float64,1.0,9,0,,identical,1

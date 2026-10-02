@@ -1,0 +1,33 @@
+fault               seed  learns(log)        weights   record    bridge-log  really learns      episodes  time
+none                   9  pass      +544   -680  pass   3721266c  pass      pass        yes   +544   -680       512   17.6
+delay-1ms              9  pass      +544   -680  pass   3721266c  pass      pass        yes   +544   -680       512   26.3
+wire-float64           9  pass      +544   -680  pass   3721266c  pass      pass        yes   +544   -680       512   17.8
+obs-float16            9  pass     +1010   -213  CAUGHT 216cc106  pass      pass        yes  +1010   -213       512   17.6
+obs-stale              9  pass     +1039   -199  CAUGHT ae8dc584  pass      pass        yes  +1039   -199       512   18.0
+reset-obs-terminal     9  pass      +999   -233  CAUGHT 398a2869  pass      pass        yes   +999   -233       512   18.0
+trunc-as-term          9  pass     +1025   -209  CAUGHT dd054830  pass      pass        yes  +1025   -209       512   17.4
+action-clip            9  pass      +820   -395  CAUGHT e1084bea  pass      pass        yes   +820   -395       512   17.4
+reward-first-zero      9  pass     +1015   -213  CAUGHT a3098bd2  CAUGHT    pass        yes  +1015   -216       512   17.6
+reward-late            9  pass     +1022   -207  CAUGHT 82ee3cdd  CAUGHT    pass        yes  +1025   -207       512   17.4
+reward-slot-shift      9  CAUGHT     +75  -1181  CAUGHT 4d7817df  CAUGHT    pass        NO     +75  -1181       512   17.4
+fill-missing           9  pass     +1022   -203  CAUGHT 2411515c  CAUGHT    pass        yes  +1022   -203       511   17.6
+log-drop-first         9  pass      +544   -676  pass   3721266c  CAUGHT    CAUGHT      yes   +544   -680       512   17.7
+
+caught on how many seeds, of 1
+fault               learns  weights  record  bridge-log
+none                     0        0       0           0
+delay-1ms                0        0       0           0
+wire-float64             0        0       0           0
+obs-float16              0        1       0           0
+obs-stale                0        1       0           0
+reset-obs-terminal       0        1       0           0
+trunc-as-term            0        1       0           0
+action-clip              0        1       0           0
+reward-first-zero        0        1       1           0
+reward-late              0        1       1           0
+reward-slot-shift        1        1       1           0
+fill-missing             0        1       1           0
+log-drop-first           0        0       1           1
+
+none at seed 9: 3721266c, E50's 3721266c: same
+all complete: True
