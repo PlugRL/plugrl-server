@@ -1,0 +1,27 @@
+{
+  "exp_name": "e46-v1a",
+  "process_id": 0,
+  "total_processes": null,
+  "completed_episodes": 40,
+  "total_episode_count": 40,
+  "metric_window": 100,
+  "mean_return": -245.61679077148438,
+  "mean_success_rate": 0.0,
+  "timing": {
+    "env_steps": 40960,
+    "infer_calls": 40960,
+    "feedback_calls": 40960,
+    "infer_wait_s": 89.67702059494331,
+    "infer_obs_pack_s": 0.5691729979589581,
+    "env_step_s": 3.562385417521,
+    "feedback_s": 3.0168544575572014,
+    "feedback_obs_pack_s": 0.7316474937833846,
+    "feedback_info_pack_s": 0.11927765794098377,
+    "collect_time_s": 96.82543346798047,
+    "effective_fps": 423.02934810558014,
+    "infer_wait_frac": 0.9261721572834364,
+    "infer_obs_pack_frac": 0.005878341852682538,
+    "env_step_frac": 0.036791835470574547,
+    "feedback_frac": 0.031157665393306555
+  }
+}

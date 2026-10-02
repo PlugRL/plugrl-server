@@ -1,0 +1,61 @@
+E46 pilot, 2026-10-01 18:00-18:13 EDT, before PROTOCOL.md
+
+Machines
+  server   guangzhao, as in E43 (24 cores, CPU only; load average 0.45 before the pilot)
+  client   the E43 Windows 11 laptop, on Cornell's network at 10.48.165.215
+  link     Tailscale. Before any traffic: "via DERP(nyc) in 19ms, direct connection not
+           established". After the first transfer: "active; direct 128.84.216.41:41641",
+           tailscale ping 8 ms. E43's path was guangzhao seeing the laptop at
+           10.48.91.111:41641 on the campus LAN; today's goes to guangzhao's public address.
+  code     plugrl-protocol#11 4c877bc (src copied to guangzhao:~/zuogou/plugrl/e46/protocol-src)
+           plugrl-server#109 75be7a8 (server-src), plugrl-env-client#16 bb890c7 (client-src)
+           laid over guangzhao's E43 venvs with PYTHONPATH:
+           mujoco 3.14.0, gymnasium 1.3.0, torch 2.7.1+cpu, numpy 2.3.2
+           laptop bench client: Python 3.11 venv with msgpack and websockets 15
+
+Bench client self-test on the laptop, 200 exchanges against the passive checker
+offering reuse-feedback-obs: v1 and v2 at 184 KiB and v2 with states only all
+"no violations"; v2's 199 reusing infers all "ok 10.1 a client reuses only an
+observation the server holds". v2's infer frame 374 bytes against v1's 188,630.
+
+Throughput, laptop -> guangzhao, 16 MiB each: 20.2  19.1  19.4 MB/s
+
+Ladder, 100 exchanges, one repetition (results/pilot-ladder.tsv), mean ms per exchange
+  rung  arm  payload   rtt      infer bytes  feedback bytes
+  lo    v1   state     0.170       361          539
+  lo    v2   state     0.254       269          539
+  ts    v1   state     0.143
+  ts    v2   state     0.167
+  phys  v1   state     4.079
+  phys  v2   state     2.782
+  lo    v1   48 KiB    0.157     49,567       49,745
+  lo    v2   48 KiB    0.208       322        49,745
+  ts    v1   48 KiB    0.158
+  ts    v2   48 KiB    0.233
+  phys  v1   48 KiB    7.017
+  phys  v2   48 KiB    5.868
+  lo    v1   184 KiB   0.300    188,630      188,808
+  lo    v2   184 KiB   0.439       374       188,808
+  ts    v1   184 KiB   0.325
+  ts    v2   184 KiB   0.323
+  phys  v1   184 KiB  20.359
+  phys  v2   184 KiB  11.696
+  lo    v1   588 KiB   0.662    602,531      602,709
+  lo    v2   588 KiB   0.610       324       602,709
+  ts    v1   588 KiB   1.184
+  ts    v2   588 KiB   0.748
+  phys  v1   588 KiB  59.849
+  phys  v2   588 KiB  31.243
+  phys excess over states only (mean of the two arms, 3.43 ms), v1 / v2:
+    48 KiB 3.59 / 2.44 = 1.47    184 KiB 16.93 / 8.27 = 2.05    588 KiB 56.42 / 27.81 = 2.03
+  The pilot ladder's verdict column is empty: ladder.sh's pgrep matched its own
+  shell and pkill ended it before the grep. Fixed before the registered run
+  ([c]onformance); the client-side numbers are unaffected.
+
+Training, train_check.sh 8192 (two iterations, seed 0, three runs at once)
+  v1a: 2 iterations, reused_observations 0,    resync closes 0, model.safetensors sha256 8bf9cb2f92fa0e52
+  v1b: 2 iterations, reused_observations 0,    resync closes 0, model.safetensors sha256 8bf9cb2f92fa0e52
+  v2:  2 iterations, reused_observations 8184, resync closes 0, model.safetensors sha256 8bf9cb2f92fa0e52
+  return per iteration, all three:  -292.856842  -278.121399
+  (iteration 1 equals E43's pilot, local seed 0: -292.8568)
+  wall clock: 15-20 s per run

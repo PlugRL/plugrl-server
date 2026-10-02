@@ -1,0 +1,66 @@
+E46 exploration, 2026-10-01 18:32-18:45 EDT, after the registered run. Not pre-registered.
+
+The question: in Part B, v2's env client waited 1.43 ms per infer against
+v1a's 2.19 and v1b's 2.21 (client summary.json, infer_wait_s / infer_calls).
+The observation is 17 floats, so reuse saves almost no bytes. Why the gap?
+
+1. Not running three at once (explore_alone.sh 8192, one run at a time, guangzhao)
+     v1-1 infer_wait per call 1.778 ms   collect 15.9 s
+     v2-2 infer_wait per call 1.222 ms   collect 11.3 s
+     v2-3 infer_wait per call 1.281 ms   collect 11.8 s
+     v1-4 infer_wait per call 1.794 ms   collect 16.0 s
+
+2. Not the server's compute (explore_timing.py, the server's own scalars, iteration 1 / 2)
+     runtime/infer_batch_time     v1 0.703 0.704 / 0.688 0.689 ms   v2 0.662 0.668 / 0.676 0.668 ms
+     runtime/feedback_batch_time  v1 23.5 22.8 / 31.6 24.0 us        v2 20.0 20.7 / 20.8 20.5 us
+   And on the laptop, FPOAlgorithm.infer on a msgpack-decoded (read-only)
+   observation against a copy of it: median 8.396 against 8.433 ms per call
+   (5 x 2,000 interleaved). No difference.
+
+3. Not the garbage collector (explore_gc.sh 8192; gc disabled by sitecustomize)
+     v1 server gc on,  client gc on    1.948 ms
+     v1 server gc off, client gc on    1.800 ms
+     v1 server gc on,  client gc off   1.836 ms
+     v2 server gc on,  client gc on    1.212 ms
+
+4. Not the bytes (explore_variants.sh 3000; a scripted client against plugrl-server, no simulator)
+     v1       2.183 ms   (every observation sent)
+     v2       1.558 ms   (reuse=[True], an empty batch)
+     v2-full  1.406 ms   (reuse=[False], the observation sent in full)
+     v2-full  1.471 ms
+     v2       1.499 ms
+     v1       2.263 ms
+   v2-full sends v1's bytes and is as fast as v2. What differs is that the
+   server goes through ObservationCache.complete, which takes a few
+   microseconds longer before the infer is queued.
+
+5. Under cProfile the gap disappears (explore_profile.sh, 3,000 exchanges)
+     v1 1.355 ms   v2-full 1.372 ms
+   Everything is slower under the profiler, and v1 got faster. So the gap is
+   in when the server wakes up, not in what it computes.
+
+6. The scheduler's sleep (explore_sleep0.sh 3000; server-src with
+   SCHEDULER_SLEEP_INTERVAL = 0.0, nothing else changed)
+     sleep 0   v1       0.908 ms
+     sleep 0   v2-full  0.952 ms
+     sleep 0   v2-full  0.927 ms
+     sleep 0   v1       0.902 ms
+     0.1 ms    v1       2.181 ms
+     0.1 ms    v2-full  1.598 ms
+
+Reading: WebSocketAgentServer's scheduler loops on
+`await asyncio.sleep(SCHEDULER_SLEEP_INTERVAL)`, 0.1 ms since E5. On Linux,
+asyncio waits in epoll_wait, whose timeout has millisecond resolution, and
+Python's selectors module rounds a positive timeout up to 1 ms. An infer
+queued while the scheduler's 0.1 ms timer is still pending, with no further
+network event coming, is therefore picked up up to a millisecond late. How
+often that happens depends on the phase between the handler and the
+scheduler. v2's extra microseconds in the handler shift that phase, so v2
+loses less, and the profiler hides the gap entirely. With the sleep at 0,
+both kinds of client get answers in 0.9 ms, and the reuse arms no longer
+differ.
+
+So the Part B speed-up is not reuse's, and the cost belongs to every
+plugrl-server run on one machine: about 1.3 ms of a 2.2 ms round trip here.
+A sleep of 0 busy-polls a core and is not the fix. The scheduler should
+wake when there is work. That is a separate change, measured separately.
