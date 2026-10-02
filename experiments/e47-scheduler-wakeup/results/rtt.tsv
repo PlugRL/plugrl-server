@@ -1,0 +1,16 @@
+arm	rep	ms_per_round_trip
+main	1	2.1939
+fix	1	0.9290
+sleep0	1	0.8910
+sleep0	2	0.8837
+fix	2	0.9185
+main	2	2.2794
+main	3	2.1211
+fix	3	0.9799
+sleep0	3	0.9093
+sleep0	4	0.8909
+fix	4	1.0361
+main	4	2.2131
+main	5	2.2896
+fix	5	0.9637
+sleep0	5	0.8950

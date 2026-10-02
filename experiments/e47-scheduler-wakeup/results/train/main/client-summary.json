@@ -1,0 +1,27 @@
+{
+  "exp_name": "e47-main",
+  "process_id": 0,
+  "total_processes": null,
+  "completed_episodes": 40,
+  "total_episode_count": 40,
+  "metric_window": 100,
+  "mean_return": -245.61679077148438,
+  "mean_success_rate": 0.0,
+  "timing": {
+    "env_steps": 40960,
+    "infer_calls": 40960,
+    "feedback_calls": 40960,
+    "infer_wait_s": 104.51456639636308,
+    "infer_obs_pack_s": 0.5666931299492717,
+    "env_step_s": 3.817090969067067,
+    "feedback_s": 2.9540344355627894,
+    "feedback_obs_pack_s": 0.7586704953573644,
+    "feedback_info_pack_s": 0.12554475339129567,
+    "collect_time_s": 111.85238493094221,
+    "effective_fps": 366.1969302244986,
+    "infer_wait_frac": 0.9343972992698412,
+    "infer_obs_pack_frac": 0.005066437611492581,
+    "env_step_frac": 0.03412614734521524,
+    "feedback_frac": 0.026410115773451
+  }
+}

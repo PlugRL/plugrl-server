@@ -128,9 +128,14 @@ class WebSocketAgentServer:
         self._model_lock = asyncio.Lock()
         self._server: Any = None
         self._lifecycle = ServerLifecycle()
+        # Set whenever something the scheduler decides on changes; see
+        # RuntimeScheduler. It used to poll every 0.1 ms, which epoll made a
+        # wait of up to 1 ms per infer.
+        self._wake = asyncio.Event()
         self._scheduler = RuntimeScheduler(
             stop_event=self._lifecycle.stop_event,
             sleep_interval=SCHEDULER_SLEEP_INTERVAL,
+            wake=self._wake,
         )
         self._progress_reporter = ProgressReporter(enabled=show_progress_bar)
         self._training = LocalTrainingBackend(
@@ -164,6 +169,7 @@ class WebSocketAgentServer:
 
     def _request_shutdown(self, reason: str, close_reason: str | None = None) -> None:
         self._lifecycle.request_shutdown(reason, close_reason)
+        self._wake.set()
 
     def _install_signal_handlers(self) -> None:
         self._lifecycle.install_signal_handlers()
@@ -275,6 +281,7 @@ class WebSocketAgentServer:
                 packer.pack(MetadataMessage(data=self._metadata).to_payload())
             )
             self._total_connections += 1
+            self._wake.set()  # the batch now waits for one more connection
             connection_counted = True
             prev_node_map: dict = {}
             step_state_map: dict = {}
@@ -312,6 +319,7 @@ class WebSocketAgentServer:
                     env_ids=np.asarray(env_ids),
                 )
                 await self._inference.enqueue_request(infer_request)
+                self._wake.set()
 
                 try:
                     # response now may include env_ids and obs_list for per-env mapping
@@ -449,6 +457,7 @@ class WebSocketAgentServer:
                     duration=time.perf_counter() - feedback_started_at,
                     batch_size=len(fb_env_ids),
                 )
+                self._wake.set()  # the buffer may be full: time to learn
 
         except websockets.ConnectionClosed:
             pass
@@ -464,6 +473,7 @@ class WebSocketAgentServer:
         finally:
             if connection_counted:
                 self._total_connections = max(0, self._total_connections - 1)
+                self._wake.set()  # a batch may have been waiting for it
 
     async def _recv_feedback(self, websocket) -> bytes | None:
         """Wait for a client's feedback, tolerating the server's own learn steps.

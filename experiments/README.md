@@ -30,6 +30,7 @@ protocol is dated in an `AMENDMENT.md`, not folded into it.
 | | Question | Answer |
 |---|---|---|
 | [`e5-boundary-cost`](e5-boundary-cost/) | What does crossing the process boundary cost per step? | **Under a millisecond on loopback**, and the scheduler's default interval was wasting about as much again |
+| [`e47-scheduler-wakeup`](e47-scheduler-wakeup/) | Was that interval fixed? | **Not until now.** Its 0.1 ms sleep became a wait of up to 1 ms in epoll. Waking on work answers an infer in 0.96 ms instead of 2.21, idles at 0.35% of a core, and trains the same weights, 1.87x faster |
 | [`e7-cross-machine`](e7-cross-machine/) | And once packets leave the machine? | **+0.52 ms** on a 184 KiB observation, from a virtual machine to its host. The cost is in leaving the machine, not in the network stack |
 | [`e43-cross-machine-training`](e43-cross-machine-training/) | And between two physical machines? | **About 3 ms plus twice the observation's bytes over the link**, per exchange: 21 ms for 184 KiB at 18 MB/s over Wi-Fi |
 | [`e46-reuse-feedback-obs`](e46-reuse-feedback-obs/) | Can the second copy of the observation go? | **Yes.** With `reuse-feedback-obs` the size term halves, 18.5 to 11.6 ms at 184 KiB, and the same training run gives bit-identical weights. On the way: the server's scheduler sleep costs up to 1 ms per infer |
