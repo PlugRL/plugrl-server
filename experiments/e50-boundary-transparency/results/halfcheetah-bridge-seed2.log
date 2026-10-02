@@ -1,0 +1,2 @@
+plugrl-bridges: slots 0-15 <- ('127.0.0.1', 48834)
+{"env": "halfcheetah", "arm": "bridge", "seed": 2, "weights_sha256": "65cc8843b7c52c80ee9c2cdae6f69c93810215c46bf121cf276563a32a88592c", "learn_s": 76.474, "steps": 409600, "steps_per_s": 5356.1, "torch": "2.14.1+cpu", "client_rc": 0}

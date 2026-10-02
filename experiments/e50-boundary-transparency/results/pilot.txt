@@ -1,0 +1,27 @@
+E50 pilots, 2026-10-02, seed 9 (not a registered seed).
+
+1. Laptop (Windows 11, dev venv: torch 2.14.1+cpu, SB3 2.9.0, gymnasium 1.3.0),
+   pendulum only, while E48's 16 cross-arm env clients ran on the same laptop:
+
+   inprocess  weights e8c34d400b8d71e0...  learn 148.0 s  692 steps/s
+   bridge     weights e8c34d400b8d71e0...  learn 163.2 s  627 steps/s  client rc 0
+   monitor.csv: 512 episodes each, returns and lengths identical line for line.
+   The bridge served one connection: "plugrl-bridges: slots 0-15 <- ('127.0.0.1', ...)".
+
+2. guangzhao (bridges-venv: torch 2.14.1+cpu, SB3 2.9.0, gymnasium 1.3.0,
+   mujoco 3.14.0 installed for this pilot), while E48's cross arm ran RLinf:
+
+   pendulum     inprocess  3721266c36817a4f...  12.687 s  8071 steps/s
+   pendulum     bridge     3721266c36817a4f...  16.413 s  6239 steps/s  client rc 0
+   halfcheetah  inprocess  0260ca9d1d961485...  64.342 s  6366 steps/s
+   halfcheetah  bridge     0260ca9d1d961485...  74.921 s  5467 steps/s  client rc 0
+
+   Per vector step (16 envs) the bridge added (16.413 - 12.687) / 6400 =
+   0.58 ms on pendulum and (74.921 - 64.342) / 25600 = 0.41 ms on halfcheetah.
+
+The laptop's pendulum hash is not guangzhao's: same code, seed and versions,
+different machine, different weights (E43 found the two machines' MuJoCo differ
+in the last bit; here it is torch or libm on CPU). The boundary, on either
+machine, changed nothing.
+
+Nothing was changed between the pilots and the registered runs.
