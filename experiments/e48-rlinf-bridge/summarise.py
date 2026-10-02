@@ -45,8 +45,7 @@ def main() -> int:
             v2 = len(steps) == 100 and not bad
             returns = scalars(run, "env/return")
             rule = (
-                len(returns) >= 6
-                and statistics.mean(returns[-5:]) >= returns[0] + 200
+                len(returns) >= 6 and statistics.mean(returns[-5:]) >= returns[0] + 200
             )
             learned += rule
             times.append(statistics.median(steps) if steps else float("nan"))
@@ -55,14 +54,19 @@ def main() -> int:
                 f"V2 {v2} ({len(steps)} epochs{', ' + ', '.join(bad) if bad else ''}), "
                 f"return {returns[0]:.0f} -> last five {statistics.mean(returns[-5:]):.0f} "
                 f"({len(returns)} batches): {'learns' if rule else 'does not learn'}"
-                if returns else f"{arm} seed {seed}: no env/return logged"
+                if returns
+                else f"{arm} seed {seed}: no env/return logged"
             )
             print("   env/return " + " ".join(f"{r:.0f}" for r in returns))
         verdicts[arm] = learned
         print(f"{arm}: learns on {learned} of 3 seeds; median s per epoch "
               + ", ".join(f"{t:.2f}" for t in times))  # fmt: skip
-    print(f"\nP1 (local learns on >= 2 of 3): {'holds' if verdicts['local'] >= 2 else 'FAILS'}")
-    print(f"P2 (cross learns on >= 2 of 3): {'holds' if verdicts['cross'] >= 2 else 'FAILS'}")
+    print(
+        f"\nP1 (local learns on >= 2 of 3): {'holds' if verdicts['local'] >= 2 else 'FAILS'}"
+    )
+    print(
+        f"P2 (cross learns on >= 2 of 3): {'holds' if verdicts['cross'] >= 2 else 'FAILS'}"
+    )
     return 0
 
 
