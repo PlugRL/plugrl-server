@@ -1,0 +1,33 @@
+ 09:21:59 up 27 days, 22:23,  1 user,  load average: 0.11, 0.18, 0.14
+== pendulum-direct-seed0 09:21:59
+{"env": "pendulum", "arm": "bridge", "seed": 0, "weights_sha256": "ec5b8226b227f3fa58bd771b411e3673b751ec2c062b010cf0dcef60baed42bc", "learn_s": 16.316, "steps": 102400, "steps_per_s": 6276.2, "torch": "2.14.1+cpu", "client_rc": 0}
+== pendulum-0-seed0 09:22:17
+{"env": "pendulum", "arm": "bridge", "seed": 0, "weights_sha256": "ec5b8226b227f3fa58bd771b411e3673b751ec2c062b010cf0dcef60baed42bc", "learn_s": 16.76, "steps": 102400, "steps_per_s": 6109.6, "torch": "2.14.1+cpu", "client_rc": 0}
+== pendulum-1-seed0 09:22:36
+{"env": "pendulum", "arm": "bridge", "seed": 0, "weights_sha256": "ec5b8226b227f3fa58bd771b411e3673b751ec2c062b010cf0dcef60baed42bc", "learn_s": 35.749, "steps": 102400, "steps_per_s": 2864.4, "torch": "2.14.1+cpu", "client_rc": 0}
+== pendulum-5-seed0 09:23:14
+{"env": "pendulum", "arm": "bridge", "seed": 0, "weights_sha256": "ec5b8226b227f3fa58bd771b411e3673b751ec2c062b010cf0dcef60baed42bc", "learn_s": 92.148, "steps": 102400, "steps_per_s": 1111.3, "torch": "2.14.1+cpu", "client_rc": 0}
+== pendulum-25-seed0 09:24:49
+{"env": "pendulum", "arm": "bridge", "seed": 0, "weights_sha256": "ec5b8226b227f3fa58bd771b411e3673b751ec2c062b010cf0dcef60baed42bc", "learn_s": 355.635, "steps": 102400, "steps_per_s": 287.9, "torch": "2.14.1+cpu", "client_rc": 0}
+== pendulum-direct-seed1 09:30:47
+{"env": "pendulum", "arm": "bridge", "seed": 1, "weights_sha256": "062e92e3bab334bb20d04f963612273166bef926f9edb017a624b133313733d6", "learn_s": 16.129, "steps": 102400, "steps_per_s": 6348.7, "torch": "2.14.1+cpu", "client_rc": 0}
+== pendulum-0-seed1 09:31:04
+{"env": "pendulum", "arm": "bridge", "seed": 1, "weights_sha256": "062e92e3bab334bb20d04f963612273166bef926f9edb017a624b133313733d6", "learn_s": 17.198, "steps": 102400, "steps_per_s": 5954.4, "torch": "2.14.1+cpu", "client_rc": 0}
+== pendulum-1-seed1 09:31:24
+{"env": "pendulum", "arm": "bridge", "seed": 1, "weights_sha256": "062e92e3bab334bb20d04f963612273166bef926f9edb017a624b133313733d6", "learn_s": 35.411, "steps": 102400, "steps_per_s": 2891.7, "torch": "2.14.1+cpu", "client_rc": 0}
+== pendulum-5-seed1 09:32:02
+{"env": "pendulum", "arm": "bridge", "seed": 1, "weights_sha256": "062e92e3bab334bb20d04f963612273166bef926f9edb017a624b133313733d6", "learn_s": 92.662, "steps": 102400, "steps_per_s": 1105.1, "torch": "2.14.1+cpu", "client_rc": 0}
+== pendulum-25-seed1 09:33:37
+{"env": "pendulum", "arm": "bridge", "seed": 1, "weights_sha256": "062e92e3bab334bb20d04f963612273166bef926f9edb017a624b133313733d6", "learn_s": 355.897, "steps": 102400, "steps_per_s": 287.7, "torch": "2.14.1+cpu", "client_rc": 0}
+== pendulum-direct-seed2 09:39:35
+{"env": "pendulum", "arm": "bridge", "seed": 2, "weights_sha256": "3a8d968f19e2a8b5dc01540e41c4a64c02cb7a8c99ccdedf4a016008cf8bcd41", "learn_s": 16.187, "steps": 102400, "steps_per_s": 6325.9, "torch": "2.14.1+cpu", "client_rc": 0}
+== pendulum-0-seed2 09:39:53
+{"env": "pendulum", "arm": "bridge", "seed": 2, "weights_sha256": "3a8d968f19e2a8b5dc01540e41c4a64c02cb7a8c99ccdedf4a016008cf8bcd41", "learn_s": 16.894, "steps": 102400, "steps_per_s": 6061.3, "torch": "2.14.1+cpu", "client_rc": 0}
+== pendulum-1-seed2 09:40:12
+{"env": "pendulum", "arm": "bridge", "seed": 2, "weights_sha256": "3a8d968f19e2a8b5dc01540e41c4a64c02cb7a8c99ccdedf4a016008cf8bcd41", "learn_s": 35.376, "steps": 102400, "steps_per_s": 2894.6, "torch": "2.14.1+cpu", "client_rc": 0}
+== pendulum-5-seed2 09:40:50
+{"env": "pendulum", "arm": "bridge", "seed": 2, "weights_sha256": "3a8d968f19e2a8b5dc01540e41c4a64c02cb7a8c99ccdedf4a016008cf8bcd41", "learn_s": 92.441, "steps": 102400, "steps_per_s": 1107.7, "torch": "2.14.1+cpu", "client_rc": 0}
+== pendulum-25-seed2 09:42:25
+{"env": "pendulum", "arm": "bridge", "seed": 2, "weights_sha256": "3a8d968f19e2a8b5dc01540e41c4a64c02cb7a8c99ccdedf4a016008cf8bcd41", "learn_s": 356.052, "steps": 102400, "steps_per_s": 287.6, "torch": "2.14.1+cpu", "client_rc": 0}
+ 09:48:23 up 27 days, 22:50,  1 user,  load average: 0.48, 0.65, 0.62
+E52_DONE

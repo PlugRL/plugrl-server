@@ -1,0 +1,11 @@
+{
+  "env": "pendulum",
+  "arm": "bridge",
+  "seed": 1,
+  "weights_sha256": "062e92e3bab334bb20d04f963612273166bef926f9edb017a624b133313733d6",
+  "learn_s": 35.411,
+  "steps": 102400,
+  "steps_per_s": 2891.7,
+  "torch": "2.14.1+cpu",
+  "client_rc": 0
+}

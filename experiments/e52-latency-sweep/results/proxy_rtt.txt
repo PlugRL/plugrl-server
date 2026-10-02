@@ -1,0 +1,8 @@
+burst 1, D   0.0 ms: round trip median 0.030 ms, beyond 2D median 0.030, p90 0.065 ms
+burst 1, D   1.0 ms: round trip median 2.479 ms, beyond 2D median 0.479, p90 0.655 ms
+burst 1, D   5.0 ms: round trip median 10.996 ms, beyond 2D median 0.996, p90 1.089 ms
+burst 1, D  25.0 ms: round trip median 50.963 ms, beyond 2D median 0.963, p90 1.442 ms
+burst 2, D   0.0 ms: round trip median 0.278 ms, beyond 2D median 0.278, p90 41.377 ms
+burst 2, D   1.0 ms: round trip median 2.768 ms, beyond 2D median 0.768, p90 0.968 ms
+burst 2, D   5.0 ms: round trip median 11.035 ms, beyond 2D median 1.035, p90 1.224 ms
+burst 2, D  25.0 ms: round trip median 51.286 ms, beyond 2D median 1.286, p90 1.686 ms
