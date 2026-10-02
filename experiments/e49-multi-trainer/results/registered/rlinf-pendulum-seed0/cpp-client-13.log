@@ -1,0 +1,5 @@
+waiting for the server: cannot connect to 127.0.0.1
+waiting for the server: cannot connect to 127.0.0.1
+connected to ws://127.0.0.1:8810, seed 13
+episode 100  return -677.466
+error: connection closed while reading

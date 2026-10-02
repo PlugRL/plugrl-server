@@ -1,0 +1,55 @@
+rlinf-pendulum-seed0: at 102,400 steps, batches 1-2 -> 20-32: -14
+rlinf-pendulum-seed0: V1 True (2048 episodes), V2 True (env/return 100 epochs, the bridge's 100), V3 None (not applicable: RLinf ends without a stop (E48))
+   batches 1-2 -1171 -> 77-128 -557 (+615, bar +500): learns
+   batch means -1105 -1238 -1229 -1232 -1189 -1160 -1108 -1075 -1138 -1229 -1062 -1233 -1218 -1189 -1234 -1177 -1191 -1200 -1041 -1290 -1226 -1252 -1166 -1220 -1167 -1170 -1111 -1150 -1121 -1202 -1190 -1140 -1156 -1169 -1175 -1177 -1205 -1218 -1167 -1179 -1163 -1045 -1150 -1189 -1152 -1089 -1215 -1132 -975 -1080 -888 -904 -719 -791 -513 -549 -358 -462 -423 -432 -413 -289 -396 -307 -368 -389 -673 -572 -767 -498 -471 -336 -283 -351 -400 -196 -248 -317 -404 -639 -890 -752 -831 -797 -466 -355 -573 -448 -392 -328 -322 -804 -427 -523 -674 -674 -360 -718 -607 -636 -683 -779 -693 -412 -562 -599 -670 -679 -500 -533 -408 -530 -631 -704 -734 -513 -653 -478 -696 -604 -715 -307 -542 -261 -293 -800 -427 -356
+rlinf-pendulum-seed1: at 102,400 steps, batches 1-2 -> 20-32: +12
+rlinf-pendulum-seed1: V1 True (2048 episodes), V2 True (env/return 100 epochs, the bridge's 100), V3 None (not applicable: RLinf ends without a stop (E48))
+   batches 1-2 -1194 -> 77-128 -431 (+763, bar +500): learns
+   batch means -1139 -1250 -1093 -1201 -1290 -1354 -1239 -1274 -1345 -1113 -1175 -1286 -1122 -1221 -1253 -1253 -1329 -1224 -1306 -1442 -1097 -1258 -1157 -1221 -1202 -1198 -1198 -1094 -1215 -1065 -1102 -1119 -1110 -1195 -1192 -1067 -1107 -1009 -1138 -1185 -1122 -1133 -1133 -1156 -1033 -975 -865 -810 -729 -756 -707 -550 -773 -561 -550 -395 -393 -541 -277 -326 -276 -263 -209 -303 -1171 -1138 -871 -1380 -1388 -1254 -1297 -1271 -1344 -1151 -1138 -933 -1036 -554 -987 -766 -731 -515 -649 -255 -453 -759 -384 -327 -385 -565 -310 -421 -422 -441 -310 -264 -920 -520 -556 -490 -346 -398 -156 -338 -391 -354 -300 -492 -542 -452 -265 -206 -290 -235 -331 -400 -407 -309 -365 -315 -216 -351 -292 -488 -201 -315 -438 -211
+rlinf-pendulum-seed2: at 102,400 steps, batches 1-2 -> 20-32: +63
+rlinf-pendulum-seed2: V1 True (2048 episodes), V2 True (env/return 100 epochs, the bridge's 100), V3 None (not applicable: RLinf ends without a stop (E48))
+   batches 1-2 -1206 -> 77-128 -391 (+816, bar +500): learns
+   batch means -1265 -1148 -1242 -1249 -1303 -1290 -1198 -1174 -1058 -1144 -1307 -1183 -1229 -1082 -1072 -1259 -1178 -1087 -1140 -1099 -1158 -1103 -1198 -1311 -1216 -1279 -1087 -1038 -1006 -1138 -1074 -1159 -1077 -1035 -1071 -1016 -1081 -1043 -1020 -1081 -1017 -1014 -976 -945 -904 -923 -762 -778 -635 -690 -459 -332 -329 -343 -213 -334 -340 -301 -225 -338 -600 -526 -667 -926 -874 -957 -880 -615 -905 -730 -1052 -645 -894 -664 -627 -838 -658 -890 -757 -715 -501 -744 -891 -879 -562 -559 -535 -852 -628 -459 -410 -407 -240 -198 -271 -153 -242 -273 -241 -308 -246 -295 -238 -272 -232 -304 -203 -310 -400 -204 -264 -359 -286 -239 -267 -242 -304 -253 -351 -196 -208 -185 -187 -245 -192 -320 -353 -797
+rlinf x pendulum: learns, with every check passing, on 3 of 3
+
+P (rlinf x pendulum learns on >= 2 of 3): holds
+
+sb3-pendulum-seed0: V1 True (512 episodes), V2 True (monitor.csv 512 episodes), V3 True (16 clients: [(6400, 32)])
+   batches 1-2 -1229 -> 20-32 -181 (+1048, bar +500): learns
+   batch means -1165 -1292 -1270 -1314 -1092 -1017 -796 -699 -629 -439 -313 -359 -251 -219 -214 -219 -219 -195 -147 -233 -200 -200 -180 -204 -178 -183 -150 -188 -139 -137 -181 -172
+sb3-pendulum-seed1: V1 True (512 episodes), V2 True (monitor.csv 512 episodes), V3 True (16 clients: [(6400, 32)])
+   batches 1-2 -1259 -> 20-32 -189 (+1071, bar +500): learns
+   batch means -1269 -1249 -1157 -1280 -1176 -1050 -865 -810 -726 -624 -561 -417 -267 -240 -272 -235 -231 -196 -232 -229 -116 -211 -154 -233 -209 -218 -212 -184 -215 -157 -151 -163
+sb3-pendulum-seed2: V1 True (512 episodes), V2 True (monitor.csv 512 episodes), V3 True (16 clients: [(6400, 32)])
+   batches 1-2 -1249 -> 20-32 -190 (+1059, bar +500): learns
+   batch means -1267 -1231 -1237 -1194 -1140 -1032 -959 -806 -635 -598 -534 -421 -365 -243 -172 -250 -206 -167 -172 -168 -228 -189 -186 -215 -187 -221 -156 -169 -183 -221 -142 -198
+sb3 x pendulum: learns, with every check passing, on 3 of 3
+
+P (sb3 x pendulum learns on >= 2 of 3): holds
+
+sb3-halfcheetah-seed0: V1 True (400 episodes), V2 True (monitor.csv 400 episodes), V3 None (no client-side count)
+   batches 1-1 -387 -> 21-25 1046 (+1433, bar +200): learns
+   batch means -387 -284 -242 -202 -144 -79 4 121 218 333 403 543 607 661 738 792 822 883 791 930 967 1028 1062 1071 1103
+sb3-halfcheetah-seed1: V1 True (400 episodes), V2 True (monitor.csv 400 episodes), V3 None (no client-side count)
+   batches 1-1 -343 -> 21-25 1171 (+1514, bar +200): learns
+   batch means -343 -298 -278 -237 -183 -114 -40 75 186 266 370 479 489 628 694 724 820 890 939 1010 1074 1100 1190 1213 1281
+sb3-halfcheetah-seed2: V1 True (400 episodes), V2 True (monitor.csv 400 episodes), V3 None (no client-side count)
+   batches 1-1 -343 -> 21-25 1208 (+1551, bar +200): learns
+   batch means -343 -314 -257 -192 -113 -42 55 160 280 410 539 539 777 853 952 952 909 1021 1001 1083 1154 1152 1200 1245 1289
+sb3 x halfcheetah: learns, with every check passing, on 3 of 3
+
+P (sb3 x halfcheetah learns on >= 2 of 3): holds
+
+cleanrl-halfcheetah-seed0: V1 True (400 episodes), V2 True (charts/episodic_return 400 episodes), V3 None (no client-side count)
+   batches 1-1 -363 -> 21-25 794 (+1157, bar +200): learns
+   batch means -363 -272 -253 -193 -177 -61 42 143 229 290 377 453 457 517 578 605 654 692 691 717 782 784 784 805 815
+cleanrl-halfcheetah-seed1: V1 True (400 episodes), V2 True (charts/episodic_return 400 episodes), V3 None (no client-side count)
+   batches 1-1 -355 -> 21-25 987 (+1341, bar +200): learns
+   batch means -355 -302 -257 -211 -152 -85 28 131 233 348 435 633 654 745 744 793 919 928 943 985 1000 943 938 1017 1035
+cleanrl-halfcheetah-seed2: V1 True (400 episodes), V2 True (charts/episodic_return 400 episodes), V3 None (no client-side count)
+   batches 1-1 -322 -> 21-25 780 (+1102, bar +200): learns
+   batch means -322 -275 -251 -230 -195 -158 -107 -71 -37 35 73 118 209 245 326 428 472 510 559 642 707 782 725 844 844
+cleanrl x halfcheetah: learns, with every check passing, on 3 of 3
+
+P (cleanrl x halfcheetah learns on >= 2 of 3): holds
+

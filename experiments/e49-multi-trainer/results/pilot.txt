@@ -1,0 +1,51 @@
+E49 pilots, 2026-10-02, seed 9 (not a registered seed), guangzhao, port 8810,
+plugrl-bridges as synced to guangzhao (PlugRL/plugrl-rlinf#2 plus the changes
+noted below). Judged with summarise.py on guangzhao (on the laptop, CleanRL's
+TensorBoard path exceeds Windows' 260-character limit).
+
+1. sb3 x pendulum (00:16, during E48's cross arm: no Ray, no plugrl-env-client)
+   V1 True (512 episodes), V2 True (monitor.csv 512), V3 True (16 clients, each 6,400 steps / 32 episodes)
+   batches 1-2 -1254 -> 20-32 -204 (+1049, bar +500): learns. 26 s.
+
+2. rlinf x pendulum, first try (02:40, after E48)
+   V1 True (512 episodes); learning: batches 1-2 -1231 -> 20-32 -1224 (+7): does not learn.
+   RLinf's critic learned (explained variance 0.03 -> 0.95), the policy barely moved
+   (approx_kl 0.002-0.004, clip fraction ~2%; SB3's was 0.03 and 0.27).
+   Cause, found by reading the config against what it claims to follow: the RLinf
+   Pendulum config says it uses rl-zoo's Pendulum-v1 PPO settings, but kept the
+   global_batch_size 1,024 (micro 256) it inherited from RLinf's CartPole template.
+   rl-zoo leaves batch_size at SB3's default, 64. With 10 epochs that is 40 updates
+   per 4,096-frame rollout against rl-zoo's 640. Fixed in the config:
+   global_batch_size 64, micro_batch_size 64. No other setting was changed.
+   Two checks in summarise.py were wrong, and were fixed before any registered run:
+   - V2 for RLinf compared env/return with batch means. RLinf logs one value per
+     epoch (256 steps), the mean of the episodes that ended in it; a Pendulum epoch
+     can hold two batches. Now grouped by epoch: 25 = 25, all within tolerance.
+   - V3 cannot apply under RLinf. RLinf never closes its environments (E48), so the
+     bridge sends no stop, and the C++ clients, killed by run_bridged.sh, never print
+     their counts. PROTOCOL.md declares this.
+   install_guangzhao.sh's import check ran without RLinf on PYTHONPATH and failed
+   after doing its work; fixed.
+
+3. sb3 x halfcheetah (02:42)
+   V1 True (400 episodes), V2 True (monitor.csv 400)
+   batch 1 -342 -> 21-25 1171 (+1514, bar +200): learns. 97 s.
+
+4. cleanrl x halfcheetah (02:43)
+   V1 True (400 episodes), V2 True (charts/episodic_return 400)
+   batch 1 -337 -> 21-25 786 (+1123, bar +200): learns. 78 s.
+
+5. rlinf x pendulum, second try, with minibatch 64 (02:42-02:48)
+   V1 True (512 episodes), V2 True (25 epochs = the bridge's 25), V3 not applicable
+   batches 1-2 -1267 -> 20-32 -1105 (+162, bar +500): does not learn by the bar,
+   but now climbs: the last six batches -1017 -1036 -1150 -1140 -985 -1046.
+   About 14 s an epoch (640 minibatch updates).
+   No defect was found behind the slower learning. The bridge passes the same
+   checks as in the other cells, and RLinf trains HalfCheetah through it (E48).
+   RLinf's PPO-MLP differs from SB3's: 256x3 tanh layers against 64x64, value
+   clipping, a fixed initial log-std of -0.5, and no gSDE. At these settings it
+   learns Pendulum more slowly. The user chose (2026-10-02 03:00) to give this
+   cell 409,600 steps (E43's budget, 100 epochs) and leave every algorithm
+   setting alone. PROTOCOL.md declares this.
+
+Nothing else was changed between these pilots and the registered runs.

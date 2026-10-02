@@ -1,0 +1,6 @@
+start 2026-10-02 02:55:33
+trainer rlinf env pendulum seed 0 steps 409600 port 8810
+trainer rc=0 at 03:05:51
+clients stopped
+end   2026-10-02 03:05:56
+RUN_DONE

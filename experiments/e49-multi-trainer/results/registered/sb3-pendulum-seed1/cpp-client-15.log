@@ -1,0 +1,4 @@
+waiting for the server: cannot connect to 127.0.0.1
+connected to ws://127.0.0.1:8810, seed 115
+server stopped the run after 6400 steps, 32 episodes
+mean return, first 10 episodes: -1011.14  last 10: -180.57
