@@ -2,13 +2,13 @@
 
 PlugRL's claim is that training should not care where its environments run:
 in another process, on another machine, on a machine with no GPU, or in a
-program that is not Python. These forty-six experiments test that claim,
-measure what it costs, and record the defects found on the way. Forty-five
-have run. E3 has a protocol and no data.
+program that is not Python, and whatever trainer is on the other side. These
+fifty experiments test that claim, measure what it costs, and record the
+defects found on the way. Forty-nine have run. E3 has a protocol and no data.
 
 Each directory has a `FINDINGS.md`: what was asked, what came back, and what
 the result does **not** support. The logs behind it are under `results*/`.
-Thirty-nine of the experiments that ran have a `PROTOCOL.md` with their
+Forty-three of the experiments that ran have a `PROTOCOL.md` with their
 predictions. Most were written before the data existed; the exceptions
 (E15 was written with its runs in flight) say so. Anything changed after a
 protocol is dated in an `AMENDMENT.md`, not folded into it.
@@ -37,6 +37,19 @@ protocol is dated in an `AMENDMENT.md`, not folded into it.
 | [`e10-vla-forward-cost`](e10-vla-forward-cost/) | Is that cheap beside a VLA forward pass? | **On a fast link.** Through openpi's compiled path a forward takes 34.9 ms for the policy PlugRL ships and 100 ms for full-size pi0.5. A 1.3 ms crossing is 1.3-3.6% of that; E43's over Wi-Fi is 21% of the 100 ms |
 | [`e9-many-clients`](e9-many-clients/) | Does one server stay correct with eight clients feeding it? | **Yes.** Twelve runs at 1, 2, 4 and 8 clients, every one exact to the unit. Throughput was still rising at eight, which falsified its prediction |
 | [`e8-keepalive-hypothesis`](e8-keepalive-hypothesis/) | Does a long learn step kill the connection? | **No.** Learn steps of 190 s close nothing. The drop that prompted it was the machine suspending, and a real reconnect bug was found and fixed anyway |
+
+## Trainers that were not written for it
+
+Through [plugrl-bridges](https://github.com/PlugRL/plugrl-bridges): one
+lockstep server, with adapters for RLinf, gymnasium's `VectorEnv` and
+Stable-Baselines3's `VecEnv`.
+
+| | Question | Answer |
+|---|---|---|
+| [`e48-rlinf-bridge`](e48-rlinf-bridge/) | Does a trainer from outside this codebase train PlugRL env clients? | **Yes.** RLinf learns HalfCheetah with its clients on its own machine, and on a laptop with no torch, Ray or RLinf, three seeds each. RLinf never closes its environments, so remote clients never hear the run end |
+| [`e49-multi-trainer`](e49-multi-trainer/) | And other trainers, through the interface each already has? | **Yes.** RLinf, Stable-Baselines3 and CleanRL each learn, three seeds per cell, a C++ client with no third-party library included. RLinf learns Pendulum late, past E44's budget |
+| [`e50-boundary-transparency`](e50-boundary-transparency/) | Does the boundary change what is learned? | **No.** On one machine, SB3 ends on byte-identical weights whether its environments run in its own process or behind the bridge. The bridge adds 0.37-0.58 ms per vector step |
+| [`e51-episode-accounting`](e51-episode-accounting/) | Do the episode counters these trainers rely on count right? | **Not all.** Gymnasium 1.3's vector `RecordEpisodeStatistics` drops each episode's first reward under SAME_STEP autoreset. CleanRL's logging logs nothing under gymnasium 1.x's default. SB3, the bridge and the env client count right |
 
 ## What trains through it
 
