@@ -1,0 +1,1 @@
+{"env": "halfcheetah", "arm": "inprocess", "seed": 1, "weights_sha256": "86564694b53ecdb7f0796927c4e65ce54d41ae41b04cc32c686216b07cddc86a", "learn_s": 66.702, "steps": 409600, "steps_per_s": 6140.7, "torch": "2.14.1+cpu"}

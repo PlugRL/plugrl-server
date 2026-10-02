@@ -1,0 +1,33 @@
+ 00:48:32 up 27 days, 13:50,  1 user,  load average: 0.23, 0.42, 0.56
+c0c1aa7c28e062dd497b088f006100d15900c351e18539501645def709d4f379  src/plugrl_bridges/gym.py
+e89ebb2c4ed69ed5788cd945bc4d36ecc023949627433818b98d9ea43d1fa7d5  src/plugrl_bridges/__init__.py
+aabf782fb30d1e35eac99b135ffc87a274a52b205347e9b16efc2e677af517ed  src/plugrl_bridges/observations.py
+1c22fca6e0f01e8ec730ee893568cc301d2d21c3e16cc2102c22959ced00ff08  src/plugrl_bridges/rlinf.py
+a4d1ec1a93d1ae9fad01e7c0ca12cd565560b96228cc6ede819e28d8c3407356  src/plugrl_bridges/sb3.py
+0e56388fea17a73d4defcb437d3a4b6c8392c609dfca07efe92343e6cac72656  src/plugrl_bridges/server.py
+== pendulum inprocess seed 0 00:48:32
+{"env": "pendulum", "arm": "inprocess", "seed": 0, "weights_sha256": "ec5b8226b227f3fa58bd771b411e3673b751ec2c062b010cf0dcef60baed42bc", "learn_s": 12.696, "steps": 102400, "steps_per_s": 8065.7, "torch": "2.14.1+cpu"}
+== pendulum bridge seed 0 00:48:46
+{"env": "pendulum", "arm": "bridge", "seed": 0, "weights_sha256": "ec5b8226b227f3fa58bd771b411e3673b751ec2c062b010cf0dcef60baed42bc", "learn_s": 16.336, "steps": 102400, "steps_per_s": 6268.5, "torch": "2.14.1+cpu", "client_rc": 0}
+== pendulum inprocess seed 1 00:49:04
+{"env": "pendulum", "arm": "inprocess", "seed": 1, "weights_sha256": "062e92e3bab334bb20d04f963612273166bef926f9edb017a624b133313733d6", "learn_s": 12.737, "steps": 102400, "steps_per_s": 8039.4, "torch": "2.14.1+cpu"}
+== pendulum bridge seed 1 00:49:18
+{"env": "pendulum", "arm": "bridge", "seed": 1, "weights_sha256": "062e92e3bab334bb20d04f963612273166bef926f9edb017a624b133313733d6", "learn_s": 16.461, "steps": 102400, "steps_per_s": 6220.8, "torch": "2.14.1+cpu", "client_rc": 0}
+== pendulum inprocess seed 2 00:49:35
+{"env": "pendulum", "arm": "inprocess", "seed": 2, "weights_sha256": "3a8d968f19e2a8b5dc01540e41c4a64c02cb7a8c99ccdedf4a016008cf8bcd41", "learn_s": 12.712, "steps": 102400, "steps_per_s": 8055.5, "torch": "2.14.1+cpu"}
+== pendulum bridge seed 2 00:49:49
+{"env": "pendulum", "arm": "bridge", "seed": 2, "weights_sha256": "3a8d968f19e2a8b5dc01540e41c4a64c02cb7a8c99ccdedf4a016008cf8bcd41", "learn_s": 16.455, "steps": 102400, "steps_per_s": 6223.1, "torch": "2.14.1+cpu", "client_rc": 0}
+== halfcheetah inprocess seed 0 00:50:07
+{"env": "halfcheetah", "arm": "inprocess", "seed": 0, "weights_sha256": "8261c03a5b604bf51d281f80b5a1b7388b9ecb845f7dea1f4ac8e141146886e1", "learn_s": 64.005, "steps": 409600, "steps_per_s": 6399.5, "torch": "2.14.1+cpu"}
+== halfcheetah bridge seed 0 00:51:12
+{"env": "halfcheetah", "arm": "bridge", "seed": 0, "weights_sha256": "8261c03a5b604bf51d281f80b5a1b7388b9ecb845f7dea1f4ac8e141146886e1", "learn_s": 75.953, "steps": 409600, "steps_per_s": 5392.8, "torch": "2.14.1+cpu", "client_rc": 0}
+== halfcheetah inprocess seed 1 00:52:30
+{"env": "halfcheetah", "arm": "inprocess", "seed": 1, "weights_sha256": "86564694b53ecdb7f0796927c4e65ce54d41ae41b04cc32c686216b07cddc86a", "learn_s": 66.702, "steps": 409600, "steps_per_s": 6140.7, "torch": "2.14.1+cpu"}
+== halfcheetah bridge seed 1 00:53:38
+{"env": "halfcheetah", "arm": "bridge", "seed": 1, "weights_sha256": "86564694b53ecdb7f0796927c4e65ce54d41ae41b04cc32c686216b07cddc86a", "learn_s": 76.452, "steps": 409600, "steps_per_s": 5357.6, "torch": "2.14.1+cpu", "client_rc": 0}
+== halfcheetah inprocess seed 2 00:54:56
+{"env": "halfcheetah", "arm": "inprocess", "seed": 2, "weights_sha256": "65cc8843b7c52c80ee9c2cdae6f69c93810215c46bf121cf276563a32a88592c", "learn_s": 66.962, "steps": 409600, "steps_per_s": 6116.9, "torch": "2.14.1+cpu"}
+== halfcheetah bridge seed 2 00:56:04
+{"env": "halfcheetah", "arm": "bridge", "seed": 2, "weights_sha256": "65cc8843b7c52c80ee9c2cdae6f69c93810215c46bf121cf276563a32a88592c", "learn_s": 76.474, "steps": 409600, "steps_per_s": 5356.1, "torch": "2.14.1+cpu", "client_rc": 0}
+ 00:57:22 up 27 days, 13:59,  1 user,  load average: 2.69, 2.16, 1.33
+E50_DONE
