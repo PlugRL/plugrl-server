@@ -1,0 +1,12 @@
+{
+  "env": "ALE/Pong-v5",
+  "arm": "bridge",
+  "seed": 0,
+  "weights_sha256": "82f80c02616bc24c4f2baa984af8162e0f94532e1f4c3a3ff49fb977ae1b489f",
+  "learn_s": 75.04,
+  "steps": 40960,
+  "steps_per_s": 545.8,
+  "observation_space": "Box(0, 255, (84, 84, 4), uint8)",
+  "torch": "2.14.1+cpu",
+  "client_rc": 0
+}

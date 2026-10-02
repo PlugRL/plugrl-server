@@ -1,0 +1,23 @@
+E53 pilot, 2026-10-02, seed 9 (not a registered seed), guangzhao, bridges-venv
+(torch 2.14.1+cpu, SB3 2.9.0, gymnasium 1.3.0, ale-py 0.12.1, then
+opencv-python-headless 5.0.0.93), plugrl-bridges#3 (803141d).
+
+First attempt: both arms failed. SB3's AtariWrapper needs OpenCV to resize
+frames, and bridges-venv had none; the client died with "OpenCV is not
+installed". OpenCV was installed (opencv-python-headless 5.0.0.93).
+
+Second attempt:
+  inprocess  76f991b80e896bd88068d6e1507bf05845710580b40a05cb375b5dcf622edddc  68.284 s  599.8 steps/s
+  bridge     failed to bind port 8830: the first attempt's bridge arm was still
+             running, waiting (timeout 600 s) for the client that had died. That
+             stuck process then accepted the second attempt's client. Both
+             processes were killed and their output deleted, unread.
+
+Third attempt, bridge arm only, port 8830 checked free first:
+  bridge     76f991b80e896bd88068d6e1507bf05845710580b40a05cb375b5dcf622edddc  74.524 s  549.6 steps/s  client rc 0
+  observation space in both: Box(0, 255, (84, 84, 4), uint8)
+
+Same weights. (74.524 - 68.284) / 2560 = 2.44 ms more per vector step.
+
+Before the registered runs: run.sh checks that port 8830 is free before every
+run. Nothing else was changed.

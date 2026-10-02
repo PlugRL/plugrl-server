@@ -1,0 +1,15 @@
+ 09:56:03 up 27 days, 22:57,  1 user,  load average: 0.96, 1.31, 0.93
+== pong-inprocess-seed0 09:56:03
+{"env": "ALE/Pong-v5", "arm": "inprocess", "seed": 0, "weights_sha256": "82f80c02616bc24c4f2baa984af8162e0f94532e1f4c3a3ff49fb977ae1b489f", "learn_s": 67.381, "steps": 40960, "steps_per_s": 607.9, "observation_space": "Box(0, 255, (84, 84, 4), uint8)", "torch": "2.14.1+cpu"}
+== pong-bridge-seed0 09:57:12
+{"env": "ALE/Pong-v5", "arm": "bridge", "seed": 0, "weights_sha256": "82f80c02616bc24c4f2baa984af8162e0f94532e1f4c3a3ff49fb977ae1b489f", "learn_s": 75.04, "steps": 40960, "steps_per_s": 545.8, "observation_space": "Box(0, 255, (84, 84, 4), uint8)", "torch": "2.14.1+cpu", "client_rc": 0}
+== pong-inprocess-seed1 09:58:31
+{"env": "ALE/Pong-v5", "arm": "inprocess", "seed": 1, "weights_sha256": "60acba42dad30f0cc497681237ee46bbc236d2374ad6502a6c65381ad2e0ddec", "learn_s": 69.586, "steps": 40960, "steps_per_s": 588.6, "observation_space": "Box(0, 255, (84, 84, 4), uint8)", "torch": "2.14.1+cpu"}
+== pong-bridge-seed1 09:59:42
+{"env": "ALE/Pong-v5", "arm": "bridge", "seed": 1, "weights_sha256": "60acba42dad30f0cc497681237ee46bbc236d2374ad6502a6c65381ad2e0ddec", "learn_s": 76.244, "steps": 40960, "steps_per_s": 537.2, "observation_space": "Box(0, 255, (84, 84, 4), uint8)", "torch": "2.14.1+cpu", "client_rc": 0}
+== pong-inprocess-seed2 10:01:02
+{"env": "ALE/Pong-v5", "arm": "inprocess", "seed": 2, "weights_sha256": "6bf04095eb14a02d5a4831dfa0d29d8e185cf3edfdcfa62c55df123f842ae611", "learn_s": 68.144, "steps": 40960, "steps_per_s": 601.1, "observation_space": "Box(0, 255, (84, 84, 4), uint8)", "torch": "2.14.1+cpu"}
+== pong-bridge-seed2 10:02:13
+{"env": "ALE/Pong-v5", "arm": "bridge", "seed": 2, "weights_sha256": "6bf04095eb14a02d5a4831dfa0d29d8e185cf3edfdcfa62c55df123f842ae611", "learn_s": 75.771, "steps": 40960, "steps_per_s": 540.6, "observation_space": "Box(0, 255, (84, 84, 4), uint8)", "torch": "2.14.1+cpu", "client_rc": 0}
+ 10:03:32 up 27 days, 23:05,  1 user,  load average: 3.27, 3.00, 1.94
+E53_DONE
