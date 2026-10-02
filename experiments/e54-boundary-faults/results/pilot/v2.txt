@@ -1,0 +1,144 @@
+117 traced runs with a fault; localised right: 115
+  not right: {'fault': 'action:f16', 'dose': '1.0', 'seed': '9', 'cells': 64943, 'injected': '0/0', 'found': '0/2 rewards', 'right': 0}
+  not right: {'fault': 'terminated:spurious', 'dose': 'one', 'seed': '9', 'cells': 1, 'injected': '3199/0', 'found': '3199/0 truncs', 'right': 0}
+
+real	0m2.229s
+user	0m3.515s
+sys	0m0.331s
+env         fault                dose   cells   raises     rule   strict  weights   record   bridge
+halfcheetah none                 1.0        0      0/1      0/1        -      0/1      0/1      0/1
+halfcheetah obs:f16              0.01    4049      0/1      0/1        -      1/1      0/1      0/1
+halfcheetah reward:stale         one        1      0/1      0/1        -      1/1      1/1      0/1
+pendulum    none                 1.0        0      0/1      0/1        -      0/1      0/1      0/1
+pendulum    delay-1ms            1.0        0      0/1      0/1        -      0/1      0/1      0/1
+pendulum    wire-float64         1.0        0      0/1      0/1        -      0/1      0/1      0/1
+pendulum    obs:zero             0.001    110      0/1      0/1        -      1/1      0/1      0/1
+pendulum    obs:zero             0.01    1068      0/1      0/1        -      1/1      0/1      0/1
+pendulum    obs:zero             0.1    10297      0/1      0/1        -      1/1      0/1      0/1
+pendulum    obs:zero             1.0    102416      0/1      1/1        -      1/1      0/1      0/1
+pendulum    obs:zero             one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    obs:stale            0.001    110      0/1      0/1        -      1/1      0/1      0/1
+pendulum    obs:stale            0.01    1068      0/1      0/1        -      1/1      0/1      0/1
+pendulum    obs:stale            0.1    10295      0/1      0/1        -      1/1      0/1      0/1
+pendulum    obs:stale            1.0    102400      0/1      0/1        -      1/1      0/1      0/1
+pendulum    obs:stale            one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    obs:swap             0.001    110      0/1      0/1        -      1/1      0/1      0/1
+pendulum    obs:swap             0.01    1068      0/1      0/1        -      1/1      0/1      0/1
+pendulum    obs:swap             0.1    10297      0/1      0/1        -      1/1      0/1      0/1
+pendulum    obs:swap             1.0    102416      0/1      1/1        -      1/1      0/1      0/1
+pendulum    obs:swap             one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    obs:f16              0.001    110      0/1      0/1        -      1/1      0/1      0/1
+pendulum    obs:f16              0.01    1068      0/1      0/1        -      1/1      0/1      0/1
+pendulum    obs:f16              0.1    10297      0/1      0/1        -      1/1      0/1      0/1
+pendulum    obs:f16              1.0    102416      0/1      0/1        -      1/1      0/1      0/1
+pendulum    obs:f16              one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:zero          0.001    110      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:zero          0.01    1068      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:zero          0.1    10296      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:zero          1.0    102400      0/1      1/1        -      1/1      0/1      0/1
+pendulum    action:zero          one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:stale         0.001     88      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:stale         0.01     784      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:stale         0.1     7428      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:stale         1.0    75433      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:stale         one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:swap          0.001     99      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:swap          0.01     969      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:swap          0.1     9468      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:swap          1.0    87162      0/1      1/1        -      1/1      0/1      0/1
+pendulum    action:swap          one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:f16           0.001     78      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:f16           0.01     709      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:f16           0.1     6964      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:f16           1.0    64943      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:f16           one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:clip          0.001     62      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:clip          0.01     570      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:clip          0.1     5586      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:clip          1.0    65640      0/1      0/1        -      1/1      0/1      0/1
+pendulum    action:clip          one        0      0/1      0/1        -      0/1      0/1      0/1
+pendulum    reward:zero          0.001    110      0/1      0/1        -      1/1      1/1      0/1
+pendulum    reward:zero          0.01    1068      0/1      0/1        -      1/1      1/1      0/1
+pendulum    reward:zero          0.1    10296      0/1      0/1        -      1/1      1/1      0/1
+pendulum    reward:zero          1.0    102400      0/1      1/1        -      1/1      1/1      0/1
+pendulum    reward:zero          one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    reward:stale         0.001    110      0/1      0/1        -      1/1      1/1      0/1
+pendulum    reward:stale         0.01    1068      0/1      0/1        -      1/1      1/1      0/1
+pendulum    reward:stale         0.1    10296      0/1      0/1        -      1/1      1/1      0/1
+pendulum    reward:stale         1.0    102400      0/1      0/1        -      1/1      1/1      0/1
+pendulum    reward:stale         one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    reward:swap          0.001    110      0/1      0/1        -      1/1      1/1      0/1
+pendulum    reward:swap          0.01    1068      0/1      0/1        -      1/1      1/1      0/1
+pendulum    reward:swap          0.1    10296      0/1      0/1        -      1/1      1/1      0/1
+pendulum    reward:swap          1.0    102400      0/1      1/1        -      1/1      1/1      0/1
+pendulum    reward:swap          one        1      0/1      0/1        -      1/1      1/1      0/1
+pendulum    reward:f16           0.001    110      0/1      0/1        -      1/1      0/1      0/1
+pendulum    reward:f16           0.01    1068      0/1      0/1        -      1/1      0/1      0/1
+pendulum    reward:f16           0.1    10295      0/1      0/1        -      1/1      0/1      0/1
+pendulum    reward:f16           1.0    102388      0/1      0/1        -      1/1      0/1      0/1
+pendulum    reward:f16           one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:zero       0.001      1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:zero       0.01       9      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:zero       0.1       55      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:zero       1.0      512      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:zero       one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:stale      0.001      1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:stale      0.01       9      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:stale      0.1       55      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:stale      1.0      512      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:stale      one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:swap       0.001      1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:swap       0.01       9      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:swap       0.1       55      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:swap       1.0      512      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:swap       one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:f16        0.001      1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:f16        0.01       9      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:f16        0.1       55      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:f16        1.0      512      0/1      0/1        -      1/1      0/1      0/1
+pendulum    final-obs:f16        one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    terminated:spurious  0.001    110      0/1      0/1        -      1/1      1/1      0/1
+pendulum    terminated:spurious  0.01    1068      0/1      1/1        -      1/1      1/1      0/1
+pendulum    terminated:spurious  0.1    10296      0/1      1/1        -      1/1      1/1      0/1
+pendulum    terminated:spurious  1.0    102400      0/1      1/1        -      1/1      1/1      0/1
+pendulum    terminated:spurious  one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    truncated:drop       0.001      1      0/1      0/1        -      1/1      1/1      0/1
+pendulum    truncated:drop       0.01       9      0/1      0/1        -      1/1      1/1      0/1
+pendulum    truncated:drop       0.1       55      0/1      0/1        -      1/1      1/1      0/1
+pendulum    truncated:drop       1.0      512      0/1      1/1        -      1/1      1/1      0/1
+pendulum    truncated:drop       one        1      0/1      0/1        -      1/1      1/1      0/1
+pendulum    truncated:as-term    0.001      1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    truncated:as-term    0.01       9      0/1      0/1        -      1/1      0/1      0/1
+pendulum    truncated:as-term    0.1       55      0/1      0/1        -      1/1      0/1      0/1
+pendulum    truncated:as-term    1.0      512      0/1      0/1        -      1/1      0/1      0/1
+pendulum    truncated:as-term    one        1      0/1      0/1        -      1/1      0/1      0/1
+pendulum    step:fill            0.001    110      0/1      0/1        -      1/1      1/1      0/1
+pendulum    step:fill            0.01    1068      0/1      0/1        -      1/1      1/1      0/1
+pendulum    step:fill            0.1    10296      0/1      0/1        -      1/1      1/1      0/1
+pendulum    step:fill            1.0    102400      0/1      1/1        -      1/1      0/1      0/1
+pendulum    step:fill            one        1      0/1      0/1        -      1/1      1/1      0/1
+pendulum    log:drop-first       0.001      0      0/1      0/1        -      0/1      0/1      0/1
+pendulum    log:drop-first       0.01       2      0/1      0/1        -      0/1      1/1      1/1
+pendulum    log:drop-first       0.1       55      0/1      0/1        -      0/1      1/1      1/1
+pendulum    log:drop-first       1.0      512      0/1      0/1        -      0/1      1/1      1/1
+pendulum    log:drop-first       one        1      0/1      0/1        -      0/1      1/1      1/1
+pendulum    log:short            0.001      0      0/1      0/1        -      0/1      0/1      0/1
+pendulum    log:short            0.01       2      0/1      0/1        -      0/1      1/1      1/1
+pendulum    log:short            0.1       55      0/1      0/1        -      0/1      1/1      1/1
+pendulum    log:short            1.0      512      0/1      0/1        -      0/1      1/1      1/1
+pendulum    log:short            one        1      0/1      0/1        -      0/1      1/1      1/1
+pendulum    indices:reorder      one        1      1/1      0/1        -        -      0/1      0/1
+pendulum    reward:short-array   one        1      1/1      0/1        -        -      0/1      0/1
+
+share of silent runs caught, by dose (runs with a changed cell)
+  pendulum    one    n= 22  raises 0.0  rule 0.0  strict   weights 0.909  record 0.227  bridge 0.091
+  pendulum    0.001  n= 21  raises 0.0  rule 0.0  strict   weights 1.0  record 0.286  bridge 0.0
+  pendulum    0.01   n= 23  raises 0.0  rule 0.043  strict   weights 0.913  record 0.348  bridge 0.087
+  pendulum    0.1    n= 23  raises 0.0  rule 0.043  strict   weights 0.913  record 0.348  bridge 0.087
+  pendulum    1.0    n= 23  raises 0.0  rule 0.391  strict   weights 0.913  record 0.304  bridge 0.087
+  halfcheetah one    n=  1  raises 0.0  rule 0.0  strict   weights 1.0  record 1.0  bridge 0.0
+  halfcheetah 0.01   n=  1  raises 0.0  rule 0.0  strict   weights 1.0  record 0.0  bridge 0.0
+
+halfcheetah none at seed 9: 0260ca9d, E50's 0260ca9d: same
+pendulum none at seed 9: 3721266c, E50's 3721266c: same
+incomplete without an error: none
