@@ -1,0 +1,2 @@
+plugrl-bridges: slots 0-15 <- ('127.0.0.1', 43758)
+{"env": "pendulum", "arm": "bridge", "seed": 2, "weights_sha256": "3a8d968f19e2a8b5dc01540e41c4a64c02cb7a8c99ccdedf4a016008cf8bcd41", "learn_s": 92.441, "steps": 102400, "steps_per_s": 1107.7, "torch": "2.14.1+cpu", "client_rc": 0}
