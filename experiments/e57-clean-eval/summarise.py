@@ -40,7 +40,8 @@ def load(root: pathlib.Path) -> list[dict]:
         rows.append(dict(
             env=d["env"], fault=d["fault"], dose=d["dose"], seed=int(d["seed"]), kind=kind(d["fault"]),
             episodes=d["episodes"], clean=round(d["mean"], 2), sha=d["weights_sha256"][:8],
-            rule=int(t["rule"]), strict=int(t["strict"]),
+            # The loud faults' runs have no `strict` (no return was logged); see AMENDMENT.md.
+            rule=int(t["rule"]) if t["rule"] else None, strict=int(t["strict"]) if t["strict"] else None,
             last=float(t["last"]) if t["last"] else None,
         ))
     return rows
