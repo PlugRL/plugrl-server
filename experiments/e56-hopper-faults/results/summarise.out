@@ -1,0 +1,94 @@
+env         fault                dose   cells   raises     rule   strict  weights   record   bridge
+hopper      none                 1.0    0/0/0      0/3      0/3      0/3      0/3      0/3      0/3
+hopper      delay-1ms            1.0    0/0/0      0/3      0/3      0/3      0/3      0/3      0/3
+hopper      wire-float64         1.0    0/0/0      0/3      0/3      0/3      0/3      0/3      0/3
+hopper      obs:zero             0.01   10067/10067/10067      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      obs:zero             1.0    1024016/1024016/1024016      0/3      3/3      3/3      3/3      0/3      0/3
+hopper      obs:zero             one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      obs:stale            0.01   10067/10067/10067      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      obs:stale            1.0    1024000/1024000/1024000      0/3      1/3      1/3      3/3      0/3      0/3
+hopper      obs:stale            one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      obs:swap             0.01   10067/10067/10067      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      obs:swap             1.0    1024016/1024016/1024016      0/3      3/3      3/3      3/3      0/3      0/3
+hopper      obs:swap             one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      obs:f16              0.01   10067/10067/10067      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      obs:f16              1.0    1024016/1024016/1024016      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      obs:f16              one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      action:zero          0.01   10067/10067/10067      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      action:zero          1.0    1024000/1024000/1024000      0/3      3/3      3/3      3/3      0/3      0/3
+hopper      action:zero          one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      action:stale         0.01   10067/10067/10062      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      action:stale         1.0    1022705/1021290/1021873      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      action:stale         one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      action:swap          0.01   10063/10066/10062      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      action:swap          1.0    1023968/1023975/1023986      0/3      3/3      3/3      3/3      0/3      0/3
+hopper      action:swap          one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      action:f16           0.01   9882/9875/9772      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      action:f16           1.0    1005791/990123/1010459      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      action:f16           one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      action:clip          0.01   9025/9424/9420      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      action:clip          1.0    963542/962566/975678      0/3      2/3      3/3      3/3      0/3      0/3
+hopper      action:clip          one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      reward:zero          0.01   10067/10067/10067      0/3      0/3      0/3      3/3      3/3      0/3
+hopper      reward:zero          1.0    1024000/1024000/1024000      0/3      3/3      3/3      3/3      3/3      0/3
+hopper      reward:zero          one    1/1/1      0/3      0/3      0/3      3/3      3/3      0/3
+hopper      reward:stale         0.01   10067/10067/10067      0/3      0/3      0/3      3/3      3/3      0/3
+hopper      reward:stale         1.0    1023999/1023999/1024000      0/3      0/3      0/3      3/3      3/3      0/3
+hopper      reward:stale         one    1/1/1      0/3      0/3      0/3      3/3      1/3      0/3
+hopper      reward:swap          0.01   10067/10067/10067      0/3      0/3      0/3      3/3      3/3      0/3
+hopper      reward:swap          1.0    1024000/1024000/1024000      0/3      3/3      3/3      3/3      3/3      0/3
+hopper      reward:swap          one    1/1/1      0/3      0/3      0/3      3/3      3/3      0/3
+hopper      reward:f16           0.01   10066/10067/10067      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      reward:f16           1.0    1023872/1023882/1023890      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      reward:f16           one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      final-obs:zero       0.01   36/35/28      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      final-obs:zero       1.0    3440/3397/3453      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      final-obs:zero       one    1/1/1      0/3      0/3      0/3      0/3      0/3      0/3
+hopper      final-obs:stale      0.01   43/43/29      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      final-obs:stale      1.0    3424/3328/3505      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      final-obs:stale      one    1/1/1      0/3      0/3      0/3      0/3      0/3      0/3
+hopper      final-obs:swap       0.01   40/36/31      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      final-obs:swap       1.0    3429/3505/3447      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      final-obs:swap       one    1/1/1      0/3      0/3      0/3      0/3      0/3      0/3
+hopper      final-obs:f16        0.01   37/42/31      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      final-obs:f16        1.0    3374/3457/3483      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      final-obs:f16        one    1/1/1      0/3      0/3      0/3      0/3      0/3      0/3
+hopper      terminated:spurious  0.01   10000/10008/10007      0/3      3/3      3/3      3/3      3/3      0/3
+hopper      terminated:spurious  1.0    999951/1003087/998368      0/3      3/3      3/3      3/3      3/3      0/3
+hopper      terminated:spurious  one    1/1/1      0/3      0/3      0/3      3/3      3/3      0/3
+hopper      truncated:drop       0.01   1/1/2      0/3      0/3      0/3      3/3      3/3      0/3
+hopper      truncated:drop       1.0    103/119/95      0/3      0/3      0/3      3/3      3/3      0/3
+hopper      truncated:drop       one    1/1/1      0/3      0/3      0/3      3/3      3/3      0/3
+hopper      truncated:as-term    0.01   3/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      truncated:as-term    1.0    103/145/163      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      truncated:as-term    one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      step:fill            0.01   10067/10067/10067      0/3      0/3      0/3      3/3      3/3      0/3
+hopper      step:fill            1.0    1024000/1024000/1024000      0/3      3/3      3/3      3/3      0/3      0/3
+hopper      step:fill            one    1/1/1      0/3      0/3      0/3      3/3      3/3      0/3
+hopper      terminated:drop      0.01   24/37/39      0/3      0/3      0/3      3/3      3/3      0/3
+hopper      terminated:drop      1.0    7178/6873/7201      0/3      3/3      3/3      3/3      3/3      0/3
+hopper      terminated:drop      one    1/1/1      0/3      0/3      0/3      3/3      3/3      0/3
+hopper      terminated:as-trunc  0.01   42/38/28      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      terminated:as-trunc  1.0    7552/7880/6856      0/3      3/3      3/3      3/3      0/3      0/3
+hopper      terminated:as-trunc  one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+hopper      log:drop-first       0.01   30/29/32      0/3      0/3      0/3      0/3      3/3      3/3
+hopper      log:drop-first       1.0    3357/3271/3552      0/3      0/3      0/3      0/3      3/3      3/3
+hopper      log:drop-first       one    1/1/1      0/3      0/3      0/3      0/3      3/3      3/3
+hopper      log:short            0.01   30/29/32      0/3      0/3      0/3      0/3      3/3      3/3
+hopper      log:short            1.0    3357/3271/3552      0/3      0/3      0/3      0/3      3/3      3/3
+hopper      log:short            one    1/1/1      0/3      0/3      0/3      0/3      3/3      3/3
+
+share of runs caught, by dose (runs with a changed cell; either = weights or record)
+  hopper      client one    n= 69  raises 0.0  rule 0.0  strict 0.0  weights 0.826  record 0.275  bridge 0.0  either 0.826
+  hopper      client 0.01   n= 69  raises 0.0  rule 0.043  strict 0.043  weights 1.0  record 0.304  bridge 0.0  either 1.0
+  hopper      client 1.0    n= 69  raises 0.0  rule 0.478  strict 0.493  weights 1.0  record 0.261  bridge 0.0  either 1.0
+  hopper      log    one    n=  6  raises 0.0  rule 0.0  strict 0.0  weights 0.0  record 1.0  bridge 1.0  either 1.0
+  hopper      log    0.01   n=  6  raises 0.0  rule 0.0  strict 0.0  weights 0.0  record 1.0  bridge 1.0  either 1.0
+  hopper      log    1.0    n=  6  raises 0.0  rule 0.0  strict 0.0  weights 0.0  record 1.0  bridge 1.0  either 1.0
+  hopper      all    one    n= 75  raises 0.0  rule 0.0  strict 0.0  weights 0.76  record 0.333  bridge 0.08  either 0.84
+  hopper      all    0.01   n= 75  raises 0.0  rule 0.04  strict 0.04  weights 0.92  record 0.36  bridge 0.08  either 1.0
+  hopper      all    1.0    n= 75  raises 0.0  rule 0.44  strict 0.453  weights 0.92  record 0.32  bridge 0.08  either 1.0
+
+hopper fault-free band, seeds 10-19: mean 2031.4, sd 259.2, min 1612.8, max 2271.7
+hopper strict check on fault-free seeds 10-19, each against the other nine: 0 of 10 flagged
+incomplete without an error: none

@@ -1,0 +1,35 @@
+{'run': 'hopper/none/1.0/seed9', 'fault': 'none', 'dose': '1.0', 'seed': '9', 'cells': 0, 'caught': 0, 'differing': 0, 'injected': '', 'found': '', 'right': 1}
+ 18:20:59 up 28 days,  7:22,  1 user,  load average: 4.45, 7.94, 6.58
+E56_DONE
+0
+28 runs compared; right: 28
+hopper      wire-float64         1.0        0      0/1      0/1        -      0/1      0/1      0/1
+hopper      obs:zero             one        1      0/1      0/1        -      1/1      0/1      0/1
+hopper      obs:stale            one        1      0/1      0/1        -      1/1      0/1      0/1
+hopper      obs:swap             one        1      0/1      0/1        -      1/1      0/1      0/1
+hopper      obs:f16              one        1      0/1      0/1        -      1/1      0/1      0/1
+hopper      action:zero          one        1      0/1      0/1        -      1/1      0/1      0/1
+hopper      action:stale         one        1      0/1      0/1        -      1/1      0/1      0/1
+hopper      action:swap          one        1      0/1      0/1        -      1/1      0/1      0/1
+hopper      action:f16           one        1      0/1      0/1        -      1/1      0/1      0/1
+hopper      action:clip          one        1      0/1      0/1        -      1/1      0/1      0/1
+hopper      reward:zero          one        1      0/1      0/1        -      1/1      1/1      0/1
+hopper      reward:stale         one        1      0/1      0/1        -      1/1      1/1      0/1
+hopper      reward:swap          one        1      0/1      0/1        -      1/1      1/1      0/1
+hopper      reward:f16           one        1      0/1      0/1        -      1/1      0/1      0/1
+hopper      final-obs:zero       one        1      0/1      0/1        -      0/1      0/1      0/1
+hopper      final-obs:stale      one        1      0/1      0/1        -      0/1      0/1      0/1
+hopper      final-obs:swap       one        1      0/1      0/1        -      0/1      0/1      0/1
+hopper      final-obs:f16        one        1      0/1      0/1        -      0/1      0/1      0/1
+hopper      terminated:spurious  one        1      0/1      0/1        -      1/1      1/1      0/1
+hopper      truncated:drop       one        1      0/1      0/1        -      1/1      1/1      0/1
+hopper      truncated:as-term    one        1      0/1      0/1        -      1/1      0/1      0/1
+hopper      step:fill            one        1      0/1      0/1        -      1/1      1/1      0/1
+hopper      terminated:drop      one        1      0/1      0/1        -      1/1      1/1      0/1
+hopper      terminated:as-trunc  one        1      0/1      0/1        -      1/1      0/1      0/1
+hopper      log:drop-first       one        1      0/1      0/1        -      0/1      1/1      1/1
+hopper      log:short            one        1      0/1      0/1        -      0/1      1/1      1/1
+
+share of runs caught, by dose (runs with a changed cell; either = weights or record)
+
+incomplete without an error: none

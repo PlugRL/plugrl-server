@@ -1,0 +1,13 @@
+exploratory: boundary-fault runs silent on the curve, against fault-free runs
+env          dose    n   mean z   median z   U-test p   twin gap median (clean - none at same seed)
+halfcheetah  one     60     0.56       0.51      0.096       100.7
+halfcheetah  0.01    57     0.43       0.55      0.139        80.0
+halfcheetah  1.0     31     0.28       0.41      0.571        63.0
+hopper       one     69     0.19       0.62      0.534       142.4
+hopper       0.01    66     0.16       0.67      0.539       168.3
+hopper       1.0     35     0.27       0.81      0.342       368.2
+pendulum     one     63     0.24       0.55      0.195         6.8
+pendulum     0.001   58     0.03       0.60      0.053         6.5
+pendulum     0.01    59     0.09       0.54      0.208         7.3
+pendulum     0.1     50     0.36       0.60      0.061         8.4
+pendulum     1.0     25     0.65       0.68      0.003         9.2

@@ -1,0 +1,6 @@
+V1: holds - 834 evaluations of 834 runs, 834 with 50 episodes
+V2: holds - 12 weights shared by two or more runs; 0 with differing clean returns []
+P1: holds - band seeds flagged: {'halfcheetah': 0, 'hopper': 0, 'pendulum': 0}
+P2: holds - harmed at one value (harmed, runs): {'halfcheetah': (0, 63), 'hopper': (0, 69), 'pendulum': (1, 63)}
+P3: holds - pendulum reward:zero 1.0: [(0, -1195.55, '0.0', 1), (1, -1549.63, '0.0', 1), (2, -1639.38, '0.0', 1)]
+reported: hopper obs:f16 1.0 (seed, clean, harmed, silent on the curve): [(0, 1505.25, 0, '1'), (1, 3588.14, 0, '1'), (2, 3592.49, 0, '1')]

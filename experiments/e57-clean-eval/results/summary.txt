@@ -1,0 +1,29 @@
+halfcheetah: band (none, seeds 10-19) mean 852.6 sd 202.5 n 10; harm bar 245.1; band seeds flagged against the other nine: 0 of 10
+hopper: band (none, seeds 10-19) mean 2717.4 sd 857.0 n 10; harm bar 146.5; band seeds flagged against the other nine: 0 of 10
+pendulum: band (none, seeds 10-19) mean -185.9 sd 26.1 n 10; harm bar -264.1; band seeds flagged against the other nine: 0 of 10
+
+boundary-fault runs, seeds 0-2: harmed / runs; harmed among those silent on the curve
+  halfcheetah  one    harmed   0/63  silent on the curve  60, of them harmed   0
+  halfcheetah  0.01   harmed   0/63  silent on the curve  57, of them harmed   0
+  halfcheetah  1.0    harmed  28/63  silent on the curve  31, of them harmed   0
+  hopper       one    harmed   0/69  silent on the curve  69, of them harmed   0
+  hopper       0.01   harmed   0/69  silent on the curve  66, of them harmed   0
+  hopper       1.0    harmed  19/69  silent on the curve  35, of them harmed   0
+  pendulum     one    harmed   1/63  silent on the curve  63, of them harmed   1
+  pendulum     0.001  harmed   2/63  silent on the curve  58, of them harmed   1
+  pendulum     0.01   harmed   1/63  silent on the curve  59, of them harmed   1
+  pendulum     0.1    harmed   6/63  silent on the curve  50, of them harmed   2
+  pendulum     1.0    harmed  24/63  silent on the curve  25, of them harmed   0
+
+faults silent on the curve at all three seeds and harmed at two or more (fault, dose: clean returns)
+
+log error (logged final return - clean return): min / median / max by kind
+  halfcheetah  control   n  13     -479.1    -410.4     126.6
+  halfcheetah  boundary  n 177    -1034.8    -377.7    1521.1
+  halfcheetah  log       n  18     -441.1    -331.5    -259.1
+  hopper       control   n  19    -1666.7    -439.8     805.9
+  hopper       boundary  n 201    -1959.9   -1129.5    1162.5
+  hopper       log       n  18    -1667.7    -333.4     489.1
+  pendulum     control   n  19      -70.0     -35.2      33.3
+  pendulum     boundary  n 309     -450.6     -29.0    1639.4
+  pendulum     log       n  30      -70.0     -34.2       4.0

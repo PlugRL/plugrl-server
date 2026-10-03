@@ -1,0 +1,11 @@
+E56 budget pilot, 2026-10-02 17:58-18:03, guangzhao, three runs at a time.
+Hopper-v5, fault-free, 1,024,000 steps, SB3 defaults, 16 envs x 256 frames per rollout.
+Columns: run, final weights (SHA-256 prefix), model.learn() seconds, episodes logged,
+mean return of each tenth of the trainer's log (in order), last tenth minus first tenth.
+
+none, seed 9                  2f370852  250.0 s  3210 episodes  [19, 84, 204, 387, 868, 1537, 1732, 1740, 1991, 2035]  gain 2016
+none, seed 9, traced+ledgered 2f370852  251.3 s  3210 episodes  [19, 84, 204, 387, 868, 1537, 1732, 1740, 1991, 2035]  gain 2016
+none, seed 10                 d5a3ae29  251.3 s  3848 episodes  [21, 130, 259, 451, 640, 736, 1005, 1476, 1696, 2173]  gain 2169
+
+Traced and ledgered run: peak memory of train.py 682 MB; trace.npz 55 MB, ledger.npz 97 MB.
+Its ledger found no difference between the two sides.
