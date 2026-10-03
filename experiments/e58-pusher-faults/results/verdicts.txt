@@ -1,0 +1,12 @@
+V1: holds - 226 of 226 complete
+V2: holds - controls on none's weights: 6 of 6
+P1: holds - weights differ in 189 of 189
+P2: holds - log faults on none's weights: 18 of 18
+P3: holds - one: 0/69 (0.0%, cap 10%); 0.01: 3/69 (4.3%, cap 10%); 1.0: 21/69 (30.4%, cap 60%)
+P4: holds - missed 0, caught 0 it should not
+P5: holds - bridge caught 18 of 18 log-fault runs, 0 of 189 client-fault runs
+P6: holds - caught and right in 189 of 189 client-fault runs; no difference in 27 of 27 control and log-fault runs
+P7: holds - ledger or record caught 207 of 207
+P8: holds - band seeds flagged against the other nine: 0 of 10
+P9: holds - harmed at doses one and 0.01: 3 of 126
+reported: clean band mean -31.8 sd 2.1, harm bar -38.0; harmed: 0 of 155 runs silent on both curve checks, 30 of 34 runs a curve check caught; silent and harmed: []
