@@ -34,15 +34,15 @@ protocol is dated in an `AMENDMENT.md`, not folded into it.
 | [`e7-cross-machine`](e7-cross-machine/) | And once packets leave the machine? | **+0.52 ms** on a 184 KiB observation, from a virtual machine to its host. The cost is in leaving the machine, not in the network stack |
 | [`e43-cross-machine-training`](e43-cross-machine-training/) | And between two physical machines? | **About 3 ms plus twice the observation's bytes over the link**, per exchange: 21 ms for 184 KiB at 18 MB/s over Wi-Fi |
 | [`e46-reuse-feedback-obs`](e46-reuse-feedback-obs/) | Can the second copy of the observation go? | **Yes.** With `reuse-feedback-obs` the size term halves, 18.5 to 11.6 ms at 184 KiB, and the same training run gives bit-identical weights. On the way: the server's scheduler sleep costs up to 1 ms per infer |
-| [`e10-vla-forward-cost`](e10-vla-forward-cost/) | Is that cheap beside a VLA forward pass? | **On a fast link.** Through openpi's compiled path a forward takes 34.9 ms for the policy PlugRL ships and 100 ms for full-size pi0.5. A 1.3 ms crossing is 1.3-3.6% of that; E43's over Wi-Fi is 21% of the 100 ms |
+| [`e10-vla-forward-cost`](e10-vla-forward-cost/) | Is that cheap beside a VLA forward pass? | **On a fast link.** Through openpi's compiled path a forward takes 34.9 ms for the policy PlugRL ships and 100 ms for full-size pi0.5. A 1.3 ms crossing is 1.3-3.6% of that; E43's over Wi-Fi is 21% of the 100 ms, and E46's, with each observation sent once, 12% |
 | [`e9-many-clients`](e9-many-clients/) | Does one server stay correct with eight clients feeding it? | **Yes.** Twelve runs at 1, 2, 4 and 8 clients, every one exact to the unit. Throughput was still rising at eight, which falsified its prediction |
 | [`e8-keepalive-hypothesis`](e8-keepalive-hypothesis/) | Does a long learn step kill the connection? | **No.** Learn steps of 190 s close nothing. The drop that prompted it was the machine suspending, and a real reconnect bug was found and fixed anyway |
 
 ## Trainers that were not written for it
 
-Through [plugrl-bridges](https://github.com/PlugRL/plugrl-bridges): one
-lockstep server, with adapters for RLinf, gymnasium's `VectorEnv` and
-Stable-Baselines3's `VecEnv`.
+Through `plugrl-bridges` (not public yet): one lockstep server, with
+adapters for RLinf, gymnasium's `VectorEnv` and Stable-Baselines3's
+`VecEnv`.
 
 | | Question | Answer |
 |---|---|---|
