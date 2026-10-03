@@ -18,7 +18,11 @@ import numpy as np
 import torch
 from stable_baselines3 import PPO
 
-IDS = {"pendulum": "Pendulum-v1", "halfcheetah": "HalfCheetah-v5", "hopper": "Hopper-v5"}
+IDS = {
+    "pendulum": "Pendulum-v1",
+    "halfcheetah": "HalfCheetah-v5",
+    "hopper": "Hopper-v5",
+}
 SEED0 = 10_000
 
 
@@ -49,14 +53,24 @@ def main() -> int:
         lengths.append(n)
 
     out = dict(
-        env=res["env"], fault=res["fault"], dose=res["dose"], seed=res["seed"],
-        weights_sha256=res["weights_sha256"], episodes=a.episodes,
-        returns=returns, lengths=lengths, mean=float(np.mean(returns)),
+        env=res["env"],
+        fault=res["fault"],
+        dose=res["dose"],
+        seed=res["seed"],
+        weights_sha256=res["weights_sha256"],
+        episodes=a.episodes,
+        returns=returns,
+        lengths=lengths,
+        mean=float(np.mean(returns)),
         eval_s=round(time.time() - t0, 3),
     )
     a.out.mkdir(parents=True, exist_ok=True)
     (a.out / "clean_eval.json").write_text(json.dumps(out))
-    print(json.dumps({k: out[k] for k in ("env", "fault", "dose", "seed", "mean", "eval_s")}))
+    print(
+        json.dumps(
+            {k: out[k] for k in ("env", "fault", "dose", "seed", "mean", "eval_s")}
+        )
+    )
     return 0
 
 
