@@ -26,15 +26,17 @@ has been measured:
 | [E45](experiments/e45-env-side-footprint/) | And the other systems that train through their channel? | **Torch on the env side** - RLlib's external-env client and LeRobot's HIL-SERL actor install 6.1 GB each, 27x plugrl-env-client. dm_env_rpc and openpi-client are thin too, but do not train |
 | [E12](experiments/e12-cuda-free-rollout/) | Does a rollout machine need CUDA, or a GPU? | **No** - LIBERO's env client goes from 7.8G to 3.4G with no nvidia wheels, and renders on the CPU at 1.91x the wall clock ([E13](experiments/e13-gpu-free-rendering/)) |
 | [E43](experiments/e43-cross-machine-training/) | Does training still work with the env clients on another physical machine? | **Yes** - the quickstart pair learns with its env clients on a Windows laptop over campus Wi-Fi |
-| [E43](experiments/e43-cross-machine-training/) | What does crossing cost? | About **3 ms plus twice the observation's bytes over the link** per exchange: 21 ms for 184 KiB at 18 MB/s |
-| [E10](experiments/e10-vla-forward-cost/) | Is that cheap beside a VLA forward pass? | **On a fast link.** Over that Wi-Fi a 184 KiB observation is 21% of pi0.5's 100 ms forward, not E10's 1.3-3.6% |
+| [E46](experiments/e46-reuse-feedback-obs/) | What does crossing cost? | About **3 ms plus the observation's bytes over the link** per exchange: 11.6 ms for 184 KiB at 23.7 MB/s. Each observation crosses once with `reuse-feedback-obs`, which the server offers and the env client uses by default; [E43](experiments/e43-cross-machine-training/) measured twice the bytes before it, and the weights are byte-identical either way |
+| [E10](experiments/e10-vla-forward-cost/) | Is that cheap beside a VLA forward pass? | **On a fast link.** On that link a 184 KiB observation is 12% of pi0.5's 100 ms forward, not E10's 1.3-3.6% |
+| [E49](experiments/e49-multi-trainer/) | Do other trainers train through it? | **Yes** - RLinf, Stable-Baselines3 and CleanRL train PlugRL env clients through `plugrl-bridges` (not public yet), 3 of 3 seeds in every pairing; RLinf also with the env clients on a laptop with no torch, Ray or RLinf ([E48](experiments/e48-rlinf-bridge/)) |
+| [E50](experiments/e50-boundary-transparency/) | Does training see the boundary? | **No** - SB3 with its 16 environments behind the protocol ends on byte-identical weights to SB3 with them in its own process, also on Atari frames ([E53](experiments/e53-image-observations/)) and with 25 ms each way between the two ([E52](experiments/e52-latency-sweep/)). It costs 0.4-0.6 ms per vector step on one machine |
 | [E11](experiments/e11-vla-rl-libero/) | Does a full-size VLA go through it? | **Yes** - pi0.5 on LIBERO scores what openpi publishes, and the server's episode and step counts match the clients' exactly |
 
 Fine-tuning pi0.5 with reinforcement learning through it has not made the
 policy better yet; that record is on
 [its own page](https://plugrl.github.io/vla/).
-[`experiments/`](experiments/) holds forty-four experiments, forty-three of them
-run. Each carries its data and a `FINDINGS.md` stating what the result does
+[`experiments/`](experiments/) holds over fifty experiments. Each that has
+run carries its data and a `FINDINGS.md` stating what the result does
 **not** support. The documentation, including a quickstart that trains FPO
 on HalfCheetah with no GPU and nothing to download, is at
 [plugrl.github.io](https://plugrl.github.io).
