@@ -1,0 +1,51 @@
+ 00:52:44 up 28 days, 13:54,  1 user,  load average: 0.79, 0.38, 0.79
+2 runs, 2 at a time
+worker 1 done
+worker 0 done
+ 01:01:31 up 28 days, 14:03,  1 user,  load average: 2.03, 2.03, 1.55
+E58_DONE
+ 01:02:22 up 28 days, 14:04,  1 user,  load average: 0.88, 1.71, 1.46
+26 runs, 10 at a time
+worker 0 done
+worker 8 done
+worker 9 done
+worker 7 done
+worker 1 done
+worker 3 done
+worker 4 done
+worker 5 done
+worker 6 done
+worker 2 done
+ 01:09:00 up 28 days, 14:10,  1 user,  load average: 5.92, 6.76, 4.13
+E58_DONE
+{
+  "env": "pusher",
+  "fault": "none",
+  "dose": "1.0",
+  "seed": 8,
+  "weights_sha256": "25f2fe6f9589049716eba51bccfb0c84db7aaddd9b508d78966715e36176a9e1",
+  "learn_s": 507.243,
+  "steps": 2048000,
+  "torch": "2.14.1+cpu",
+  "client_rc": 0
+}
+{
+  "env": "pusher",
+  "fault": "none",
+  "dose": "1.0",
+  "seed": 9,
+  "weights_sha256": "4e4a5ca2f035c6f78ff3de4dfd33770594731e64152de8e0bbfaa7f116429ebb",
+  "learn_s": 510.704,
+  "steps": 2048000,
+  "torch": "2.14.1+cpu",
+  "client_rc": 0
+}
+seed 8, first 409600 steps: 4096 episodes, first tenth -111.5, last tenth -38.9, gain 72.6
+seed 8, first 1024000 steps: 10240 episodes, first tenth -97.6, last tenth -32.9, gain 64.7
+seed 8, first 2048000 steps: 20480 episodes, first tenth -76.5, last tenth -32.0, gain 44.5
+seed 8 clean return at 2,048,000 steps (50 episodes): -30.3
+seed 9, first 409600 steps: 4096 episodes, first tenth -110.2, last tenth -36.5, gain 73.7
+seed 9, first 1024000 steps: 10240 episodes, first tenth -104.3, last tenth -29.6, gain 74.7
+seed 9, first 2048000 steps: 20480 episodes, first tenth -82.1, last tenth -27.9, gain 54.2
+seed 9 clean return at 2,048,000 steps (50 episodes): -27.7
+fault pilot none seed 9 clean return at 409,600 steps: -32.1
