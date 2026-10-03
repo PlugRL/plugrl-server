@@ -1,0 +1,10 @@
+V1: holds - 244 of 244 complete
+V2: holds - controls on none's weights: 6 of 6
+P1: holds - weights differ in 171 of 171
+P2: holds - log faults on none's weights: 18 of 18
+P3: holds - one: 0/75 (0.0%, cap 10%); 0.01: 3/75 (4.0%, cap 10%); 1.0: 33/75 (44.0%, cap 60%)
+P4: holds - missed 0, caught 0 it should not
+P5: holds - bridge caught 18 of 18 log-fault runs, 0 of 207 client-fault runs
+P6: holds - caught and right in 207 of 207 client-fault runs; no difference in 27 of 27 control and log-fault runs
+P7: holds - ledger or record caught 225 of 225
+reported: final-obs runs (fault, dose, seed, weights caught): [('final-obs:f16', '0.01', '0', '1'), ('final-obs:f16', '0.01', '1', '1'), ('final-obs:f16', '0.01', '2', '1'), ('final-obs:f16', '1.0', '0', '1'), ('final-obs:f16', '1.0', '1', '1'), ('final-obs:f16', '1.0', '2', '1'), ('final-obs:f16', 'one', '0', '0'), ('final-obs:f16', 'one', '1', '0'), ('final-obs:f16', 'one', '2', '0'), ('final-obs:stale', '0.01', '0', '1'), ('final-obs:stale', '0.01', '1', '1'), ('final-obs:stale', '0.01', '2', '1'), ('final-obs:stale', '1.0', '0', '1'), ('final-obs:stale', '1.0', '1', '1'), ('final-obs:stale', '1.0', '2', '1'), ('final-obs:stale', 'one', '0', '0'), ('final-obs:stale', 'one', '1', '0'), ('final-obs:stale', 'one', '2', '0'), ('final-obs:swap', '0.01', '0', '1'), ('final-obs:swap', '0.01', '1', '1'), ('final-obs:swap', '0.01', '2', '1'), ('final-obs:swap', '1.0', '0', '1'), ('final-obs:swap', '1.0', '1', '1'), ('final-obs:swap', '1.0', '2', '1'), ('final-obs:swap', 'one', '0', '0'), ('final-obs:swap', 'one', '1', '0'), ('final-obs:swap', 'one', '2', '0'), ('final-obs:zero', '0.01', '0', '1'), ('final-obs:zero', '0.01', '1', '1'), ('final-obs:zero', '0.01', '2', '1'), ('final-obs:zero', '1.0', '0', '1'), ('final-obs:zero', '1.0', '1', '1'), ('final-obs:zero', '1.0', '2', '1'), ('final-obs:zero', 'one', '0', '0'), ('final-obs:zero', 'one', '1', '0'), ('final-obs:zero', 'one', '2', '0')]
