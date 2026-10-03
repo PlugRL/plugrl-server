@@ -1,0 +1,88 @@
+env         fault                dose   cells   raises     rule   strict  weights   record   bridge
+pusher      none                 1.0    0/0/0      0/3      0/3      0/3      0/3      0/3      0/3
+pusher      delay-1ms            1.0    0/0/0      0/3      0/3      0/3      0/3      0/3      0/3
+pusher      wire-float64         1.0    0/0/0      0/3      0/3      0/3      0/3      0/3      0/3
+pusher      obs:zero             0.01   4049/4049/4049      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      obs:zero             1.0    409616/409616/409616      0/3      0/3      3/3      3/3      0/3      0/3
+pusher      obs:zero             one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      obs:stale            0.01   4049/4049/4049      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      obs:stale            1.0    409600/409600/409600      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      obs:stale            one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      obs:swap             0.01   4049/4049/4049      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      obs:swap             1.0    409616/409616/409616      0/3      0/3      3/3      3/3      0/3      0/3
+pusher      obs:swap             one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      obs:f16              0.01   4049/4049/4049      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      obs:f16              1.0    409616/409616/409616      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      obs:f16              one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      action:zero          0.01   4049/4049/4049      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      action:zero          1.0    409600/409600/409600      0/3      3/3      3/3      3/3      0/3      0/3
+pusher      action:zero          one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      action:stale         0.01   4049/4049/4049      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      action:stale         1.0    409600/409600/409600      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      action:stale         one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      action:swap          0.01   4049/4049/4049      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      action:swap          1.0    409600/409600/409600      0/3      3/3      3/3      3/3      0/3      0/3
+pusher      action:swap          one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      action:f16           0.01   4049/4049/4049      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      action:f16           1.0    409600/409600/409600      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      action:f16           one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      action:clip          0.01   1433/1454/1350      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      action:clip          1.0    203780/212889/249421      0/3      0/3      1/3      3/3      0/3      0/3
+pusher      action:clip          one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      reward:zero          0.01   4049/4049/4049      0/3      0/3      0/3      3/3      3/3      0/3
+pusher      reward:zero          1.0    409600/409600/409600      0/3      3/3      3/3      3/3      3/3      0/3
+pusher      reward:zero          one    1/1/1      0/3      0/3      0/3      3/3      3/3      0/3
+pusher      reward:stale         0.01   4049/4049/4049      0/3      0/3      0/3      3/3      3/3      0/3
+pusher      reward:stale         1.0    409600/409600/409600      0/3      0/3      0/3      3/3      3/3      0/3
+pusher      reward:stale         one    1/1/1      0/3      0/3      0/3      3/3      3/3      0/3
+pusher      reward:swap          0.01   4049/4049/4049      0/3      0/3      0/3      3/3      3/3      0/3
+pusher      reward:swap          1.0    409600/409600/409600      0/3      3/3      3/3      3/3      3/3      0/3
+pusher      reward:swap          one    1/1/1      0/3      0/3      0/3      3/3      3/3      0/3
+pusher      reward:f16           0.01   4049/4047/4049      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      reward:f16           1.0    409549/409543/409546      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      reward:f16           one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      final-obs:zero       0.01   38/38/38      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      final-obs:zero       1.0    4096/4096/4096      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      final-obs:zero       one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      final-obs:stale      0.01   38/38/38      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      final-obs:stale      1.0    4096/4096/4096      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      final-obs:stale      one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      final-obs:swap       0.01   38/38/38      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      final-obs:swap       1.0    4096/4096/4096      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      final-obs:swap       one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      final-obs:f16        0.01   38/38/38      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      final-obs:f16        1.0    4096/4096/4096      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      final-obs:f16        one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      terminated:spurious  0.01   4049/4049/4049      0/3      3/3      1/3      3/3      3/3      0/3
+pusher      terminated:spurious  1.0    409600/409600/409600      0/3      3/3      3/3      3/3      3/3      0/3
+pusher      terminated:spurious  one    1/1/1      0/3      0/3      0/3      3/3      3/3      0/3
+pusher      truncated:drop       0.01   38/38/38      0/3      0/3      0/3      3/3      3/3      0/3
+pusher      truncated:drop       1.0    4096/4096/4096      0/3      3/3      3/3      3/3      3/3      0/3
+pusher      truncated:drop       one    1/1/1      0/3      0/3      0/3      3/3      3/3      0/3
+pusher      truncated:as-term    0.01   38/38/38      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      truncated:as-term    1.0    4096/4096/4096      0/3      0/3      3/3      3/3      0/3      0/3
+pusher      truncated:as-term    one    1/1/1      0/3      0/3      0/3      3/3      0/3      0/3
+pusher      step:fill            0.01   4049/4049/4049      0/3      0/3      0/3      3/3      3/3      0/3
+pusher      step:fill            1.0    409600/409600/409600      0/3      3/3      3/3      3/3      0/3      0/3
+pusher      step:fill            one    1/1/1      0/3      0/3      0/3      3/3      3/3      0/3
+pusher      log:drop-first       0.01   39/39/39      0/3      0/3      0/3      0/3      3/3      3/3
+pusher      log:drop-first       1.0    4096/4096/4096      0/3      0/3      0/3      0/3      3/3      3/3
+pusher      log:drop-first       one    1/1/1      0/3      0/3      0/3      0/3      3/3      3/3
+pusher      log:short            0.01   39/39/39      0/3      0/3      0/3      0/3      3/3      3/3
+pusher      log:short            1.0    4096/4096/4096      0/3      0/3      0/3      0/3      3/3      3/3
+pusher      log:short            one    1/1/1      0/3      0/3      0/3      0/3      3/3      3/3
+
+share of runs caught, by dose (runs with a changed cell; either = weights or record)
+  pusher      client one    n= 63  raises 0.0  rule 0.0  strict 0.0  weights 1.0  record 0.286  bridge 0.0  either 1.0
+  pusher      client 0.01   n= 63  raises 0.0  rule 0.048  strict 0.016  weights 1.0  record 0.286  bridge 0.0  either 1.0
+  pusher      client 1.0    n= 63  raises 0.0  rule 0.333  strict 0.492  weights 1.0  record 0.238  bridge 0.0  either 1.0
+  pusher      log    one    n=  6  raises 0.0  rule 0.0  strict 0.0  weights 0.0  record 1.0  bridge 1.0  either 1.0
+  pusher      log    0.01   n=  6  raises 0.0  rule 0.0  strict 0.0  weights 0.0  record 1.0  bridge 1.0  either 1.0
+  pusher      log    1.0    n=  6  raises 0.0  rule 0.0  strict 0.0  weights 0.0  record 1.0  bridge 1.0  either 1.0
+  pusher      all    one    n= 69  raises 0.0  rule 0.0  strict 0.0  weights 0.913  record 0.348  bridge 0.087  either 1.0
+  pusher      all    0.01   n= 69  raises 0.0  rule 0.043  strict 0.014  weights 0.913  record 0.348  bridge 0.087  either 1.0
+  pusher      all    1.0    n= 69  raises 0.0  rule 0.304  strict 0.449  weights 0.913  record 0.304  bridge 0.087  either 1.0
+
+pusher fault-free band, seeds 10-19: mean -36.1, sd 1.9, min -39.4, max -32.8
+pusher strict check on fault-free seeds 10-19, each against the other nine: 0 of 10 flagged
+incomplete without an error: none
