@@ -109,3 +109,23 @@ repetition and validity rules, the stopping rule and the record format all
 stand as pre-registered. Correction 1 changes a motivating percentage,
 correction 2 changes a parameter count in a table, and change 1 adds a level
 to one variable.
+
+---
+
+## Correction 3: both levels are pi0.5, which the labels do not say
+
+**Written 2026-10-06, after the results.**
+
+`measure.py` (lines 93-104) builds both levels with
+`Pi0Config(pi05=True, action_horizon=10)`: the tiny one with `gemma_tiny` and
+`gemma_expert_tiny`, as `pi05_tiny_libero` does, and the full-size one with
+the default `gemma_2b` and `gemma_300m`. Change 1 above, `FINDINGS.md` and
+`results/` name the two levels after openpi's model class, `pi0-tiny` and
+`pi0-base`, and none of them says that `pi05=True` is set.
+
+**Both rows are pi0.5 forwards.** The 100.0 ms row is a full-size pi0.5 with
+random weights, not pi0. E43, E46 and `experiments/README.md` call it pi0.5,
+correctly; reading `pi0-base` as pi0 is wrong.
+
+Nothing measured changes. The numbers, the predictions and their verdicts
+stand; this names the model they describe.
