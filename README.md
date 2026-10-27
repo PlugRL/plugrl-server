@@ -28,9 +28,16 @@ has been measured:
 | [E43](experiments/e43-cross-machine-training/) | Does training still work with the env clients on another physical machine? | **Yes** - the quickstart pair learns with its env clients on a Windows laptop over campus Wi-Fi |
 | [E46](experiments/e46-reuse-feedback-obs/) | What does crossing cost? | About **3 ms plus the observation's bytes over the link** per exchange: 11.6 ms for 184 KiB at 23.7 MB/s. Each observation crosses once with `reuse-feedback-obs`, which the server offers and the env client uses by default; [E43](experiments/e43-cross-machine-training/) measured twice the bytes before it, and the weights are byte-identical either way |
 | [E10](experiments/e10-vla-forward-cost/) | Is that cheap beside a VLA forward pass? | **On a fast link.** On that link a 184 KiB observation is 12% of pi0.5's 100 ms forward, not E10's 1.3-3.6% |
-| [E49](experiments/e49-multi-trainer/) | Do other trainers train through it? | **Yes** - RLinf, Stable-Baselines3 and CleanRL train PlugRL env clients through `plugrl-bridges` (not public yet), 3 of 3 seeds in every pairing; RLinf also with the env clients on a laptop with no torch, Ray or RLinf ([E48](experiments/e48-rlinf-bridge/)) |
+| [E49](experiments/e49-multi-trainer/) | Do other trainers train through it? | **Yes** - RLinf, Stable-Baselines3 and CleanRL train PlugRL env clients through [`plugrl-bridges`](https://github.com/PlugRL/plugrl-bridges), 3 of 3 seeds in every pairing; RLinf also with the env clients on a laptop with no torch, Ray or RLinf ([E48](experiments/e48-rlinf-bridge/)) |
 | [E50](experiments/e50-boundary-transparency/) | Does training see the boundary? | **No** - SB3 with its 16 environments behind the protocol ends on byte-identical weights to SB3 with them in its own process, also on Atari frames ([E53](experiments/e53-image-observations/)) and with 25 ms each way between the two ([E52](experiments/e52-latency-sweep/)). It costs 0.4-0.6 ms per vector step on one machine |
+| [E54](experiments/e54-boundary-faults/) | Would a fault at the boundary show? | **Not in the learning curve** - unless every value crossing is wrong, a fault passes a learning-curve threshold in at least nine runs of ten, and a clean evaluation of the policy nearly always ([E57](experiments/e57-clean-eval/)). A step ledger kept on both sides caught and located every such fault wherever it was kept, on Pendulum, Hopper and Pusher ([E55](experiments/e55-step-ledger/), [E56](experiments/e56-hopper-faults/), [E58](experiments/e58-pusher-faults/)), for a median 3% of training time on Pendulum |
 | [E11](experiments/e11-vla-rl-libero/) | Does a full-size VLA go through it? | **Yes** - pi0.5 on LIBERO scores what openpi publishes, and the server's episode and step counts match the clients' exactly |
+
+The boundary checks are the paper *Detecting Silent Faults at the
+Environment-Trainer Boundary in Reinforcement Learning*, accepted to the CoRL
+2026 Workshop on Everything Beneath the Policy
+([PDF](https://plugrl.github.io/assets/silent-faults-webp2026.pdf),
+[summary and video](https://plugrl.github.io/#when-the-boundary-is-wrong-nothing-says-so)).
 
 Fine-tuning pi0.5 with reinforcement learning through it has not made the
 policy better yet; that record is on

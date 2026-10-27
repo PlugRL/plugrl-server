@@ -3,12 +3,12 @@
 PlugRL's claim is that training should not care where its environments run:
 in another process, on another machine, on a machine with no GPU, or in a
 program that is not Python, and whatever trainer is on the other side. These
-fifty-two experiments test that claim, measure what it costs, and record the
-defects found on the way. Fifty-one have run. E3 has a protocol and no data.
+fifty-seven experiments test that claim, measure what it costs, and record the
+defects found on the way. Fifty-six have run. E3 has a protocol and no data.
 
 Each directory has a `FINDINGS.md`: what was asked, what came back, and what
 the result does **not** support. The logs behind it are under `results*/`.
-Forty-five of the experiments that ran have a `PROTOCOL.md` with their
+Fifty of the experiments that ran have a `PROTOCOL.md` with their
 predictions. Most were written before the data existed; the exceptions
 (E15 was written with its runs in flight) say so. Anything changed after a
 protocol is dated in an `AMENDMENT.md`, not folded into it.
@@ -52,6 +52,22 @@ adapters for RLinf, gymnasium's `VectorEnv` and Stable-Baselines3's
 | [`e51-episode-accounting`](e51-episode-accounting/) | Do the episode counters these trainers rely on count right? | **Not all.** Gymnasium 1.3's vector `RecordEpisodeStatistics` drops each episode's first reward under SAME_STEP autoreset. CleanRL's logging logs nothing under gymnasium 1.x's default. SB3, the bridge and the env client count right |
 | [`e52-latency-sweep`](e52-latency-sweep/) | Does latency change what is learned? | **No, only the time.** With 0 to 25 ms added each way between client and bridge, every run ends on the in-process weights. Each step costs two one-way delays plus up to 3.1 ms, a little over the predicted band at 25 ms |
 | [`e53-image-observations`](e53-image-observations/) | And with camera frames and a CNN? | **Still the same weights.** SB3's CnnPolicy on Atari frames ends byte-identical in process and through the bridge; 16 frames a step cost 2.6-3.0 ms |
+
+## When the boundary is wrong
+
+Faults injected into what crosses the bridge, and the checks that notice
+them. These five are the paper *Detecting Silent Faults at the
+Environment-Trainer Boundary in Reinforcement Learning*, accepted to the CoRL
+2026 Workshop on Everything Beneath the Policy
+([PDF](https://plugrl.github.io/assets/silent-faults-webp2026.pdf)).
+
+| | Question | Answer |
+|---|---|---|
+| [`e54-boundary-faults`](e54-boundary-faults/) | Would a fault in what crosses show in the learning curve? | **Rarely.** 21 client faults and 2 log faults on Pendulum and HalfCheetah, from one value to every value: below every value, the gain threshold caught at most one run in ten. Byte-identical weights or the env-side episode record caught every one |
+| [`e55-step-ledger`](e55-step-ledger/) | Can a check find the fault with no fault-free run to compare? | **Yes.** A step ledger on both sides caught and located all 189 client-fault runs on Pendulum at their first changed value, with no false alarm in 27, and all 21 across two machines, for a median 3% of training time |
+| [`e56-hopper-faults`](e56-hopper-faults/) | And on Hopper, which ends episodes when it falls? | **The same.** The ledger caught and located all 207 client-fault runs, and the curves missed most. Byte identity missed 12 final-observation faults that SB3 never reads |
+| [`e57-clean-eval`](e57-clean-eval/) | Are the policies behind the faults the curves miss any worse? | **Almost never.** On a clean environment, 5 of 255 Pendulum runs that passed both curve checks scored below the fault-free band, none on HalfCheetah or Hopper. Every policy the faults wrecked, the curve checks had already caught |
+| [`e58-pusher-faults`](e58-pusher-faults/) | And on a 7-joint arm? | **E54-E57 hold on Pusher.** The ledger caught and located all 189 client-fault runs, the curves missed most, and no fault the curves missed left a worse policy |
 
 ## What trains through it
 
