@@ -36,7 +36,7 @@ has been measured:
 The boundary checks are the paper *Detecting Silent Faults at the
 Environment-Trainer Boundary in Reinforcement Learning*, accepted to the CoRL
 2026 Workshop on Everything Beneath the Policy
-([PDF](https://plugrl.github.io/assets/silent-faults-webp2026.pdf),
+([arXiv:2611.08144](https://arxiv.org/abs/2611.08144),
 [summary and video](https://plugrl.github.io/#when-the-boundary-is-wrong-nothing-says-so)).
 
 Fine-tuning pi0.5 with reinforcement learning through it has not made the
